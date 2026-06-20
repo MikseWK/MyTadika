@@ -1,0 +1,8 @@
+# Maven build files
+mytadika-backend/target/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
