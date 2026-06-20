@@ -1,0 +1,39 @@
+:root {
+  --color-bg: #fff8e9;
+  --color-card: #ffffff;
+  --color-primary: #ffc93c;
+  --color-primary-dark: #f2a900;
+  --color-accent: #ff8a3d;
+  --color-text: #3a2e20;
+  --color-text-muted: #978a76;
+  --color-border: #f0e4cc;
+  --radius-lg: 24px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --shadow-soft: 0 20px 45px -15px rgba(180, 140, 60, 0.35);
+
+  font: 16px/1.5 'Segoe UI', system-ui, Roboto, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+button, input {
+  font: inherit;
+}
