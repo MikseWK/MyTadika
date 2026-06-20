@@ -885,16 +885,22 @@ the exact basic/alternative flow.
 Work top to bottom — each phase depends on the entities/auth from the one
 before it.
 
-> **Actual state as of 2026-06-18** (confirmed by reading the codebase, not
-> assumed): only **Phase 5's backend half is scaffolded** —
-> `HealthRecord.java`, `AllergyProfile.java`, `HealthController.java`,
-> `HealthAdviceService.java`, `AiPredictionClient.java` all exist under
-> `mytadika-backend/src/main/java/com/mytadika/`. **Phases 0–4 have not
-> started**: no `Account`/`Student`/`Classroom` entity exists, no auth is
-> wired up (no `SecurityConfig`, no JWT, no Supabase client), and
-> `mytadika-frontend`'s `LoginPage.jsx` is a stub that routes by a picked
-> role with no backend call. Don't assume earlier phases are done just
-> because Phase 5 has progress — they were built independently/out of order.
+> **Actual state as of 2026-06-20** (confirmed by reading the codebase, not
+> assumed): **Phases 0–3 and Phase 5's backend half are built.**
+> `Account`/`Student`/`Classroom`/`Gender`/`Role` entities, `SecurityConfig`
+> (OAuth2 resource server), `SupabaseJwtAuthConverter`, `AccountResolver`,
+> `AccountController`/`AuthController`/`StudentController`, and the
+> `AccountService`/`StudentService` RBAC-scoped logic all exist under
+> `mytadika-backend/src/main/java/com/mytadika/`, alongside the already-built
+> `HealthRecord`/`AllergyProfile`/`HealthController`/`HealthAdviceService`/
+> `AiPredictionClient` (Phase 5). The Maven wrapper (`mvnw`) is in place and
+> the backend compiles clean (`mvn clean compile`, 37 source files). On the
+> frontend, `mytadika-frontend` is scaffolded with `supabaseClient.js`,
+> `AuthContext`, `axiosClient` (Supabase-session interceptor),
+> `ProtectedRoute`, and working `LoginPage`/`RegisterPage`/
+> `ParentDashboard`/Student pages — not stubs. Remaining: Phase 4 (Academic
+> Performance Tracking) hasn't started, and Phase 6 (tests, deployment prep)
+> is still open.
 
 **Phase 0 — Scaffolding**
 - [ ] Supabase project created; note the project ref, region, and DB password; confirm legacy vs. asymmetric JWT signing keys (Dashboard → API → JWT Keys)
