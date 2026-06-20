@@ -1,20 +1,18 @@
-package controller;
+package com.mytadika.controller;
 
+import com.mytadika.model.AllergyProfile;
+import com.mytadika.model.HealthRecord;
+import com.mytadika.repository.AllergyProfileRepository;
+import com.mytadika.repository.HealthRecordRepository;
+import com.mytadika.service.AiPredictionClient;
+import com.mytadika.service.HealthAdviceService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import model.AllergyProfile;
-import model.HealthRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import repository.AllergyProfileRepository;
-import repository.HealthRecordRepository;
-import service.AiPredictionClient;
-import service.HealthAdviceService;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -25,17 +23,27 @@ import java.util.Optional;
 @RequestMapping("/api/health")
 @CrossOrigin(origins = "*") // Adjust origins in production settings
 @Validated
-@Slf4j
-@RequiredArgsConstructor
 public class HealthController {
+
+    private static final Logger log = LoggerFactory.getLogger(HealthController.class);
 
     private final HealthRecordRepository healthRecordRepository;
     private final AllergyProfileRepository allergyProfileRepository;
     private final AiPredictionClient aiPredictionClient;
     private final HealthAdviceService healthAdviceService;
 
+    public HealthController(
+            HealthRecordRepository healthRecordRepository,
+            AllergyProfileRepository allergyProfileRepository,
+            AiPredictionClient aiPredictionClient,
+            HealthAdviceService healthAdviceService) {
+        this.healthRecordRepository = healthRecordRepository;
+        this.allergyProfileRepository = allergyProfileRepository;
+        this.aiPredictionClient = aiPredictionClient;
+        this.healthAdviceService = healthAdviceService;
+    }
+
     // DTO for incoming measurements & advice requests
-    @Data
     public static class HealthRequestDTO {
         @NotBlank(message = "childId is required")
         private String childId;
@@ -67,21 +75,171 @@ public class HealthController {
         private List<String> allergies;
         private List<String> shownAdviceIds;
         private Long recordedBy;
+
+        public HealthRequestDTO() {}
+
+        public String getChildId() {
+            return childId;
+        }
+
+        public void setChildId(String childId) {
+            this.childId = childId;
+        }
+
+        public Double getAgeMonths() {
+            return ageMonths;
+        }
+
+        public void setAgeMonths(Double ageMonths) {
+            this.ageMonths = ageMonths;
+        }
+
+        public Double getWeightKg() {
+            return weightKg;
+        }
+
+        public void setWeightKg(Double weightKg) {
+            this.weightKg = weightKg;
+        }
+
+        public Double getHeightCm() {
+            return heightCm;
+        }
+
+        public void setHeightCm(Double heightCm) {
+            this.heightCm = heightCm;
+        }
+
+        public Double getMuacCm() {
+            return muacCm;
+        }
+
+        public void setMuacCm(Double muacCm) {
+            this.muacCm = muacCm;
+        }
+
+        public String getGender() {
+            return gender;
+        }
+
+        public void setGender(String gender) {
+            this.gender = gender;
+        }
+
+        public Integer getActivityLevel() {
+            return activityLevel;
+        }
+
+        public void setActivityLevel(Integer activityLevel) {
+            this.activityLevel = activityLevel;
+        }
+
+        public List<String> getAllergies() {
+            return allergies;
+        }
+
+        public void setAllergies(List<String> allergies) {
+            this.allergies = allergies;
+        }
+
+        public List<String> getShownAdviceIds() {
+            return shownAdviceIds;
+        }
+
+        public void setShownAdviceIds(List<String> shownAdviceIds) {
+            this.shownAdviceIds = shownAdviceIds;
+        }
+
+        public Long getRecordedBy() {
+            return recordedBy;
+        }
+
+        public void setRecordedBy(Long recordedBy) {
+            this.recordedBy = recordedBy;
+        }
     }
 
     // Wrapper response indicating saved record ID and generated advice
-    @Data
-    @Builder
     public static class RecordResponseDTO {
         private Long recordId;
         private HealthRecord healthRecord;
         private HealthAdviceService.AdviceResult advice;
+
+        public RecordResponseDTO() {}
+
+        public RecordResponseDTO(Long recordId, HealthRecord healthRecord, HealthAdviceService.AdviceResult advice) {
+            this.recordId = recordId;
+            this.healthRecord = healthRecord;
+            this.advice = advice;
+        }
+
+        public Long getRecordId() {
+            return recordId;
+        }
+
+        public void setRecordId(Long recordId) {
+            this.recordId = recordId;
+        }
+
+        public HealthRecord getHealthRecord() {
+            return healthRecord;
+        }
+
+        public void setHealthRecord(HealthRecord healthRecord) {
+            this.healthRecord = healthRecord;
+        }
+
+        public HealthAdviceService.AdviceResult getAdvice() {
+            return advice;
+        }
+
+        public void setAdvice(HealthAdviceService.AdviceResult advice) {
+            this.advice = advice;
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private Long recordId;
+            private HealthRecord healthRecord;
+            private HealthAdviceService.AdviceResult advice;
+
+            public Builder recordId(Long recordId) {
+                this.recordId = recordId;
+                return this;
+            }
+
+            public Builder healthRecord(HealthRecord healthRecord) {
+                this.healthRecord = healthRecord;
+                return this;
+            }
+
+            public Builder advice(HealthAdviceService.AdviceResult advice) {
+                this.advice = advice;
+                return this;
+            }
+
+            public RecordResponseDTO build() {
+                return new RecordResponseDTO(recordId, healthRecord, advice);
+            }
+        }
     }
 
     // DTO for allergy updates
-    @Data
     public static class AllergyUpdateDTO {
         private List<String> allergies;
+
+        public AllergyUpdateDTO() {}
+
+        public List<String> getAllergies() {
+            return allergies;
+        }
+
+        public void setAllergies(List<String> allergies) {
+            this.allergies = allergies;
+        }
     }
 
     /**
@@ -259,7 +417,7 @@ public class HealthController {
     public ResponseEntity<AllergyProfile> updateAllergies(
             @PathVariable Long studentId,
             @RequestBody AllergyUpdateDTO updateRequest
-    ) {
+            ) {
         log.info("REST request to update active allergies list for student: {}", studentId);
         AllergyProfile profile = allergyProfileRepository.findById(studentId)
                 .orElse(AllergyProfile.builder().studentId(studentId).build());

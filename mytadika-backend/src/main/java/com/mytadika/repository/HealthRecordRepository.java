@@ -1,6 +1,6 @@
-package repository;
+package com.mytadika.repository;
 
-import model.HealthRecord;
+import com.mytadika.model.HealthRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
