@@ -106,13 +106,6 @@ def _compute_bmi(weight_kg: float, height_cm: float) -> float:
     return weight_kg / (height_m ** 2)
 
 
-def _simple_z_score(value: float, mean: float, sd: float) -> float:
-    """Simplified z-score helper (no LMS table lookup — uses population proxies)."""
-    if sd == 0:
-        return 0.0
-    return (value - mean) / sd
-
-
 def _age_group(age_months: float) -> int:
     """0 = infant (0-12m), 1 = toddler (12-36m), 2 = preschool (36-72m)"""
     if age_months < 12:
@@ -131,33 +124,44 @@ def _build_feature_row(
     gender: str | None,
 ) -> dict[str, float]:
     """
-    Construct feature dict matching the training pipeline.
-    Uses the same column names as selected_features.joblib.
+    Construct feature dict matching the training pipeline exactly
+    (mirrors the `predict_nutrition_status` helper in Model_Training.ipynb,
+    cell 61 — same formulas, same feature names, same thresholds).
     """
     bmi_verified = _compute_bmi(weight_kg, height_cm)
+    bmi_value = bmi if bmi is not None else bmi_verified
+    muac_value = muac_cm if muac_cm is not None else 14.0  # population mean fallback
 
-    # Simplified z-score proxies (WHO LMS table lookup would be more accurate;
-    # these proxies are sufficient given the training data used the same approach)
-    weight_for_age_z   = _simple_z_score(weight_kg,  mean=14.0, sd=3.5)
-    height_for_age_z   = _simple_z_score(height_cm,  mean=95.0, sd=12.0)
-    bmi_for_age_z      = _simple_z_score(bmi_verified, mean=15.5, sd=2.0)
-    muac_for_age_z     = _simple_z_score(muac_cm or 15.0, mean=15.0, sd=1.5)
+    expected_weight   = 3.0 + 0.15 * age_months
+    expected_height    = 50.0 + 1.1 * age_months
+    weight_for_age_z   = (weight_kg - expected_weight) / (expected_weight * 0.15)
+    height_for_age_z   = (height_cm - expected_height) / (expected_height * 0.05)
+    bmi_for_age_z      = (bmi_value - 15.5) / 2.0
+    muac_for_age_z      = (muac_value - 14.0) / 1.2
+
+    is_sam         = int(muac_value < 11.5)
+    is_mam         = int(11.5 <= muac_value < 12.5)
+    is_stunted     = int(height_for_age_z < -2)
+    is_underweight = int(weight_for_age_z < -2)
+    age_bmi_interaction = age_months * bmi_value
 
     return {
-        "age_months":        age_months,
-        "weight_kg":         weight_kg,
-        "height_cm":         height_cm,
-        "muac_cm":           muac_cm if muac_cm is not None else 15.0,
-        "bmi":               bmi if bmi is not None else bmi_verified,
-        "bmi_verified":      bmi_verified,
-        "weight_for_age_z":  weight_for_age_z,
-        "height_for_age_z":  height_for_age_z,
-        "bmi_for_age_z":     bmi_for_age_z,
-        "muac_for_age_z":    muac_for_age_z,
-        "age_group":         _age_group(age_months),
-        "weight_height_ratio": weight_kg / height_cm,
-        "is_stunted":        int(height_for_age_z < -2),
-        "is_wasted":         int(weight_for_age_z < -2),
+        "age_months":           age_months,
+        "weight_kg":            weight_kg,
+        "height_cm":            height_cm,
+        "muac_cm":              muac_value,
+        "bmi":                  bmi_value,
+        "weight_for_age_z":     weight_for_age_z,
+        "height_for_age_z":     height_for_age_z,
+        "bmi_for_age_z":        bmi_for_age_z,
+        "muac_for_age_z":       muac_for_age_z,
+        "weight_height_ratio":  weight_kg / height_cm,
+        "age_group":            _age_group(age_months),
+        "is_sam":               is_sam,
+        "is_mam":               is_mam,
+        "is_stunted":           is_stunted,
+        "is_underweight":       is_underweight,
+        "age_bmi_interaction":  age_bmi_interaction,
     }
 
 
@@ -165,19 +169,13 @@ def _build_feature_row(
 #  Clinical flags  
 # ─────────────────────────────────────────────
 
-def _compute_flags(
-    muac_cm: float | None,
-    height_for_age_z: float,
-    weight_for_age_z: float,
-) -> dict[str, bool]:
-    """
-    WHO-based clinical flags.
-    SAM: MUAC < 11.5 cm  OR  weight-for-height z < -3
-    """
-    is_sam     = (muac_cm is not None and muac_cm < 11.5) or weight_for_age_z < -3
-    is_stunted = height_for_age_z < -2
-    is_wasted  = weight_for_age_z < -2
-    return {"is_sam": is_sam, "is_stunted": is_stunted, "is_wasted": is_wasted}
+def _compute_flags(feat: dict[str, float]) -> dict[str, bool]:
+    """Clinical flags shown in the API response, derived from the same feature row used for inference."""
+    return {
+        "is_sam":     bool(feat["is_sam"]),
+        "is_stunted": bool(feat["is_stunted"]),
+        "is_wasted":  bool(feat["is_underweight"]),
+    }
 
 
 # ─────────────────────────────────────────────
@@ -246,12 +244,7 @@ def predict(
     confidence       = float(prob_by_encoded.get(predicted_encoded, 0.0))
 
     # ── 6. Clinical flags ─────────────────────────────────────────────────
-    feat_full = _build_feature_row(age_months, weight_kg, height_cm, muac_cm, bmi, gender)
-    flags = _compute_flags(
-        muac_cm,
-        feat_full["height_for_age_z"],
-        feat_full["weight_for_age_z"],
-    )
+    flags = _compute_flags(feat_dict)
 
     # ── 7. Compose response ───────────────────────────────────────────────
     return {
