@@ -1,6 +1,10 @@
 # MyTadika — Core System Development Plan
 ## React Frontend & Spring Boot Backend Integration
 
+> **Superseded by `CLAUDE.md`** (see its Section 3 decisions log) — kept for
+> historical reference only. Its grading-scale and phase-checklist details
+> have been folded into `CLAUDE.md` Sections 6.3 and 10.
+
 > **Scope**: Implementation framework for the School-Parent Engagement System (MyTadika), focusing on digitizing student records, academic performance tracking, and health & nutritional analysis with AI integrations.
 
 ---
@@ -41,7 +45,7 @@ The application follows a secure, decoupled, three-tier architecture with role-b
 ### Technology Matrix
 *   **Frontend**: React 18, React Router v6, Axios (Client-side HTTP), Chart.js / Recharts (Growth charts), CSS Modules / CSS Variables.
 *   **Backend**: Spring Boot 3.x, Java 17, Spring Security, Spring Web, Spring Data JPA, JSR-380 validation, Lombok, JWT (jjwt).
-*   **Database**: PostgreSQL or MySQL for production (SQLite or H2 for local test configurations).
+*   **Database**: PostgreSQL or MySQL meant for supabase  (SQLite or H2 for local test configurations).
 *   **AI Microservice**: FastAPI, Uvicorn, joblib, scikit-learn, XGBoost.
 
 ---
