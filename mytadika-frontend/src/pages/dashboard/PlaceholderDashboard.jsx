@@ -1,15 +1,21 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import '../students/students.css'
 
 function PlaceholderDashboard({ role }) {
-  const { account, signOut } = useAuth()
+  const { account } = useAuth()
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-      <h1>{role} Dashboard</h1>
-      <p>Signed in as {account?.fullName} ({account?.email})</p>
-      <Link to="/students">Manage Students →</Link>
-      <button type="button" onClick={signOut}>Sign out</button>
+    <div className="page-shell">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">{role} Dashboard</h1>
+        </div>
+      </div>
+      <div className="card">
+        <p style={{ marginBottom: 16 }}>Signed in as {account?.fullName} ({account?.email})</p>
+        <Link className="btn btn-secondary" to="/students">Manage Students →</Link>
+      </div>
     </div>
   )
 }

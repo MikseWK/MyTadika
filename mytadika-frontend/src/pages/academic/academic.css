@@ -1,0 +1,49 @@
+.section-title {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.score-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.score-input {
+  text-align: right;
+}
+
+.score-remove {
+  white-space: nowrap;
+}
+
+.grade-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.grade-good {
+  background: #e3f6e8;
+  color: #2f8a4b;
+}
+
+.grade-ok {
+  background: #fff3da;
+  color: #b8730a;
+}
+
+.grade-low {
+  background: #ffe2e2;
+  color: #c0392b;
+}

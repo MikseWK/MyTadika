@@ -3,9 +3,16 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import PlaceholderDashboard from './pages/dashboard/PlaceholderDashboard'
 import ParentDashboard from './pages/dashboard/ParentDashboard'
+import TeacherDashboard from './pages/dashboard/TeacherDashboard'
 import StudentListPage from './pages/students/StudentListPage'
 import StudentFormPage from './pages/students/StudentFormPage'
 import StudentProfilePage from './pages/students/StudentProfilePage'
+import AcademicTrackingPage from './pages/academic/AcademicTrackingPage'
+import HealthTrackerPage from './pages/health/HealthTrackerPage'
+import ProfilePage from './pages/profile/ProfilePage'
+import ComingSoonPage from './pages/common/ComingSoonPage'
+import HelpPage from './pages/common/HelpPage'
+import AuthenticatedLayout from './layouts/AuthenticatedLayout'
 import { ProtectedRoute } from './routes/ProtectedRoute'
 import { useAuth } from './context/AuthContext'
 import { dashboardPathFor } from './routes/roleRoutes'
@@ -23,54 +30,80 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route
-        path="/parent/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['PARENT']}>
-            <ParentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/teacher/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['TEACHER']}>
-            <PlaceholderDashboard role="Teacher" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
-            <PlaceholderDashboard role="Admin" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/students"
-        element={
-          <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-            <StudentListPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/students/new"
-        element={
-          <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-            <StudentFormPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/students/:id"
-        element={
-          <ProtectedRoute allowedRoles={['PARENT', 'TEACHER', 'ADMIN']}>
-            <StudentProfilePage />
-          </ProtectedRoute>
-        }
-      />
+
+      <Route element={<AuthenticatedLayout />}>
+        <Route
+          path="/parent/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['PARENT']}>
+              <ParentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER']}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <PlaceholderDashboard role="Admin" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+              <StudentListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students/new"
+          element={
+            <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+              <StudentFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students/:id"
+          element={
+            <ProtectedRoute allowedRoles={['PARENT', 'TEACHER', 'ADMIN']}>
+              <StudentProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students/:studentId/academic"
+          element={
+            <ProtectedRoute allowedRoles={['PARENT', 'TEACHER', 'ADMIN']}>
+              <AcademicTrackingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/students/:studentId/health"
+          element={
+            <ProtectedRoute allowedRoles={['PARENT', 'TEACHER', 'ADMIN']}>
+              <HealthTrackerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/classroom" element={<ComingSoonPage feature="Classroom" />} />
+        <Route path="/messages" element={<ComingSoonPage feature="Messages" />} />
+        <Route path="/memory-box" element={<ComingSoonPage feature="Memory Box" />} />
+        <Route path="/events" element={<ComingSoonPage feature="Events" />} />
+      </Route>
+
       <Route path="/" element={<RootRedirect />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

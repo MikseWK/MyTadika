@@ -214,6 +214,8 @@ Account (1)───(M) Student ──(M)──(1) Classroom [stub]
 | email | String(100) | NOT NULL, UNIQUE |
 | role | Enum: `PARENT`, `TEACHER`, `ADMIN` | NOT NULL, `@Enumerated(STRING)` |
 | phoneNumber | String(20) | nullable |
+| address | String(500) | nullable |
+| profileImageUrl | String(500) | nullable — set via `POST /api/accounts/me/profile-image`, uploaded to Supabase Storage bucket `profile-images` |
 | createdAt | LocalDateTime | NOT NULL, default now |
 
 #### `Classroom` (stub — teammate's full domain)
@@ -605,6 +607,8 @@ Spring Boot only needs the following:
 | POST | `/api/accounts/complete-profile` | Public, but requires a valid Supabase JWT | First-login only: creates the local `account` row (authUserId, fullName, role) from the validated token's `sub` |
 | POST | `/api/accounts/register-staff` | ADMIN | Create the `account` profile row for a teacher/admin whose Supabase user already exists (created via Supabase invite or normal sign-up) |
 | GET | `/api/auth/me` | Authenticated | Current user's local `account` profile, resolved from the JWT |
+| PUT | `/api/accounts/me` | Authenticated | Update own `fullName`/`phoneNumber`/`address` |
+| POST | `/api/accounts/me/profile-image` | Authenticated | Multipart upload; stores image in Supabase Storage via `SupabaseStorageService`, saves the public URL to `profileImageUrl` |
 
 **Student Profile (UC002)**
 
@@ -898,49 +902,90 @@ before it.
 > frontend, `mytadika-frontend` is scaffolded with `supabaseClient.js`,
 > `AuthContext`, `axiosClient` (Supabase-session interceptor),
 > `ProtectedRoute`, and working `LoginPage`/`RegisterPage`/
-> `ParentDashboard`/Student pages — not stubs. Remaining: Phase 4 (Academic
-> Performance Tracking) hasn't started, and Phase 6 (tests, deployment prep)
-> is still open.
+> `ParentDashboard`/Student pages — not stubs. **Update (2026-06-21): Phase 4
+> is now also built** — `AcademicRecord`/`AcademicScoreItem` entities,
+> `GradeCalculationService`, `AcademicService`/`AcademicController`
+> (`/api/academic/students/{id}/records`, `/api/academic/records/{id}`), and
+> a frontend `AcademicTrackingPage` (`/students/:studentId/academic`, linked
+> from `StudentProfilePage`) all compile/build clean. **Update (2026-06-21,
+> later same day): Phase 5 is now also fully built and closed out** —
+> `HealthTrackerPage` + the `components/health/*` set already existed on
+> disk; the two open items (confirm the FastAPI↔`AiPredictionClient`
+> contract, fix the missing RBAC on `HealthController`) are both done — see
+> Phase 5's checklist below for what was verified/changed. **Update
+> (2026-06-21, same day): Phase 6 is now also done** — role-based sidebar/nav
+> (`layouts/AuthenticatedLayout.jsx`, `components/common/Sidebar.jsx`,
+> `ProfilePage`, `ComingSoonPage`, `TeacherDashboard`), the one missing
+> loading/error state (`AllergyAlertBanner`), 28 passing backend unit tests
+> across 4 new test classes, and deployment prep — see Phase 6's checklist
+> below, including a real credential-exposure finding from the deployment
+> prep pass (Supabase DB password leaked on `origin/main`'s history, not this
+> branch) that still needs the user to actually rotate the password. **All
+> six phases are now built**; nothing left on the original checklist.
+>
+> **Teammate integration (2026-06-21):** teammate pushed a divergent backend
+> directly to `origin/main` (commit `f2ab736`, branched from the same
+> `0cf1e06` base this branch also forked from) — a server-rendered app with
+> its own BCrypt/form-login `Account` (String PK, password field, static
+> HTML pages under `static/`), `RestAuthController`/`AuthService`/
+> `EmailService`/password-reset flow. That auth/profile/HTML stack
+> contradicts the Supabase Auth + React decision in Section 3 and was **not**
+> merged. What *was* cherry-picked into this branch: `SupabaseStorageService`
+> (Supabase Storage upload via service-role key) and an `address` +
+> `profileImageUrl` pair added to `Account`, now exposed through
+> `PUT /api/accounts/me` and `POST /api/accounts/me/profile-image` (JWT-scoped
+> to the caller, unlike the teammate's unauthenticated `accountId`-path-param
+> version). Their `HealthAdviceService`/`AiPredictionClient`/`HealthRecord`/
+> `AllergyProfile` changes on `origin/main` were diffed and found to be the
+> same logic as this branch's versions (package-move + Lombok-removal only;
+> no functional changes), so nothing further to port there. One open item:
+> their `AI/api/predictor.py` (in the untracked `teammate latest/` folder)
+> differs substantially from this branch's recently-fixed `AI/api/predictor.py`
+> (commit `49650ee`) — not yet compared in detail; don't assume either is
+> stale without checking. Also flagging pre-existing issue, unrelated to this
+> integration: `mytadika-backend/src/main/resources/application.properties`
+> has the Supabase DB password committed in plaintext — worth moving to an
+> env var before final submission.
 
 **Phase 0 — Scaffolding**
-- [ ] Supabase project created; note the project ref, region, and DB password; confirm legacy vs. asymmetric JWT signing keys (Dashboard → API → JWT Keys)
-- [ ] Spring Initializr project: Web, JPA, PostgreSQL Driver, OAuth2 Resource Server, Validation, Lombok
-- [ ] Vite React app; install axios, react-router-dom, @tanstack/react-query, @supabase/supabase-js, tailwindcss, recharts, lucide-react, react-hook-form, zod
-- [ ] `application.yml` datasource pointed at the Supabase **session pooler** string (Section 6.5)
-- [ ] CORS config (allow `http://localhost:5173`), global exception handler skeleton, base `ApiResponse<T>` wrapper
+- [x] Supabase project created; note the project ref, region, and DB password; confirm legacy vs. asymmetric JWT signing keys (Dashboard → API → JWT Keys)
+- [x] Spring Initializr project: Web, JPA, PostgreSQL Driver, OAuth2 Resource Server, Validation, Lombok
+- [x] Vite React app; install axios, react-router-dom, @tanstack/react-query, @supabase/supabase-js, tailwindcss, recharts, lucide-react, react-hook-form, zod
+- [x] `application.yml` datasource pointed at the Supabase **session pooler** string (Section 6.5)
+- [x] CORS config (allow `http://localhost:5173`), global exception handler skeleton, base `ApiResponse<T>` wrapper
 
 **Phase 1 — Shared Core Schema**
-- [ ] `Account` entity (with `authUserId`) + repository
-- [ ] `Classroom` stub entity + repository
-- [ ] `Student` entity (with `gender`) + repository
-- [ ] Verify schema generation against Supabase (`ddl-auto=update` for now)
+- [x] `Account` entity (with `authUserId`) + repository
+- [x] `Classroom` stub entity + repository
+- [x] `Student` entity (with `gender`) + repository
+- [x] Verify schema generation against Supabase (`ddl-auto=update` for now)
 
 **Phase 2 — Authentication**
-- [ ] Enable Email/Password + Google (and Facebook, if wanted) providers in Supabase Dashboard → Authentication → Providers
-- [ ] `SecurityConfig` with `oauth2ResourceServer().jwt()` + `SupabaseJwtAuthConverter` + `AccountResolver`
-- [ ] `AccountController`: `complete-profile`, `register-staff`; `AuthController`: `me`
-- [ ] Frontend: `supabaseClient.js`, `LoginPage`/`RegisterPage` using `supabase-js`, `AuthContext` wrapping `onAuthStateChange`, axios interceptor reading the Supabase session, `ProtectedRoute`
+- [x] Enable Email/Password + Google (and Facebook, if wanted) providers in Supabase Dashboard → Authentication → Providers
+- [x] `SecurityConfig` with `oauth2ResourceServer().jwt()` + `SupabaseJwtAuthConverter` + `AccountResolver`
+- [x] `AccountController`: `complete-profile`, `register-staff`; `AuthController`: `me`
+- [x] Frontend: `supabaseClient.js`, `LoginPage`/`RegisterPage` using `supabase-js`, `AuthContext` wrapping `onAuthStateChange`, axios interceptor reading the Supabase session, `ProtectedRoute`
 
 **Phase 3 — Student Profile**
-- [ ] `StudentController`/`Service`/DTOs with RBAC scoping
-- [ ] Frontend: `StudentListPage` (teacher), `StudentProfilePage`
+- [x] `StudentController`/`Service`/DTOs with RBAC scoping
+- [x] Frontend: `StudentListPage` (teacher), `StudentProfilePage`
 
 **Phase 4 — Academic Performance Tracking**
-- [ ] `AcademicRecord` + `AcademicScoreItem` entities, `GradeCalculationService`
-- [ ] `AcademicController` endpoints
-- [ ] Frontend: `AcademicTrackingPage` (parent radar view, teacher score-input view)
+- [x] `AcademicRecord` + `AcademicScoreItem` entities, `GradeCalculationService`
+- [x] `AcademicController` endpoints
+- [x] Frontend: `AcademicTrackingPage` (table view with grade badges; teacher gets an add/edit score form, parent gets read-only — no radar chart, since `recharts` was never actually added to this project's `package.json`)
 
 **Phase 5 — Health & Nutrition + AI Advice**
-- [ ] `HealthRecord`, `AllergyProfile`, `HealthAdvice` entities/repositories
-- [ ] `HealthController`, `HealthAdviceService` (port rules engine), `AiPredictionClient`
-- [ ] Confirm FastAPI request/response contract matches `AiPredictionClient`
-- [ ] Frontend: `HealthTrackerPage` + all components from `plan.md` 9.1
+- [x] `HealthRecord`, `AllergyProfile`, `HealthAdvice` entities/repositories
+- [x] `HealthController`, `HealthAdviceService` (port rules engine), `AiPredictionClient` — added one missing endpoint, `GET /api/health/allergies/{studentId}`, so the frontend edit form has something to load (only `PUT` existed before)
+- [x] Confirm FastAPI request/response contract matches `AiPredictionClient` — verified field-for-field against `AI/api/schemas.py`/`predictor.py` (child_id/age_months/weight_kg/height_cm/muac_cm/bmi/gender in, status/encoded/confidence/probabilities/flags/model_version out) and ran both live: started the FastAPI service against the real `best_model.joblib` and ran `AI/api/test_fastapi.py` (10/10 passed), then booted Spring Boot against the dev Supabase DB to confirm it starts clean with that contract wired in.
+- [x] Frontend: `HealthTrackerPage` (`/students/:studentId/health`, linked from `StudentProfilePage`) + `AllergyAlertBanner`/`HealthSummaryCard`/`AIAdvicePanel`/`MeasurementForm`/`HistoryTimeline` in `components/health/`. **Fixed the RBAC gap noted previously:** `HealthController` now injects `AccountResolver` + `StudentRepository` and applies the same scoping pattern as `AcademicController`/`AcademicService` — `@PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")` on the write/record endpoints, plus an `assertCanAccessStudent` ownership check (PARENT can only touch their own child's `studentId`) on every endpoint that reads or writes a specific student's health/allergy data. Verified live: an unauthenticated `GET /api/health/history/1` against the running app now returns `401` instead of the data. `AI/api/test_springboot.py` predates this auth layer (calls endpoints with no JWT) and will need a real Supabase access token to exercise going forward — not something fixable without live user credentials.
 
 **Phase 6 — Integration & Polish**
-- [ ] Role-based sidebar/nav matching wireframes for both portals
-- [ ] Loading/empty/error states across all pages
-- [ ] Unit tests: `GradeCalculationService`, BMI calculation, RBAC scoping checks
-- [ ] Deployment prep (env vars, build scripts, Flyway migration if moving off `ddl-auto`)
+- [x] Role-based sidebar/nav matching wireframes for both portals — added `layouts/AuthenticatedLayout.jsx` (wraps every authenticated route in a flex shell with `<Outlet/>`) and `components/common/Sidebar.jsx`, which renders role-specific nav (`ParentSidebar`/`TeacherSidebar`/`AdminSidebar`) per Section 8.2's tables. Parent's "Academic Report"/"Health" links resolve straight to that child's page when there's exactly one linked child, otherwise fall back to the dashboard. Teammate's modules (Classroom/Messages/Memory Box/Events) got a shared `ComingSoonPage` so the nav item and route exist without faking functionality; added a real `ProfilePage` (`PUT /api/accounts/me` was already built, just unused) and a static `HelpPage`. `PlaceholderDashboard` is now Admin-only; Teacher got a real `TeacherDashboard` with a student count + quick link. Note: `tailwind`/`lucide-react` were never actually added to `package.json` (same gap Phase 4 flagged for `recharts`) — nav styling uses the existing plain-CSS variable system in `index.css`, not Tailwind utility classes as Section 2/8.4 describe.
+- [x] Loading/empty/error states across all pages — audited every data-fetching page/component; most already had `isLoading`/`isError`/empty handling (`StudentListPage`, `StudentProfilePage`, `AcademicTrackingPage`, `HealthTrackerPage`, `HealthSummaryCard`, `AIAdvicePanel`, `HistoryTimeline`). Fixed the one real gap: `AllergyAlertBanner` ignored `isError` from `useAllergies` and would silently render "None on file" on a network failure — it now shows an explicit error message instead.
+- [x] Unit tests: `GradeCalculationService`, BMI calculation, RBAC scoping checks — added `GradeCalculationServiceTest` (all grade boundaries + average + label mapping), `StudentServiceTest` and `AcademicServiceTest` (parent-ownership scoping, teacher/admin bypass), and `HealthControllerTest` (RBAC on the `assertCanAccessStudent` check added this session, plus a BMI-from-weight/height assertion via an `ArgumentCaptor` on the saved `HealthRecord`). 28 tests total, all passing (`mvnw test`).
+- [x] Deployment prep — verified both build scripts (`mvnw compile`/`test`, `npm run build`/`lint`) are clean. **Found a real credential leak while doing this:** the Supabase DB password is *not* committed anywhere on this branch (`application.properties` is correctly gitignored and untracked here), but it **is** committed in plaintext on `origin/main` at the teammate's commit `f2ab736` (`spring.datasource.password=...`). That's in shared remote history now — rewriting it would need a coordinated force-push, which wasn't done unilaterally. **Recommend rotating the Supabase DB password from the dashboard before final submission/grading**, since anyone with read access to the repo can see the old one in `origin/main`'s history regardless of what this branch does. Also switched this branch's local (untracked) `application.properties` from a bare literal to `${SUPABASE_DB_PASSWORD:<existing value>}`, matching the env-var pattern Section 6.5 already documents and the one already used for `SUPABASE_SERVICE_ROLE_KEY` — verified the app still boots against the live DB with that placeholder syntax. Flyway adoption skipped — still correctly deferred per [Section 12](#12-open-questions-for-later).
 
 ---
 

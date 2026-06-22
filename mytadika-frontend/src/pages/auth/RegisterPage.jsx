@@ -45,9 +45,11 @@ function RegisterPage() {
       <div className="login-screen">
         <div className="login-panel-form">
           <div className="login-card">
-            <h2 className="login-title">Check your inbox</h2>
+            <h2 className="login-title">Almost there</h2>
             <p className="login-subtitle">
-              We sent a confirmation link to {email}. Confirm it, then sign in.
+              If {email} isn't already registered, we just sent a confirmation link to it —
+              confirm it, then sign in. Already have an account with this email? Just{' '}
+              <Link className="link-accent" to="/login">sign in</Link> instead (no email needed).
             </p>
             <Link className="link-accent" to="/login">Back to login</Link>
           </div>

@@ -14,6 +14,8 @@ public class AccountResponseDTO {
     private String email;
     private Role role;
     private String phoneNumber;
+    private String address;
+    private String profileImageUrl;
     private LocalDateTime createdAt;
 
     public static AccountResponseDTO from(Account account) {
@@ -24,6 +26,8 @@ public class AccountResponseDTO {
         dto.email = account.getEmail();
         dto.role = account.getRole();
         dto.phoneNumber = account.getPhoneNumber();
+        dto.address = account.getAddress();
+        dto.profileImageUrl = account.getProfileImageUrl();
         dto.createdAt = account.getCreatedAt();
         return dto;
     }
@@ -50,6 +54,14 @@ public class AccountResponseDTO {
 
     public String getPhoneNumber() {
         return phoneNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
     }
 
     public LocalDateTime getCreatedAt() {

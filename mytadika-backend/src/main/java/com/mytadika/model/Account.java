@@ -31,6 +31,12 @@ public class Account {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Column(length = 500)
+    private String address;
+
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

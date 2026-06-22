@@ -90,6 +90,12 @@ function StudentProfilePage() {
           <h1 className="page-title">{student.fullName}</h1>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
+          <Link className="btn btn-secondary" to={`/students/${student.id}/academic`}>
+            Academic Records
+          </Link>
+          <Link className="btn btn-secondary" to={`/students/${student.id}/health`}>
+            Health &amp; Nutrition
+          </Link>
           {!editing && (
             <button type="button" className="btn btn-primary" onClick={startEditing}>
               Edit

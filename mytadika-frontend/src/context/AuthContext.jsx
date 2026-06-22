@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
   const signOut = useCallback(() => supabase.auth.signOut(), [])
 
   return (
-    <AuthContext.Provider value={{ session, account, loading, signOut }}>
+    <AuthContext.Provider value={{ session, account, loading, signOut, setAccount }}>
       {children}
     </AuthContext.Provider>
   )

@@ -4,7 +4,7 @@ import { useMyChildren } from '../../hooks/useStudents'
 import '../students/students.css'
 
 function ParentDashboard() {
-  const { account, signOut } = useAuth()
+  const { account } = useAuth()
   const { data: children, isLoading, isError } = useMyChildren()
 
   return (
@@ -13,7 +13,6 @@ function ParentDashboard() {
         <div>
           <h1 className="page-title">Welcome, {account?.fullName}</h1>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={signOut}>Sign out</button>
       </div>
 
       <div className="card">

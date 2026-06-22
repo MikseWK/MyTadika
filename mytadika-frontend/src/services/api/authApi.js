@@ -9,4 +9,8 @@ export const authApi = {
     const { data } = await apiClient.post('/accounts/complete-profile', payload)
     return data
   },
+  async updateMe(payload) {
+    const { data } = await apiClient.put('/accounts/me', payload)
+    return data
+  },
 }

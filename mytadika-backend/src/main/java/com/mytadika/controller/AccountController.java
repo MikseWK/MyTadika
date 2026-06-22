@@ -3,6 +3,7 @@ package com.mytadika.controller;
 import com.mytadika.dto.AccountResponseDTO;
 import com.mytadika.dto.CompleteProfileRequestDTO;
 import com.mytadika.dto.RegisterStaffRequestDTO;
+import com.mytadika.dto.UpdateProfileRequestDTO;
 import com.mytadika.model.Account;
 import com.mytadika.security.AccountResolver;
 import com.mytadika.service.AccountService;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -36,5 +38,17 @@ public class AccountController {
     public ResponseEntity<AccountResponseDTO> registerStaff(@Valid @RequestBody RegisterStaffRequestDTO request) {
         Account account = accountService.registerStaff(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponseDTO.from(account));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<AccountResponseDTO> updateMyProfile(@Valid @RequestBody UpdateProfileRequestDTO request) {
+        Account account = accountService.updateProfile(accountResolver.requireCurrentAccount(), request);
+        return ResponseEntity.ok(AccountResponseDTO.from(account));
+    }
+
+    @PostMapping("/me/profile-image")
+    public ResponseEntity<AccountResponseDTO> uploadMyProfileImage(@RequestParam("file") MultipartFile file) {
+        Account account = accountService.updateProfileImage(accountResolver.requireCurrentAccount(), file);
+        return ResponseEntity.ok(AccountResponseDTO.from(account));
     }
 }

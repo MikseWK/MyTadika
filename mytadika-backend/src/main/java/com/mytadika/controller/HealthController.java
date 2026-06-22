@@ -1,9 +1,16 @@
 package com.mytadika.controller;
 
+import com.mytadika.exception.ResourceNotFoundException;
+import com.mytadika.exception.UnauthorizedAccessException;
+import com.mytadika.model.Account;
 import com.mytadika.model.AllergyProfile;
 import com.mytadika.model.HealthRecord;
+import com.mytadika.model.Role;
+import com.mytadika.model.Student;
 import com.mytadika.repository.AllergyProfileRepository;
 import com.mytadika.repository.HealthRecordRepository;
+import com.mytadika.repository.StudentRepository;
+import com.mytadika.security.AccountResolver;
 import com.mytadika.service.AiPredictionClient;
 import com.mytadika.service.HealthAdviceService;
 import jakarta.validation.Valid;
@@ -11,6 +18,7 @@ import jakarta.validation.constraints.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,18 +37,33 @@ public class HealthController {
 
     private final HealthRecordRepository healthRecordRepository;
     private final AllergyProfileRepository allergyProfileRepository;
+    private final StudentRepository studentRepository;
     private final AiPredictionClient aiPredictionClient;
     private final HealthAdviceService healthAdviceService;
+    private final AccountResolver accountResolver;
 
     public HealthController(
             HealthRecordRepository healthRecordRepository,
             AllergyProfileRepository allergyProfileRepository,
+            StudentRepository studentRepository,
             AiPredictionClient aiPredictionClient,
-            HealthAdviceService healthAdviceService) {
+            HealthAdviceService healthAdviceService,
+            AccountResolver accountResolver) {
         this.healthRecordRepository = healthRecordRepository;
         this.allergyProfileRepository = allergyProfileRepository;
+        this.studentRepository = studentRepository;
         this.aiPredictionClient = aiPredictionClient;
         this.healthAdviceService = healthAdviceService;
+        this.accountResolver = accountResolver;
+    }
+
+    /** Mirrors AcademicService's assertCanAccess: a PARENT may only touch their own child's health data. */
+    private void assertCanAccessStudent(Long studentId, Account currentUser) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found."));
+        if (currentUser.getRole() == Role.PARENT && !student.getParent().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedAccessException("Cannot access another parent's child.");
+        }
     }
 
     // DTO for incoming measurements & advice requests
@@ -247,6 +270,7 @@ public class HealthController {
      * Does NOT persist any records.
      */
     @PostMapping("/predict")
+    @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<HealthAdviceService.AdviceResult> predictAndAdvise(
             @Valid @RequestBody HealthRequestDTO request) {
         log.info("REST request to predict and generate advice for child: {}", request.getChildId());
@@ -278,6 +302,7 @@ public class HealthController {
      * Endpoint to record new measurement, run AI checks, and persist the record.
      */
     @PostMapping("/record")
+    @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<RecordResponseDTO> recordMeasurement(
             @Valid @RequestBody HealthRequestDTO request) {
         log.info("REST request to record measurements and advise for student: {}", request.getChildId());
@@ -289,6 +314,7 @@ public class HealthController {
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().build();
         }
+        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
 
         // 2. Fetch AI advice result
         AiPredictionClient.PredictionResponse modelResponse = aiPredictionClient.predict(
@@ -350,6 +376,7 @@ public class HealthController {
     @GetMapping("/history/{studentId}")
     public ResponseEntity<List<HealthRecord>> getHistory(@PathVariable Long studentId) {
         log.info("REST request to fetch health log history for student: {}", studentId);
+        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
         List<HealthRecord> history = healthRecordRepository.findByStudentIdOrderByRecordedAtDesc(studentId);
         return ResponseEntity.ok(history);
     }
@@ -364,6 +391,7 @@ public class HealthController {
             @RequestParam(required = false) List<String> shownAdviceIds
     ) {
         log.info("REST request to fetch latest AI advice cards for student: {}", studentId);
+        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
 
         Optional<HealthRecord> latestRecordOpt = healthRecordRepository.findFirstByStudentIdOrderByRecordedAtDesc(studentId);
         if (latestRecordOpt.isEmpty()) {
@@ -411,14 +439,28 @@ public class HealthController {
     }
 
     /**
+     * Retrieves the active allergy list for a child (empty list if none recorded yet).
+     */
+    @GetMapping("/allergies/{studentId}")
+    public ResponseEntity<List<String>> getAllergies(@PathVariable Long studentId) {
+        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
+        List<String> allergies = allergyProfileRepository.findById(studentId)
+                .map(AllergyProfile::getAllergiesList)
+                .orElse(Collections.emptyList());
+        return ResponseEntity.ok(allergies);
+    }
+
+    /**
      * Updates allergy profile for a child.
      */
     @PutMapping("/allergies/{studentId}")
+    @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<AllergyProfile> updateAllergies(
             @PathVariable Long studentId,
             @RequestBody AllergyUpdateDTO updateRequest
             ) {
         log.info("REST request to update active allergies list for student: {}", studentId);
+        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
         AllergyProfile profile = allergyProfileRepository.findById(studentId)
                 .orElse(AllergyProfile.builder().studentId(studentId).build());
 
