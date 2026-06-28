@@ -11,7 +11,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     List<Student> findByDeletedAtIsNull();
 
-    List<Student> findByParentIdAndDeletedAtIsNull(Long parentId);
+    List<Student> findByParentAccountIdAndDeletedAtIsNull(String parentAccountId);
 
     List<Student> findByClassroomIdAndDeletedAtIsNull(Long classroomId);
 }

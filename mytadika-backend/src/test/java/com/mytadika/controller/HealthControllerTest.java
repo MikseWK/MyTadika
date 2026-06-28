@@ -9,7 +9,6 @@ import com.mytadika.model.Student;
 import com.mytadika.repository.AllergyProfileRepository;
 import com.mytadika.repository.HealthRecordRepository;
 import com.mytadika.repository.StudentRepository;
-import com.mytadika.security.AccountResolver;
 import com.mytadika.service.AiPredictionClient;
 import com.mytadika.service.HealthAdviceService;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,18 +35,11 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class HealthControllerTest {
 
-    @Mock
-    private HealthRecordRepository healthRecordRepository;
-    @Mock
-    private AllergyProfileRepository allergyProfileRepository;
-    @Mock
-    private StudentRepository studentRepository;
-    @Mock
-    private AiPredictionClient aiPredictionClient;
-    @Mock
-    private HealthAdviceService healthAdviceService;
-    @Mock
-    private AccountResolver accountResolver;
+    @Mock private HealthRecordRepository healthRecordRepository;
+    @Mock private AllergyProfileRepository allergyProfileRepository;
+    @Mock private StudentRepository studentRepository;
+    @Mock private AiPredictionClient aiPredictionClient;
+    @Mock private HealthAdviceService healthAdviceService;
 
     private HealthController healthController;
 
@@ -59,10 +51,10 @@ class HealthControllerTest {
     void setUp() {
         healthController = new HealthController(
                 healthRecordRepository, allergyProfileRepository, studentRepository,
-                aiPredictionClient, healthAdviceService, accountResolver);
+                aiPredictionClient, healthAdviceService);
 
-        owningParent = Account.builder().id(1L).fullName("Owning Parent").role(Role.PARENT).build();
-        otherParent = Account.builder().id(2L).fullName("Other Parent").role(Role.PARENT).build();
+        owningParent = Account.builder().accountId("parent01").fullName("Owning Parent").role(Role.PARENT).build();
+        otherParent = Account.builder().accountId("parent02").fullName("Other Parent").role(Role.PARENT).build();
         student = Student.builder()
                 .id(10L)
                 .parent(owningParent)
@@ -77,37 +69,31 @@ class HealthControllerTest {
 
     @Test
     void getHistory_rejectsNonOwningParent() {
-        when(accountResolver.requireCurrentAccount()).thenReturn(otherParent);
-
-        assertThatThrownBy(() -> healthController.getHistory(10L))
+        assertThatThrownBy(() -> healthController.getHistory(10L, otherParent))
                 .isInstanceOf(UnauthorizedAccessException.class);
     }
 
     @Test
     void getHistory_allowsOwningParent() {
-        when(accountResolver.requireCurrentAccount()).thenReturn(owningParent);
         when(healthRecordRepository.findByStudentIdOrderByRecordedAtDesc(10L)).thenReturn(Collections.emptyList());
 
-        var response = healthController.getHistory(10L);
+        var response = healthController.getHistory(10L, owningParent);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
     @Test
     void getHistory_allowsTeacherRegardlessOfOwnership() {
-        Account teacher = Account.builder().id(3L).fullName("Teacher").role(Role.TEACHER).build();
-        when(accountResolver.requireCurrentAccount()).thenReturn(teacher);
+        Account teacher = Account.builder().accountId("teacher01").fullName("Teacher").role(Role.TEACHER).build();
         when(healthRecordRepository.findByStudentIdOrderByRecordedAtDesc(10L)).thenReturn(Collections.emptyList());
 
-        var response = healthController.getHistory(10L);
+        var response = healthController.getHistory(10L, teacher);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     }
 
     @Test
     void recordMeasurement_rejectsNonOwningParent() {
-        when(accountResolver.requireCurrentAccount()).thenReturn(otherParent);
-
         var request = new HealthController.HealthRequestDTO();
         request.setChildId("10");
         request.setAgeMonths(24.0);
@@ -115,13 +101,12 @@ class HealthControllerTest {
         request.setHeightCm(85.0);
         request.setActivityLevel(1);
 
-        assertThatThrownBy(() -> healthController.recordMeasurement(request))
+        assertThatThrownBy(() -> healthController.recordMeasurement(request, otherParent))
                 .isInstanceOf(UnauthorizedAccessException.class);
     }
 
     @Test
     void recordMeasurement_computesBmiFromWeightAndHeight() {
-        when(accountResolver.requireCurrentAccount()).thenReturn(owningParent);
         when(aiPredictionClient.predict(anyString(), anyDouble(), anyDouble(), anyDouble(), any(), any()))
                 .thenReturn(new AiPredictionClient.PredictionResponse(
                         "10", "normal", 0, 0.9,
@@ -140,7 +125,7 @@ class HealthControllerTest {
         request.setHeightCm(100.0); // 12.0 / (1.0 * 1.0) = 12.0 BMI
         request.setActivityLevel(1);
 
-        var response = healthController.recordMeasurement(request);
+        var response = healthController.recordMeasurement(request, owningParent);
 
         ArgumentCaptor<HealthRecord> captor = ArgumentCaptor.forClass(HealthRecord.class);
         org.mockito.Mockito.verify(healthRecordRepository).save(captor.capture());

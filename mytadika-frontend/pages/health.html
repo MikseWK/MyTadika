@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Tracker | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT,TEACHER,ADMIN">
+
+<div class="fixed -top-20 -left-16 w-72 h-72 bg-secondary-cont/20 blob -z-10 blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-10 right-10 w-48 h-48 bg-primary/10 blob -z-10 blur-2xl pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center gap-4 px-8 py-4">
+    <a href="#" onclick="history.back()" class="p-2 rounded-full hover:bg-surface-high transition-colors">
+      <span class="material-symbols-outlined text-ink-muted">arrow_back</span>
+    </a>
+    <h1 class="text-xl font-bold text-ink">Health Tracker</h1>
+    <div class="ml-auto flex items-center gap-3">
+      <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full space-y-6">
+
+    <!-- Loading state -->
+    <div id="loading-state" class="flex items-center justify-center gap-3 py-20 text-ink-muted">
+      <span class="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+      <span class="font-medium">Loading health data…</span>
+    </div>
+
+    <!-- Page content (hidden until loaded) -->
+    <div id="page-content" class="hidden space-y-6">
+
+      <!-- Parent: child switcher — shown only when parent has > 1 child -->
+      <div id="child-switcher" class="hidden flex-wrap items-center gap-2 bg-surface rounded-xl px-6 py-4 shadow-card print:hidden">
+        <span class="text-xs font-bold text-ink-muted uppercase tracking-wide mr-1">Switch child:</span>
+      </div>
+
+      <!-- Allergy alert banner -->
+      <div id="allergy-banner" class="hidden rounded-xl p-4 border flex items-start gap-3"
+        style="background:#fff5f5;border-color:#fce4ec">
+        <span class="material-symbols-outlined mt-0.5 flex-shrink-0" style="color:#b02500;font-variation-settings:'FILL' 1">warning</span>
+        <div class="flex-1">
+          <p class="font-bold text-sm" style="color:#b02500">Allergy Alert</p>
+          <p id="allergy-banner-text" class="text-sm mt-0.5" style="color:#7b4000"></p>
+        </div>
+      </div>
+
+      <!-- Student header -->
+      <div class="bg-surface rounded-xl p-6 flex items-center gap-5 shadow-card">
+        <div id="student-avatar"
+          class="w-20 h-20 rounded-full border-4 border-primary bg-surface-high flex items-center justify-center text-2xl font-extrabold text-ink flex-shrink-0">?</div>
+        <div class="flex-1 min-w-0">
+          <h2 id="student-name" class="text-2xl font-extrabold text-ink">—</h2>
+          <p id="student-meta" class="text-ink-muted font-medium mt-1">—</p>
+          <div class="flex gap-2 mt-2 flex-wrap">
+            <span id="nutrition-badge" class="hidden px-3 py-1 text-xs font-bold rounded-full">—</span>
+          </div>
+        </div>
+        <!-- Latest stats -->
+        <div class="hidden md:flex gap-4">
+          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">BMI</p>
+            <p id="stat-bmi" class="text-2xl font-extrabold text-ink">—</p>
+          </div>
+          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">Weight</p>
+            <p id="stat-weight" class="text-2xl font-extrabold text-ink">—</p>
+          </div>
+          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">Height</p>
+            <p id="stat-height" class="text-2xl font-extrabold text-ink">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left: Log form + Growth chart -->
+        <div class="lg:col-span-2 space-y-6">
+
+          <!-- TEACHER: Log measurement form -->
+          <div id="log-section" class="hidden bg-surface rounded-xl p-6 shadow-card">
+            <h3 class="font-bold text-ink mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary">add_chart</span>
+              Log Measurement
+            </h3>
+            <div id="log-error" class="error-banner hidden mb-4"></div>
+            <div id="log-success" class="success-banner hidden mb-4"></div>
+            <form id="log-form" class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-secondary mb-1 px-1">Height (cm) *</label>
+                  <input id="input-height" type="number" step="0.1" min="45" max="130" placeholder="e.g. 105.5"
+                    class="w-full bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-secondary mb-1 px-1">Weight (kg) *</label>
+                  <input id="input-weight" type="number" step="0.1" min="2" max="30" placeholder="e.g. 18.2"
+                    class="w-full bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-secondary mb-1 px-1">MUAC (cm) — optional</label>
+                  <input id="input-muac" type="number" step="0.1" min="5" max="30" placeholder="e.g. 14.5"
+                    class="w-full bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-secondary mb-1 px-1">Activity Level *</label>
+                  <select id="input-activity"
+                    class="w-full bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+                    <option value="0">Sedentary</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="2">Highly Active</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Allergy tags -->
+              <div>
+                <label class="block text-xs font-bold text-secondary mb-1 px-1">Known Allergies</label>
+                <div id="allergy-tags" class="flex flex-wrap gap-2 mb-2 min-h-[32px]"></div>
+                <div class="flex gap-2">
+                  <input id="allergy-input" type="text" placeholder="Type allergy and press Enter…"
+                    class="flex-1 bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+                  <button type="button" id="add-allergy-btn"
+                    class="px-4 py-3 bg-surface-high rounded-xl text-ink-muted font-bold text-sm hover:bg-surface-high/70 transition-colors">
+                    Add
+                  </button>
+                </div>
+              </div>
+              <button type="submit" id="log-btn" class="btn-primary py-3 text-sm w-full">
+                <span class="material-symbols-outlined text-base">save</span>
+                Save &amp; Get AI Advice
+              </button>
+            </form>
+          </div>
+
+          <!-- Growth chart -->
+          <div class="bg-surface rounded-xl p-6 shadow-card">
+            <div class="flex items-center justify-between mb-5">
+              <h3 class="font-bold text-ink flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary">show_chart</span>
+                Growth Chart
+              </h3>
+              <div class="flex items-center gap-3 text-xs font-bold text-ink-muted">
+                <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-primary border border-primary-dim"></span>BMI</span>
+                <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-secondary"></span>Weight (kg)</span>
+              </div>
+            </div>
+            <div id="chart-empty" class="hidden text-center py-10 text-ink-muted">
+              <span class="material-symbols-outlined text-4xl block mb-2">bar_chart</span>
+              <p class="font-medium">No measurements logged yet.</p>
+            </div>
+            <div id="chart-container" class="hidden relative h-64">
+              <canvas id="growth-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- History timeline -->
+          <div class="bg-surface rounded-xl p-6 shadow-card">
+            <h3 class="font-bold text-ink mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary">history</span>
+              Measurement History
+            </h3>
+            <div id="history-container">
+              <div class="text-center py-6 text-ink-muted text-sm">No history yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Advice -->
+        <div class="space-y-6">
+
+          <!-- Allergy management -->
+          <div id="allergy-manage-section" class="hidden bg-surface rounded-xl p-5 shadow-card">
+            <h3 class="font-bold text-ink mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined" style="color:#b02500;font-variation-settings:'FILL' 1">no_food</span>
+              Allergy Profile
+            </h3>
+            <div id="manage-allergy-tags" class="flex flex-wrap gap-2 mb-3 min-h-[32px]"></div>
+            <div class="flex gap-2">
+              <input id="manage-allergy-input" type="text" placeholder="Add allergy…"
+                class="flex-1 bg-surface-high border-0 rounded-xl px-3 py-2 text-xs font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+              <button id="manage-add-btn"
+                class="p-2 rounded-xl bg-surface-high text-ink-muted hover:bg-surface-high/70 transition-colors">
+                <span class="material-symbols-outlined" style="font-size:18px">add</span>
+              </button>
+            </div>
+            <button id="save-allergies-btn" class="mt-3 w-full py-2 rounded-xl bg-surface-high text-ink font-bold text-xs hover:bg-primary/20 transition-colors">
+              Save Allergy Profile
+            </button>
+            <div id="allergy-save-ok" class="success-banner hidden mt-2"></div>
+          </div>
+
+          <!-- AI Advice panel -->
+          <div class="bg-surface rounded-xl overflow-hidden shadow-card">
+            <div class="p-5 flex items-center justify-between"
+              style="background:linear-gradient(135deg,#FFF4E1,#FFFDF5)">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                  <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">psychology</span>
+                </div>
+                <div>
+                  <h3 class="font-bold text-ink">AI Wellness Buddy</h3>
+                  <p class="text-xs text-ink-muted">Personalised advice</p>
+                </div>
+              </div>
+              <!-- TEACHER: generate fresh advice -->
+              <button id="generate-advice-btn" class="hidden px-4 py-2 bg-secondary text-white font-bold text-xs rounded-full flex items-center gap-1 hover:bg-secondary/80 transition-colors">
+                <span class="material-symbols-outlined text-base">auto_awesome</span>
+                Generate
+              </button>
+            </div>
+
+            <!-- Urgent referral alert -->
+            <div id="urgent-banner" class="hidden px-5 py-3 text-sm font-bold" style="background:#fff5f5;color:#b02500">
+              <span class="material-symbols-outlined align-middle mr-1" style="font-size:16px">emergency</span>
+              Please consult a healthcare professional immediately.
+            </div>
+
+            <div id="advice-loading" class="flex items-center justify-center gap-2 py-10 text-ink-muted">
+              <span class="material-symbols-outlined animate-spin">progress_activity</span>
+              <span class="text-sm">Loading advice…</span>
+            </div>
+
+            <div id="advice-content" class="hidden p-5 space-y-4">
+              <!-- Status badge -->
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-bold text-ink-muted uppercase tracking-wider">Nutrition Status</span>
+                <span id="advice-status-badge" class="px-3 py-1 rounded-full text-xs font-bold">—</span>
+              </div>
+
+              <!-- Allergy warnings -->
+              <div id="advice-allergy-section" class="hidden">
+                <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2">Allergy Warnings</p>
+                <div id="advice-allergy-list" class="space-y-2"></div>
+              </div>
+
+              <!-- Dietary advice -->
+              <div id="advice-dietary-section" class="hidden">
+                <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2">Dietary Advice</p>
+                <div id="advice-dietary-list" class="space-y-2"></div>
+              </div>
+
+              <!-- Activity advice -->
+              <div id="advice-activity-section" class="hidden">
+                <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2">Activity Advice</p>
+                <div id="advice-activity-list" class="space-y-2"></div>
+              </div>
+
+              <!-- Confidence caveat -->
+              <div id="advice-caveat" class="hidden rounded-xl p-3 text-xs text-ink-muted bg-surface-high border border-outline"></div>
+
+              <!-- Disclaimer -->
+              <div id="advice-disclaimer" class="rounded-xl p-3 text-xs text-ink-muted bg-surface-high border border-outline"></div>
+            </div>
+
+            <div id="advice-empty" class="hidden p-5 text-center text-ink-muted text-sm py-10">
+              <span class="material-symbols-outlined text-4xl block mb-2">tips_and_updates</span>
+              Log a measurement to get AI advice.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/health.js"></script>
+</body>
+</html>

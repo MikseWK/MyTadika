@@ -1,159 +1,196 @@
-# MyTadika — Running the Full Stack Locally
+# MyTadika — School-Parent Engagement Web App
 
-Three services make up the app. All six build phases in `CLAUDE.md` are
-done, so this is the real flow — Supabase Auth (email/password + Google
-OAuth), role-based dashboards, Student/Academic/Health modules, and AI
-nutrition advice all work end-to-end.
+Malaysian kindergarten management system. FYP split:
 
-```text
-mytadika-frontend/   React (Vite)         → http://localhost:5173
-mytadika-backend/    Spring Boot (Maven)  → http://localhost:8080
-AI/api/              FastAPI microservice → http://localhost:8001
-```
+| Module | Owner |
+|---|---|
+| Core Admin & Health Analytics (Auth, Student Profile, Academic, Health + AI) | This repo |
+| Parent Engagement & Communication (Chat, Gallery, Notifications) | Teammate |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Plain HTML5 / CSS3 / JavaScript (ES Modules) — **no build step** |
+| Styling | Tailwind CSS via CDN |
+| HTTP client | Axios via CDN |
+| Charts | Chart.js via CDN |
+| Backend | Spring Boot 3.x (Java 21), Maven |
+| Database | PostgreSQL on Supabase |
+| Auth | Custom BCrypt + self-issued JWT (HS256) |
+| ML service | Python FastAPI (`AI/` directory, port 8001) |
+
+---
 
 ## Prerequisites
 
-- Node.js 18+
-- JDK 17+ (the bundled Maven wrapper handles the rest)
-- Python 3.10+
-- A Supabase project (PostgreSQL + Auth) — see `CLAUDE.md` Section 6 if you
-  need to create one from scratch
+| Tool | Version | Notes |
+|---|---|---|
+| Java | 21 (LTS) | Maven wrapper (`./mvnw`) is included |
+| Node.js | 18+ | Only for `npx serve` — zero extra installs needed |
+| Python | 3.9+ | Only for the AI health advice service |
 
-## One-time setup
+---
 
-### 1. Frontend environment
+## One-Command Start (Windows)
 
-```bash
+```powershell
+.\start.ps1
+```
+
+This opens **two terminal windows** simultaneously:
+
+| Window | Service | URL |
+|---|---|---|
+| 1 | Spring Boot backend | http://localhost:8080 |
+| 2 | Static frontend server | http://localhost:3000/pages/login.html |
+
+> `npx serve` downloads itself on first run — no `npm install` required.
+
+---
+
+## Manual Start (alternative)
+
+### Backend
+
+```powershell
+cd mytadika-backend
+.\mvnw spring-boot:run
+```
+
+Verify it's up: `GET http://localhost:8080/api/auth/me` → `401` is correct (no token yet).
+
+### Frontend
+
+```powershell
 cd mytadika-frontend
-npm install
-cp .env.example .env
+npx serve . --listen 3000
 ```
 
-Edit `.env` with your Supabase project's values (Dashboard → Project
-Settings → API):
+Open: **http://localhost:3000/pages/login.html**
 
-```ini
-VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-or-publishable-key>
-VITE_API_BASE_URL=http://localhost:8080/api
-```
+### AI Service (optional — needed for health advice generation)
 
-### 2. Backend configuration
-
-`mytadika-backend/src/main/resources/application.properties` is gitignored
-(it holds DB/JWT secrets) — create it if it doesn't exist yet:
-
-```properties
-server.port=8080
-
-spring.datasource.url=jdbc:postgresql://<pooler-host>.pooler.supabase.com:5432/postgres?sslmode=require
-spring.datasource.username=postgres.<project-ref>
-spring.datasource.password=${SUPABASE_DB_PASSWORD:<your-db-password>}
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=false
-spring.jpa.open-in-view=false
-
-ai.service.url=http://localhost:8001/api/predict
-
-# Use the Session Pooler connection string (port 5432), not the Transaction
-# pooler (6543) or the raw direct connection — see CLAUDE.md §3/§6.5 for why.
-spring.security.oauth2.resourceserver.jwt.jwk-set-uri=https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json
-
-app.cors.allowed-origins=http://localhost:5173
-
-supabase.url=https://<project-ref>.supabase.co
-supabase.service-role-key=${SUPABASE_SERVICE_ROLE_KEY:}
-supabase.storage.bucket=profile-images
-```
-
-Get `<pooler-host>`, `<project-ref>`, and the DB password from Supabase
-Dashboard → Project Settings → Database → Connect → **Session pooler**.
-`SUPABASE_SERVICE_ROLE_KEY` is only needed for profile-image uploads
-(Dashboard → Project Settings → API → service_role key) — leave it blank to
-skip that feature.
-
-### 3. AI microservice dependencies
-
-```bash
+```powershell
 cd AI/api
 pip install -r requirements.txt
-```
-
-Trained model files already live in `AI/models/` — nothing else to set up.
-
-## Boot order
-
-Start these in order, each in its own terminal:
-
-**1. AI microservice** (optional but recommended — the backend falls back to
-a rule-based estimate if this isn't reachable):
-
-```bash
-cd AI/api
 uvicorn main:app --reload --port 8001
 ```
 
-Verify: `curl http://localhost:8001/health` → `{"status":"healthy",...}`
+The backend falls back to a rule-based estimate if this isn't running.
 
-**2. Backend:**
+---
 
-```bash
+## Environment Variables
+
+Set these before starting the backend (or add to a `.env` file / your shell profile):
+
+```properties
+# Required
+SUPABASE_DB_PASSWORD=your_supabase_session_pooler_password
+JWT_SECRET=/u0sfwn7U4HB/EbRH4U58r0m6F5MATjUCBt3gduWCoQ=
+
+# Optional — only needed for forgot-password emails
+MAIL_USERNAME=your_gmail@gmail.com
+MAIL_PASSWORD=your_gmail_app_password
+```
+
+> **JWT_SECRET** — the value above is a generated default. Replace it for production.
+> **MAIL_PASSWORD** — use a Gmail **App Password** (Google Account → Security → App passwords), not your login password.
+> **SUPABASE_DB_PASSWORD** — get from Supabase Dashboard → Project Settings → Database → Connect → **Session pooler** (port 5432).
+
+---
+
+## Project Structure
+
+```
+MyTadika/
+├── start.ps1                        ← one-command launcher (Windows)
+├── README.md
+│
+├── mytadika-backend/                ← Spring Boot (port 8080)
+│   └── src/main/java/com/mytadika/
+│       ├── controller/              AuthController, StudentController,
+│       │                            AcademicController, HealthController, AccountController
+│       ├── service/                 AuthService, StudentService, AcademicService,
+│       │                            HealthAdviceService, AccountService, EmailService
+│       ├── model/                   Account, Student, Classroom, AcademicRecord,
+│       │                            HealthRecord, AllergyProfile, PasswordResetToken
+│       ├── repository/
+│       ├── security/                JwtService, JwtAuthenticationFilter
+│       └── config/                  SecurityConfig, CorsConfig
+│
+├── mytadika-frontend/               ← Plain HTML/JS (port 3000, no build)
+│   ├── pages/                       login.html, create-account.html, dashboard-*.html,
+│   │                                students.html, academic.html, health.html, profile.html …
+│   ├── css/styles.css               design tokens (--color-primary, --color-bg …)
+│   ├── js/
+│   │   ├── api/                     axiosClient.js, authApi.js, studentApi.js,
+│   │   │                            academicApi.js, healthApi.js
+│   │   ├── auth/authGuard.js        session check + role guard on every page
+│   │   └── pages/                   per-page JS modules
+│   └── assets/images/
+│
+└── AI/                              ← FastAPI ML microservice (port 8001)
+```
+
+---
+
+## API Reference
+
+All endpoints except auth require `Authorization: Bearer <jwt>`.
+
+| Area | Method | Endpoint |
+|---|---|---|
+| **Auth** | POST | `/api/auth/login` |
+| | POST | `/api/auth/register` |
+| | POST | `/api/auth/forgot-password` |
+| | POST | `/api/auth/reset-password` |
+| | GET | `/api/auth/me` |
+| **Students** | GET | `/api/students` (TEACHER/ADMIN) |
+| | GET | `/api/students/my-children` (PARENT) |
+| | GET/POST/PUT | `/api/students/{id}` |
+| **Academic** | GET/POST | `/api/academic/students/{id}/records` |
+| | GET/PUT | `/api/academic/records/{id}` |
+| **Health** | POST | `/api/health/record` |
+| | GET | `/api/health/history/{id}` |
+| | GET | `/api/health/advice/{id}` |
+| | GET/PUT | `/api/health/allergies/{id}` |
+| **Account** | PUT | `/api/accounts/me` |
+| | POST | `/api/accounts/me/profile-image` |
+| | POST | `/api/accounts/register-staff` (ADMIN only) |
+
+---
+
+## Accounts & Roles
+
+| Role | How to create |
+|---|---|
+| `PARENT` | Self-register via `POST /api/auth/register` or the Register page |
+| `TEACHER` / `ADMIN` | An existing ADMIN calls `POST /api/accounts/register-staff` |
+
+---
+
+## Running Tests
+
+```powershell
 cd mytadika-backend
-./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
+.\mvnw test
 ```
 
-Verify: `curl http://localhost:8080/api/auth/me` → `401` (expected without a
-token — it means the server is up).
+28 tests — all passing (grading scale, BMI computation, RBAC scoping).
 
-**3. Frontend:**
-
-```bash
-cd mytadika-frontend
-npm run dev
-```
-
-Open the URL Vite prints (usually `http://localhost:5173`).
-
-## Using the app
-
-- **Sign up** as a parent from `/register` (email/password) or sign in with
-  **Google** from `/login` — both go through Supabase Auth directly, not the
-  backend. Staff accounts (Teacher/Admin) are provisioned via
-  `POST /api/accounts/register-staff` by an existing Admin, not self-service.
-- First login auto-creates your local profile row (`PARENT` role) — this
-  requires the **backend to be running**; if it isn't, you'll land on a
-  blank page after login instead of your dashboard (see Troubleshooting).
-- Role-based nav (sidebar) routes to Student/Academic/Health/Profile pages;
-  Classroom/Messages/Memory Box/Events show a "coming soon" placeholder —
-  those belong to the teammate's Parent Engagement module.
+---
 
 ## Troubleshooting
 
-**Blank page after Google/email login, URL ends in a stray `#`.**
-The backend isn't running (or isn't reachable at `VITE_API_BASE_URL`). The
-frontend fetches your profile right after login; if that call fails with a
-connection error rather than a 404, it gives up silently. Start the backend
-and refresh.
+**"AI Service is currently unreachable"**
+The FastAPI service on port 8001 isn't running. Start it with the command above, or ignore it — the backend serves rule-based advice as fallback.
 
-**Sign-up shows "check your inbox" but no email arrives.**
-That email is probably already registered (e.g. you signed in with Google
-using it earlier). Supabase intentionally no-ops repeat sign-ups instead of
-erroring, to avoid leaking which emails exist — check
-Dashboard → Authentication → Users, or just sign in instead of signing up.
+**Backend can't connect to database**
+Check that `SUPABASE_DB_PASSWORD` is set and you're using the **Session pooler** connection string (port 5432), not the direct connection or Transaction pooler (port 6543).
 
-**"AI Service is currently unreachable" / nutrition predictions look generic.**
-The FastAPI microservice (port 8001) isn't running — the backend's
-`AiPredictionClient` falls back to a simple BMI-threshold rule rather than
-the trained model. Start `AI/api` and retry.
-
-**Backend won't connect to the database / "prepared statement already exists".**
-You're probably using the Transaction pooler (port 6543) instead of the
-Session pooler (port 5432) — see `CLAUDE.md` Section 6.5.
-
-## Running tests
-
-```bash
-cd mytadika-backend && ./mvnw test     # 28 unit tests: grading, BMI, RBAC scoping
-cd mytadika-frontend && npm run lint && npm run build
-```
+**Login returns 401 after correct credentials**
+Ensure the backend is running on port 8080. Check `JWT_SECRET` is set to the same value in the environment and in `application.properties`.

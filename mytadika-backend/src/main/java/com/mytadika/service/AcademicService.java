@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional
 public class AcademicService {
 
     private final AcademicRecordRepository academicRecordRepository;
@@ -102,7 +103,7 @@ public class AcademicService {
     }
 
     private void assertCanAccess(Student student, Account currentUser) {
-        if (currentUser.getRole() == Role.PARENT && !student.getParent().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() == Role.PARENT && !student.getParent().getAccountId().equals(currentUser.getAccountId())) {
             throw new UnauthorizedAccessException("Cannot access another parent's child.");
         }
     }

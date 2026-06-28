@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT">
+
+<div class="fixed top-[-5%] right-[-5%] w-80 h-80 bg-primary opacity-10 blob -z-10 pointer-events-none"></div>
+<div class="fixed bottom-0 left-[10%] w-56 h-56 bg-secondary-cont opacity-40 blob -z-10 pointer-events-none"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<!-- Main -->
+<div class="ml-64 min-h-screen flex flex-col">
+
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center justify-between px-8 py-4">
+    <div class="text-sm font-medium text-ink-muted" id="header-date"></div>
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-ink-muted select-none cursor-pointer">notifications</span>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-ink" id="header-name"></span>
+        <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm select-none">?</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full space-y-8">
+
+    <!-- Hero bento -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="md:col-span-2 relative overflow-hidden bg-primary rounded-xl p-10 min-h-[220px] flex flex-col justify-center">
+        <div class="absolute -top-16 -right-16 w-64 h-64 bg-secondary/20 blob pointer-events-none"></div>
+        <div class="relative z-10">
+          <h2 id="greeting-text" class="text-4xl font-extrabold text-ink leading-tight mb-3">Good morning!</h2>
+          <p id="greeting-sub" class="text-ink/70 font-medium">Loading your child's update…</p>
+          <div class="mt-6">
+            <span class="inline-flex items-center gap-2 px-5 py-2 bg-surface/60 backdrop-blur rounded-full font-bold text-ink text-sm">
+              <span class="material-symbols-outlined text-success text-base" style="font-variation-settings:'FILL' 1">check_circle</span>
+              Today's update available
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-surface rounded-xl p-6 flex flex-col items-center justify-center text-center gap-4 shadow-card">
+        <div class="w-20 h-20 rounded-full bg-surface-high border-4 border-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-4xl text-ink-muted">child_care</span>
+        </div>
+        <div id="child-info"><p class="text-ink-muted text-sm">Loading…</p></div>
+        <a id="view-report-btn" href="#" class="hidden w-full py-2.5 bg-surface-high text-ink font-bold rounded-full text-sm hover:bg-primary/20 transition-colors text-center">
+          View Report →
+        </a>
+      </div>
+    </section>
+
+    <!-- Content grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- Today's Schedule -->
+      <div class="lg:col-span-7 space-y-4">
+        <h3 class="text-xl font-bold text-ink">Today's Schedule</h3>
+        <div class="bg-surface rounded-xl p-6 space-y-4 shadow-card">
+          <div class="flex gap-4 items-center p-4 bg-surface-low rounded-xl">
+            <div class="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-ink">menu_book</span>
+            </div>
+            <div>
+              <p class="font-bold text-ink text-sm">Story Time &amp; Phonics</p>
+              <p class="text-xs text-ink-muted mt-0.5">9:00 AM · Ocean Adventures</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-center p-4 bg-primary/20 rounded-xl border border-primary/40">
+            <div class="w-11 h-11 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-ink">nature_people</span>
+            </div>
+            <div class="flex-1">
+              <p class="font-bold text-ink text-sm">Outdoor Explorations</p>
+              <p class="text-xs text-ink-muted mt-0.5">10:30 AM · Garden Area</p>
+            </div>
+            <span class="px-3 py-1 bg-ink text-surface text-[10px] font-black rounded-full uppercase tracking-wider">LIVE</span>
+          </div>
+          <div class="flex gap-4 items-center p-4 bg-surface-low rounded-xl">
+            <div class="w-11 h-11 rounded-full bg-secondary-cont flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-secondary">restaurant</span>
+            </div>
+            <div>
+              <p class="font-bold text-ink text-sm">Nutritious Lunch</p>
+              <p class="text-xs text-ink-muted mt-0.5">12:00 PM · Cafeteria</p>
+            </div>
+          </div>
+          <p class="text-center text-xs text-ink-muted pt-2">Full schedule managed by your school</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions + Reminders -->
+      <div class="lg:col-span-5 space-y-6">
+        <h3 class="text-xl font-bold text-ink">Quick Actions</h3>
+        <div class="space-y-3">
+          <a id="link-health" href="#" class="flex items-center justify-between p-4 bg-surface rounded-xl hover:bg-primary/10 transition-colors shadow-card">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center">
+                <span class="material-symbols-outlined text-success text-xl">medical_services</span>
+              </div>
+              <span class="font-bold text-ink text-sm">Health Record</span>
+            </div>
+            <span class="material-symbols-outlined text-ink-muted">chevron_right</span>
+          </a>
+          <a id="link-academic" href="#" class="flex items-center justify-between p-4 bg-surface rounded-xl hover:bg-primary/10 transition-colors shadow-card">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <span class="material-symbols-outlined text-ink text-xl">assessment</span>
+              </div>
+              <span class="font-bold text-ink text-sm">Academic Report</span>
+            </div>
+            <span class="material-symbols-outlined text-ink-muted">chevron_right</span>
+          </a>
+          <a href="profile.html" class="flex items-center justify-between p-4 bg-surface rounded-xl hover:bg-primary/10 transition-colors shadow-card">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-secondary-cont flex items-center justify-center">
+                <span class="material-symbols-outlined text-secondary text-xl">person</span>
+              </div>
+              <span class="font-bold text-ink text-sm">My Profile</span>
+            </div>
+            <span class="material-symbols-outlined text-ink-muted">chevron_right</span>
+          </a>
+        </div>
+
+        <h3 class="text-xl font-bold text-ink pt-2">Upcoming Reminders</h3>
+        <div class="space-y-3">
+          <div class="p-5 bg-surface rounded-xl shadow-card flex gap-4 items-start border-l-4 border-secondary">
+            <div class="text-center min-w-[44px] bg-surface-high rounded-xl p-2 flex-shrink-0">
+              <span class="block text-[10px] font-bold text-ink-muted uppercase">Oct</span>
+              <span class="block text-2xl font-black text-secondary">27</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-ink text-sm">School Picture Day</h4>
+              <p class="text-xs text-ink-muted mt-1">Smart casual attire. Photos start 9:00 AM.</p>
+            </div>
+          </div>
+          <div class="p-5 bg-surface rounded-xl shadow-card flex gap-4 items-start border-l-4 border-success">
+            <div class="text-center min-w-[44px] bg-surface-high rounded-xl p-2 flex-shrink-0">
+              <span class="block text-[10px] font-bold text-ink-muted uppercase">Nov</span>
+              <span class="block text-2xl font-black text-success">02</span>
+            </div>
+            <div>
+              <h4 class="font-bold text-ink text-sm">Parent-Teacher Meet</h4>
+              <p class="text-xs text-ink-muted mt-1">Contact your teacher to book a slot.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/dashboard-parent.js"></script>
+</body>
+</html>

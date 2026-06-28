@@ -10,7 +10,6 @@ import com.mytadika.model.Student;
 import com.mytadika.repository.AllergyProfileRepository;
 import com.mytadika.repository.HealthRecordRepository;
 import com.mytadika.repository.StudentRepository;
-import com.mytadika.security.AccountResolver;
 import com.mytadika.service.AiPredictionClient;
 import com.mytadika.service.HealthAdviceService;
 import jakarta.validation.Valid;
@@ -19,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +29,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/health")
-@CrossOrigin(origins = "*") // Adjust origins in production settings
+@CrossOrigin(origins = "*")
 @Validated
 public class HealthController {
 
@@ -40,28 +40,25 @@ public class HealthController {
     private final StudentRepository studentRepository;
     private final AiPredictionClient aiPredictionClient;
     private final HealthAdviceService healthAdviceService;
-    private final AccountResolver accountResolver;
 
     public HealthController(
             HealthRecordRepository healthRecordRepository,
             AllergyProfileRepository allergyProfileRepository,
             StudentRepository studentRepository,
             AiPredictionClient aiPredictionClient,
-            HealthAdviceService healthAdviceService,
-            AccountResolver accountResolver) {
+            HealthAdviceService healthAdviceService) {
         this.healthRecordRepository = healthRecordRepository;
         this.allergyProfileRepository = allergyProfileRepository;
         this.studentRepository = studentRepository;
         this.aiPredictionClient = aiPredictionClient;
         this.healthAdviceService = healthAdviceService;
-        this.accountResolver = accountResolver;
     }
 
-    /** Mirrors AcademicService's assertCanAccess: a PARENT may only touch their own child's health data. */
     private void assertCanAccessStudent(Long studentId, Account currentUser) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found."));
-        if (currentUser.getRole() == Role.PARENT && !student.getParent().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() == Role.PARENT
+                && !student.getParent().getAccountId().equals(currentUser.getAccountId())) {
             throw new UnauthorizedAccessException("Cannot access another parent's child.");
         }
     }
@@ -87,7 +84,6 @@ public class HealthController {
         private Double heightCm;
 
         private Double muacCm;
-
         private String gender;
 
         @NotNull(message = "activityLevel is required")
@@ -101,88 +97,28 @@ public class HealthController {
 
         public HealthRequestDTO() {}
 
-        public String getChildId() {
-            return childId;
-        }
-
-        public void setChildId(String childId) {
-            this.childId = childId;
-        }
-
-        public Double getAgeMonths() {
-            return ageMonths;
-        }
-
-        public void setAgeMonths(Double ageMonths) {
-            this.ageMonths = ageMonths;
-        }
-
-        public Double getWeightKg() {
-            return weightKg;
-        }
-
-        public void setWeightKg(Double weightKg) {
-            this.weightKg = weightKg;
-        }
-
-        public Double getHeightCm() {
-            return heightCm;
-        }
-
-        public void setHeightCm(Double heightCm) {
-            this.heightCm = heightCm;
-        }
-
-        public Double getMuacCm() {
-            return muacCm;
-        }
-
-        public void setMuacCm(Double muacCm) {
-            this.muacCm = muacCm;
-        }
-
-        public String getGender() {
-            return gender;
-        }
-
-        public void setGender(String gender) {
-            this.gender = gender;
-        }
-
-        public Integer getActivityLevel() {
-            return activityLevel;
-        }
-
-        public void setActivityLevel(Integer activityLevel) {
-            this.activityLevel = activityLevel;
-        }
-
-        public List<String> getAllergies() {
-            return allergies;
-        }
-
-        public void setAllergies(List<String> allergies) {
-            this.allergies = allergies;
-        }
-
-        public List<String> getShownAdviceIds() {
-            return shownAdviceIds;
-        }
-
-        public void setShownAdviceIds(List<String> shownAdviceIds) {
-            this.shownAdviceIds = shownAdviceIds;
-        }
-
-        public Long getRecordedBy() {
-            return recordedBy;
-        }
-
-        public void setRecordedBy(Long recordedBy) {
-            this.recordedBy = recordedBy;
-        }
+        public String getChildId() { return childId; }
+        public void setChildId(String childId) { this.childId = childId; }
+        public Double getAgeMonths() { return ageMonths; }
+        public void setAgeMonths(Double ageMonths) { this.ageMonths = ageMonths; }
+        public Double getWeightKg() { return weightKg; }
+        public void setWeightKg(Double weightKg) { this.weightKg = weightKg; }
+        public Double getHeightCm() { return heightCm; }
+        public void setHeightCm(Double heightCm) { this.heightCm = heightCm; }
+        public Double getMuacCm() { return muacCm; }
+        public void setMuacCm(Double muacCm) { this.muacCm = muacCm; }
+        public String getGender() { return gender; }
+        public void setGender(String gender) { this.gender = gender; }
+        public Integer getActivityLevel() { return activityLevel; }
+        public void setActivityLevel(Integer activityLevel) { this.activityLevel = activityLevel; }
+        public List<String> getAllergies() { return allergies; }
+        public void setAllergies(List<String> allergies) { this.allergies = allergies; }
+        public List<String> getShownAdviceIds() { return shownAdviceIds; }
+        public void setShownAdviceIds(List<String> shownAdviceIds) { this.shownAdviceIds = shownAdviceIds; }
+        public Long getRecordedBy() { return recordedBy; }
+        public void setRecordedBy(Long recordedBy) { this.recordedBy = recordedBy; }
     }
 
-    // Wrapper response indicating saved record ID and generated advice
     public static class RecordResponseDTO {
         private Long recordId;
         private HealthRecord healthRecord;
@@ -196,146 +132,78 @@ public class HealthController {
             this.advice = advice;
         }
 
-        public Long getRecordId() {
-            return recordId;
-        }
+        public Long getRecordId() { return recordId; }
+        public void setRecordId(Long recordId) { this.recordId = recordId; }
+        public HealthRecord getHealthRecord() { return healthRecord; }
+        public void setHealthRecord(HealthRecord healthRecord) { this.healthRecord = healthRecord; }
+        public HealthAdviceService.AdviceResult getAdvice() { return advice; }
+        public void setAdvice(HealthAdviceService.AdviceResult advice) { this.advice = advice; }
 
-        public void setRecordId(Long recordId) {
-            this.recordId = recordId;
-        }
-
-        public HealthRecord getHealthRecord() {
-            return healthRecord;
-        }
-
-        public void setHealthRecord(HealthRecord healthRecord) {
-            this.healthRecord = healthRecord;
-        }
-
-        public HealthAdviceService.AdviceResult getAdvice() {
-            return advice;
-        }
-
-        public void setAdvice(HealthAdviceService.AdviceResult advice) {
-            this.advice = advice;
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
+        public static Builder builder() { return new Builder(); }
 
         public static class Builder {
             private Long recordId;
             private HealthRecord healthRecord;
             private HealthAdviceService.AdviceResult advice;
 
-            public Builder recordId(Long recordId) {
-                this.recordId = recordId;
-                return this;
-            }
-
-            public Builder healthRecord(HealthRecord healthRecord) {
-                this.healthRecord = healthRecord;
-                return this;
-            }
-
-            public Builder advice(HealthAdviceService.AdviceResult advice) {
-                this.advice = advice;
-                return this;
-            }
-
-            public RecordResponseDTO build() {
-                return new RecordResponseDTO(recordId, healthRecord, advice);
-            }
+            public Builder recordId(Long recordId) { this.recordId = recordId; return this; }
+            public Builder healthRecord(HealthRecord healthRecord) { this.healthRecord = healthRecord; return this; }
+            public Builder advice(HealthAdviceService.AdviceResult advice) { this.advice = advice; return this; }
+            public RecordResponseDTO build() { return new RecordResponseDTO(recordId, healthRecord, advice); }
         }
     }
 
-    // DTO for allergy updates
     public static class AllergyUpdateDTO {
         private List<String> allergies;
-
         public AllergyUpdateDTO() {}
-
-        public List<String> getAllergies() {
-            return allergies;
-        }
-
-        public void setAllergies(List<String> allergies) {
-            this.allergies = allergies;
-        }
+        public List<String> getAllergies() { return allergies; }
+        public void setAllergies(List<String> allergies) { this.allergies = allergies; }
     }
 
-    /**
-     * Endpoint to run direct prediction and advice generation on user input.
-     * Does NOT persist any records.
-     */
     @PostMapping("/predict")
     @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<HealthAdviceService.AdviceResult> predictAndAdvise(
             @Valid @RequestBody HealthRequestDTO request) {
         log.info("REST request to predict and generate advice for child: {}", request.getChildId());
 
-        // Invoke ML model via microservice client
         AiPredictionClient.PredictionResponse modelResponse = aiPredictionClient.predict(
-                request.getChildId(),
-                request.getAgeMonths(),
-                request.getWeightKg(),
-                request.getHeightCm(),
-                request.getMuacCm(),
-                request.getGender()
-        );
+                request.getChildId(), request.getAgeMonths(), request.getWeightKg(),
+                request.getHeightCm(), request.getMuacCm(), request.getGender());
 
-        // Run Rules Engine port
         HealthAdviceService.AdviceResult adviceResult = healthAdviceService.generateAdvice(
-                request.getChildId(),
-                request.getAgeMonths(),
-                request.getActivityLevel(),
+                request.getChildId(), request.getAgeMonths(), request.getActivityLevel(),
                 request.getAllergies() != null ? request.getAllergies() : Collections.emptyList(),
                 request.getShownAdviceIds() != null ? request.getShownAdviceIds() : Collections.emptyList(),
-                modelResponse
-        );
+                modelResponse);
 
         return ResponseEntity.ok(adviceResult);
     }
 
-    /**
-     * Endpoint to record new measurement, run AI checks, and persist the record.
-     */
     @PostMapping("/record")
     @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<RecordResponseDTO> recordMeasurement(
-            @Valid @RequestBody HealthRequestDTO request) {
+            @Valid @RequestBody HealthRequestDTO request,
+            @AuthenticationPrincipal Account currentUser) {
         log.info("REST request to record measurements and advise for student: {}", request.getChildId());
 
-        // 1. Map child ID to database ID
         Long studentId;
         try {
             studentId = Long.parseLong(request.getChildId());
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().build();
         }
-        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
+        assertCanAccessStudent(studentId, currentUser);
 
-        // 2. Fetch AI advice result
         AiPredictionClient.PredictionResponse modelResponse = aiPredictionClient.predict(
-                request.getChildId(),
-                request.getAgeMonths(),
-                request.getWeightKg(),
-                request.getHeightCm(),
-                request.getMuacCm(),
-                request.getGender()
-        );
+                request.getChildId(), request.getAgeMonths(), request.getWeightKg(),
+                request.getHeightCm(), request.getMuacCm(), request.getGender());
 
         HealthAdviceService.AdviceResult adviceResult = healthAdviceService.generateAdvice(
-                request.getChildId(),
-                request.getAgeMonths(),
-                request.getActivityLevel(),
+                request.getChildId(), request.getAgeMonths(), request.getActivityLevel(),
                 request.getAllergies() != null ? request.getAllergies() : Collections.emptyList(),
                 request.getShownAdviceIds() != null ? request.getShownAdviceIds() : Collections.emptyList(),
-                modelResponse
-        );
+                modelResponse);
 
-        // 3. Map & Save HealthRecord Entity
         double heightM = request.getHeightCm() / 100.0;
         double bmi = request.getWeightKg() / (heightM * heightM);
 
@@ -353,7 +221,6 @@ public class HealthController {
 
         HealthRecord savedRecord = healthRecordRepository.save(record);
 
-        // 4. Update/Save AllergyProfile if allergies list is provided
         if (request.getAllergies() != null) {
             AllergyProfile allergyProfile = allergyProfileRepository.findById(studentId)
                     .orElse(AllergyProfile.builder().studentId(studentId).build());
@@ -361,37 +228,30 @@ public class HealthController {
             allergyProfileRepository.save(allergyProfile);
         }
 
-        RecordResponseDTO response = RecordResponseDTO.builder()
+        return ResponseEntity.ok(RecordResponseDTO.builder()
                 .recordId(savedRecord.getId())
                 .healthRecord(savedRecord)
                 .advice(adviceResult)
-                .build();
-
-        return ResponseEntity.ok(response);
+                .build());
     }
 
-    /**
-     * Retrieve health measurement logs for a child sorted by newest first.
-     */
     @GetMapping("/history/{studentId}")
-    public ResponseEntity<List<HealthRecord>> getHistory(@PathVariable Long studentId) {
+    public ResponseEntity<List<HealthRecord>> getHistory(
+            @PathVariable Long studentId,
+            @AuthenticationPrincipal Account currentUser) {
         log.info("REST request to fetch health log history for student: {}", studentId);
-        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
-        List<HealthRecord> history = healthRecordRepository.findByStudentIdOrderByRecordedAtDesc(studentId);
-        return ResponseEntity.ok(history);
+        assertCanAccessStudent(studentId, currentUser);
+        return ResponseEntity.ok(healthRecordRepository.findByStudentIdOrderByRecordedAtDesc(studentId));
     }
 
-    /**
-     * Fetches current advice for a student using their most recent record and allergy configuration.
-     */
     @GetMapping("/advice/{studentId}")
     public ResponseEntity<HealthAdviceService.AdviceResult> getLatestAdvice(
             @PathVariable Long studentId,
             @RequestParam(required = false, defaultValue = "1") int activityLevel,
-            @RequestParam(required = false) List<String> shownAdviceIds
-    ) {
+            @RequestParam(required = false) List<String> shownAdviceIds,
+            @AuthenticationPrincipal Account currentUser) {
         log.info("REST request to fetch latest AI advice cards for student: {}", studentId);
-        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
+        assertCanAccessStudent(studentId, currentUser);
 
         Optional<HealthRecord> latestRecordOpt = healthRecordRepository.findFirstByStudentIdOrderByRecordedAtDesc(studentId);
         if (latestRecordOpt.isEmpty()) {
@@ -399,73 +259,54 @@ public class HealthController {
         }
         HealthRecord record = latestRecordOpt.get();
 
-        // Retrieve allergies
-        List<String> allergies = Collections.emptyList();
-        Optional<AllergyProfile> allergyOpt = allergyProfileRepository.findById(studentId);
-        if (allergyOpt.isPresent()) {
-            allergies = allergyOpt.get().getAllergiesList();
-        }
+        List<String> allergies = allergyProfileRepository.findById(studentId)
+                .map(AllergyProfile::getAllergiesList)
+                .orElse(Collections.emptyList());
 
-        // Mock prediction response to represent stored record status
         AiPredictionClient.PredictionResponse storedModelResponse = new AiPredictionClient.PredictionResponse(
                 String.valueOf(studentId),
                 record.getNutritionStatus(),
                 record.getNutritionStatus().equals("normal") ? 0 : (record.getNutritionStatus().equals("moderate") ? 1 : 2),
-                1.0, // Stored record has full certainty
+                1.0,
                 new AiPredictionClient.ProbabilityBreakdown(
                         record.getNutritionStatus().equals("normal") ? 1.0 : 0.0,
                         record.getNutritionStatus().equals("moderate") ? 1.0 : 0.0,
-                        record.getNutritionStatus().equals("severe") ? 1.0 : 0.0
-                ),
+                        record.getNutritionStatus().equals("severe") ? 1.0 : 0.0),
                 new AiPredictionClient.ClinicalFlags(
-                        record.getNutritionStatus().equals("severe"),
-                        false, // Flags not stored in history; fallback defaults
-                        record.getNutritionStatus().equals("severe")
-                ),
+                        record.getNutritionStatus().equals("severe"), false,
+                        record.getNutritionStatus().equals("severe")),
                 "HistoricalRecord",
-                "Fitted against historical database entry."
-        );
+                "Fitted against historical database entry.");
 
         HealthAdviceService.AdviceResult adviceResult = healthAdviceService.generateAdvice(
-                String.valueOf(studentId),
-                record.getAgeMonths(),
-                activityLevel,
-                allergies,
+                String.valueOf(studentId), record.getAgeMonths(), activityLevel, allergies,
                 shownAdviceIds != null ? shownAdviceIds : Collections.emptyList(),
-                storedModelResponse
-        );
+                storedModelResponse);
 
         return ResponseEntity.ok(adviceResult);
     }
 
-    /**
-     * Retrieves the active allergy list for a child (empty list if none recorded yet).
-     */
     @GetMapping("/allergies/{studentId}")
-    public ResponseEntity<List<String>> getAllergies(@PathVariable Long studentId) {
-        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
-        List<String> allergies = allergyProfileRepository.findById(studentId)
+    public ResponseEntity<List<String>> getAllergies(
+            @PathVariable Long studentId,
+            @AuthenticationPrincipal Account currentUser) {
+        assertCanAccessStudent(studentId, currentUser);
+        return ResponseEntity.ok(allergyProfileRepository.findById(studentId)
                 .map(AllergyProfile::getAllergiesList)
-                .orElse(Collections.emptyList());
-        return ResponseEntity.ok(allergies);
+                .orElse(Collections.emptyList()));
     }
 
-    /**
-     * Updates allergy profile for a child.
-     */
     @PutMapping("/allergies/{studentId}")
     @PreAuthorize("hasAnyRole('TEACHER','PARENT','ADMIN')")
     public ResponseEntity<AllergyProfile> updateAllergies(
             @PathVariable Long studentId,
-            @RequestBody AllergyUpdateDTO updateRequest
-            ) {
+            @RequestBody AllergyUpdateDTO updateRequest,
+            @AuthenticationPrincipal Account currentUser) {
         log.info("REST request to update active allergies list for student: {}", studentId);
-        assertCanAccessStudent(studentId, accountResolver.requireCurrentAccount());
+        assertCanAccessStudent(studentId, currentUser);
         AllergyProfile profile = allergyProfileRepository.findById(studentId)
                 .orElse(AllergyProfile.builder().studentId(studentId).build());
-
         profile.setAllergiesList(updateRequest.getAllergies());
-        AllergyProfile saved = allergyProfileRepository.save(profile);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(allergyProfileRepository.save(profile));
     }
 }

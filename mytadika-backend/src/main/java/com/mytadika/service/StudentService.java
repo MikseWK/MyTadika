@@ -14,11 +14,13 @@ import com.mytadika.repository.AccountRepository;
 import com.mytadika.repository.ClassroomRepository;
 import com.mytadika.repository.StudentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class StudentService {
 
     private final StudentRepository studentRepository;
@@ -41,7 +43,7 @@ public class StudentService {
     }
 
     public List<StudentResponseDTO> listMyChildren(Account currentUser) {
-        return studentRepository.findByParentIdAndDeletedAtIsNull(currentUser.getId())
+        return studentRepository.findByParentAccountIdAndDeletedAtIsNull(currentUser.getAccountId())
                 .stream().map(StudentResponseDTO::from).toList();
     }
 
@@ -119,7 +121,7 @@ public class StudentService {
     }
 
     private void assertCanAccess(Student student, Account currentUser) {
-        if (currentUser.getRole() == Role.PARENT && !student.getParent().getId().equals(currentUser.getId())) {
+        if (currentUser.getRole() == Role.PARENT && !student.getParent().getAccountId().equals(currentUser.getAccountId())) {
             throw new UnauthorizedAccessException("Cannot access another parent's child.");
         }
     }

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>MyTadika - Parent Profile</title>
+    <script>
+        const _token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        if (!_token) window.location.replace('login.html');
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#fcf6e3",
+                        "on-tertiary": "#d1ffc8",
+                        "inverse-surface": "#100e05",
+                        "surface-container-high": "#e9e3cc",
+                        "primary-dim": "#5e4e00",
+                        "tertiary-container": "#91f78e",
+                        "inverse-primary": "#ffd709",
+                        "surface-variant": "#e3ddc5",
+                        "secondary-fixed": "#ffc69a",
+                        "surface-dim": "#dbd5bc",
+                        "on-primary-fixed-variant": "#665500",
+                        "secondary-dim": "#7b4000",
+                        "tertiary-fixed-dim": "#83e881",
+                        "surface-container-lowest": "#ffffff",
+                        "error-dim": "#b92902",
+                        "on-secondary-fixed-variant": "#7c4100",
+                        "tertiary-fixed": "#91f78e",
+                        "tertiary-dim": "#005d16",
+                        "error-container": "#f95630",
+                        "tertiary": "#006b1b",
+                        "outline": "#7a7768",
+                        "surface-container-highest": "#e3ddc5",
+                        "surface-container-low": "#f7f1dc",
+                        "on-secondary-container": "#6f3a00",
+                        "secondary": "#8c4a00",
+                        "primary-fixed-dim": "#efc900",
+                        "secondary-fixed-dim": "#ffb375",
+                        "on-primary-container": "#5b4b00",
+                        "on-secondary": "#fff0e7",
+                        "inverse-on-surface": "#a19d8c",
+                        "secondary-container": "#ffc69a",
+                        "error": "#b02500",
+                        "on-error": "#ffefec",
+                        "surface-tint": "#6c5a00",
+                        "primary-container": "#ffd709",
+                        "outline-variant": "#b2ad9c",
+                        "on-surface": "#312f23",
+                        "surface": "#fcf6e3",
+                        "on-primary": "#fff2cd",
+                        "on-error-container": "#520c00",
+                        "primary-fixed": "#ffd709",
+                        "on-tertiary-fixed-variant": "#00691a",
+                        "on-primary-fixed": "#453900",
+                        "on-surface-variant": "#5f5c4d",
+                        "primary": "#6c5a00",
+                        "on-tertiary-container": "#005e17",
+                        "on-secondary-fixed": "#532a00",
+                        "surface-container": "#eee8d3",
+                        "on-tertiary-fixed": "#00480f",
+                        "on-background": "#312f23",
+                        "background": "#fcf6e3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "label": ["Be Vietnam Pro"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #fcf6e3;
+        }
+
+        .organic-blob {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+    </style>
+</head>
+
+<body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Abstract Background Blobs -->
+        <div
+            class="absolute -top-24 -right-24 w-96 h-96 bg-secondary-container opacity-20 organic-blob blur-3xl pointer-events-none">
+        </div>
+        <div
+            class="absolute bottom-40 -left-20 w-80 h-80 bg-tertiary-container opacity-10 organic-blob blur-3xl pointer-events-none">
+        </div>
+        <!-- SideNavBar -->
+        <aside
+            class="h-full flex-none w-64 rounded-r-xl overflow-y-auto bg-surface dark:bg-stone-900 shadow-[12px_0_32px_-4px_rgba(49,47,35,0.08)] flex flex-col py-8 gap-2 z-50">
+            <div class="px-6 mb-8">
+                <h1 class="text-xl font-bold text-primary tracking-tight font-headline">MyTadika</h1>
+                <p class="text-xs text-secondary font-medium opacity-80 uppercase tracking-widest mt-1">The Living
+                    Scrapbook</p>
+            </div>
+            <nav class="flex-1 space-y-1">
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="home.html">
+                    <span class="material-symbols-outlined" data-icon="home">home</span>
+                    <span class="font-medium text-sm">Home</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                    <span class="font-medium text-sm">View Report</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="chat">chat</span>
+                    <span class="font-medium text-sm">Messages</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+                    <span class="font-medium text-sm">Memory Box</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="event">event</span>
+                    <span class="font-medium text-sm">Events</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+                    <span class="font-medium text-sm">Health</span>
+                </a>
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="school">school</span>
+                    <span class="font-medium text-sm">Classroom</span>
+                </a>
+            </nav>
+            <div class="mt-auto border-t border-outline-variant/10 pt-4">
+                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="help">help</span>
+                    <span class="font-medium text-sm">Help</span>
+                </a>
+                <a class="flex items-center gap-3 bg-primary-container text-primary rounded-full px-4 py-3 mx-2 shadow-sm"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="account_circle"
+                        style="font-variation-settings: 'FILL' 1;">account_circle</span>
+                    <span class="font-bold text-sm">Profile</span>
+                </a>
+            </div>
+        </aside>
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-8 md:p-12 z-10">
+            <!-- Header Section -->
+            <header class="mb-12">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-4xl font-black text-primary font-headline tracking-tight mb-2">Profile Settings
+                        </h2>
+                        <p class="text-on-surface-variant font-medium">Manage your family's blossoming journey</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <button
+                            class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-lowest text-secondary shadow-sm hover:scale-95 transition-transform">
+                            <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                        </button>
+                        <button
+                            class="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-lowest text-secondary shadow-sm hover:scale-95 transition-transform">
+                            <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- Parent Profile Card -->
+            <section class="mb-14">
+                <div
+                    class="bg-surface-container-lowest rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-primary-container/20 organic-blob -mr-12 -mt-12 pointer-events-none">
+                    </div>
+                    <div class="relative">
+                        <div
+                            class="w-32 h-32 rounded-full border-4 border-primary-container overflow-hidden p-1 shadow-inner bg-primary-container flex items-center justify-center">
+                            <img id="profile-avatar" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
+                            <span id="profile-avatar-icon" class="material-symbols-outlined text-primary text-6xl"
+                                style="font-variation-settings: 'FILL' 1;">account_circle</span>
+                        </div>
+                        <a href="editparentprofile.html"
+                            class="absolute bottom-0 right-0 bg-secondary text-on-secondary w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                        </a>
+                    </div>
+                    <div class="flex-1 text-center md:text-left">
+                        <h3 class="text-2xl font-bold text-on-surface font-headline mb-1" id="profile-name">—</h3>
+                        <div class="flex flex-col gap-1 text-on-surface-variant font-medium">
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">mail</span>
+                                <span id="profile-email">Not provided</span>
+                            </span>
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">phone</span>
+                                <span id="profile-phone">Not set</span>
+                            </span>
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">home_pin</span>
+                                <span id="profile-address">Not set</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="editparentprofile.html"
+                            class="px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold shadow-sm hover:bg-primary-fixed-dim transition-colors active:scale-95 duration-150">
+                            Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- My Little Explorers Section -->
+            <section class="mb-14">
+                <h3 class="text-xl font-bold text-primary font-headline mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined" data-icon="child_care">child_care</span>
+                    My Little Explorers
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Jamie's Card -->
+                    <div
+                        class="bg-surface-container-low rounded-lg p-6 flex items-center gap-5 hover:bg-surface-container-high transition-colors cursor-pointer group">
+                        <img alt="Jamie"
+                            class="w-20 h-20 rounded-lg object-cover shadow-sm group-hover:scale-105 transition-transform"
+                            data-alt="close-up portrait of a happy preschool girl with curly hair laughing, outdoor soft focus background, bright and cheerful"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRvF2exYikoNNQ2nL2I6-eeh-VZWHJCxp6aLt0LXCcvIDSPYjveMndxjPKEkODN62-IIj9EntCS18md0sUPvq9gUxQfw7AEj0OkncaaVIMvQawAs2zYiHI-6aLhtl0pOfi01AW8RA-cyh8oQPxKzKEl-sFmdRNcitPXIWIx5nTIsdnLFU1n3ullfpuyT-Grp6LXm8jzJ6oEI3565J3x4ILM3eJtioKjbpifz7wxrbR8-iskffnygmz0_uG9Xd-T3h-Ti-Ag9UJt2U">
+                        <div>
+                            <h4 class="text-lg font-bold text-on-surface">Jamie</h4>
+                            <p class="text-sm text-on-surface-variant">4 Years Old</p>
+                            <span
+                                class="inline-block mt-2 px-3 py-1 bg-tertiary-container text-on-tertiary-container text-xs font-bold rounded-full">
+                                Little Sprouts B
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Placeholder / Add New -->
+                </div>
+            </section>
+            <!-- Account Settings Grid (Bento Style) -->
+            <section class="mb-14">
+                <h3 class="text-xl font-bold text-primary font-headline mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined" data-icon="tune">tune</span>
+                    Account Preferences
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
+                        <div
+                            class="w-12 h-12 rounded-full bg-primary-container/30 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined"
+                                data-icon="notifications_active">notifications_active</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface">Notifications</h4>
+                            <p class="text-sm text-on-surface-variant">Manage daily reports and alerts</p>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
+                        <div
+                            class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined" data-icon="security">security</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface">Privacy &amp; Security</h4>
+                            <p class="text-sm text-on-surface-variant">Update password and safety</p>
+                        </div>
+                    </div>
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
+                        <div
+                            class="w-12 h-12 rounded-full bg-tertiary-container/30 flex items-center justify-center text-tertiary">
+                            <span class="material-symbols-outlined" data-icon="language">language</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface">Language</h4>
+                            <p class="text-sm text-on-surface-variant">English (US)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Sign Out Section -->
+            <footer class="mt-20 pt-8 border-t border-outline-variant/10 flex justify-center">
+                <button id="logout-btn"
+                    class="flex items-center gap-3 px-10 py-4 bg-error-container/10 text-error-dim rounded-full font-bold hover:bg-error-container/20 transition-colors active:scale-95 duration-150">
+                    <span class="material-symbols-outlined">logout</span>
+                    Logout from Portal
+                </button>
+            </footer>
+        </main>
+    </div>
+    <script>
+        const accountId = sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
+
+        // Populate profile by fetching from API
+        (async () => {
+            try {
+                const res = await fetch(`/api/profile/${accountId}`);
+                if (!res.ok) return;
+                const p = await res.json();
+
+                document.getElementById('profile-name').textContent = p.fullName || 'Parent';
+                document.getElementById('profile-email').textContent = p.email || 'Not provided';
+                document.getElementById('profile-phone').textContent = p.phoneNumber || 'Not set';
+                document.getElementById('profile-address').textContent = p.address || 'Not set';
+
+                if (p.profileImageUrl) {
+                    const img = document.getElementById('profile-avatar');
+                    img.src = p.profileImageUrl;
+                    img.classList.remove('hidden');
+                    document.getElementById('profile-avatar-icon').classList.add('hidden');
+                }
+            } catch (_) {
+                // Fallback to storage values
+                document.getElementById('profile-name').textContent =
+                    sessionStorage.getItem('fullName') || localStorage.getItem('fullName') || 'Parent';
+                document.getElementById('profile-email').textContent =
+                    sessionStorage.getItem('email') || localStorage.getItem('email') || 'Not provided';
+            }
+        })();
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = 'login.html';
+        });
+    </script>
+</body>
+
+</html>

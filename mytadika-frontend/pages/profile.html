@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT,TEACHER,ADMIN">
+
+<div class="fixed -top-24 -right-24 w-96 h-96 bg-secondary-cont opacity-30 blob -z-10 pointer-events-none"></div>
+<div class="fixed bottom-20 -left-20 w-72 h-72 bg-primary opacity-10 blob -z-10 pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center justify-between px-8 py-4">
+    <h1 class="text-xl font-bold text-ink">Profile</h1>
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-ink-muted cursor-pointer">notifications</span>
+      <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-10 max-w-5xl mx-auto w-full space-y-10">
+
+    <!-- Profile card -->
+    <section class="relative overflow-hidden bg-surface rounded-xl p-8 flex flex-col md:flex-row items-center gap-8"
+      style="box-shadow:0 12px 32px -4px rgba(74,63,53,.08)">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 blob pointer-events-none -mr-8 -mt-8"></div>
+      <div class="relative flex-shrink-0">
+        <div id="avatar-circle"
+          class="w-28 h-28 rounded-full border-4 border-primary bg-surface-high flex items-center justify-center text-4xl font-extrabold text-ink overflow-hidden">?</div>
+      </div>
+      <div class="flex-1 text-center md:text-left">
+        <h2 id="profile-name" class="text-2xl font-bold text-ink">—</h2>
+        <div class="flex flex-col gap-1.5 mt-2 text-ink-muted">
+          <span class="flex items-center justify-center md:justify-start gap-2 text-sm">
+            <span class="material-symbols-outlined text-secondary" style="font-size:18px">mail</span>
+            <span id="profile-email">—</span>
+          </span>
+          <span class="flex items-center justify-center md:justify-start gap-2 text-sm">
+            <span class="material-symbols-outlined text-secondary" style="font-size:18px">phone</span>
+            <span id="profile-phone">Not set</span>
+          </span>
+          <span id="role-badge" class="inline-block mt-1 px-3 py-1 bg-primary/20 text-ink text-xs font-bold rounded-full w-max mx-auto md:mx-0">—</span>
+        </div>
+      </div>
+      <a href="edit-profile.html" class="btn-primary max-w-xs md:max-w-none px-8 py-3 text-sm">
+        <span class="material-symbols-outlined text-base">edit</span>
+        Edit Profile
+      </a>
+    </section>
+
+    <!-- My Children (PARENT only) -->
+    <section id="children-section" class="hidden space-y-4">
+      <h3 class="text-xl font-bold text-ink flex items-center gap-2">
+        <span class="material-symbols-outlined text-secondary">child_care</span>
+        My Children
+      </h3>
+      <div id="children-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <p class="text-ink-muted text-sm col-span-full">Loading…</p>
+      </div>
+    </section>
+
+    <!-- Account Preferences -->
+    <section class="space-y-4">
+      <h3 class="text-xl font-bold text-ink flex items-center gap-2">
+        <span class="material-symbols-outlined text-secondary">tune</span>
+        Account Preferences
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="bg-surface rounded-xl p-6 flex flex-col gap-3 shadow-card">
+          <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-ink">notifications_active</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-ink">Notifications</h4>
+            <p class="text-sm text-ink-muted mt-1">Manage daily reports and alerts</p>
+          </div>
+          <span class="text-xs text-ink-muted font-medium">Coming soon</span>
+        </div>
+        <div class="bg-surface rounded-xl p-6 flex flex-col gap-3 shadow-card">
+          <div class="w-12 h-12 rounded-full bg-secondary-cont flex items-center justify-center">
+            <span class="material-symbols-outlined text-secondary">security</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-ink">Privacy &amp; Security</h4>
+            <p class="text-sm text-ink-muted mt-1">Update password and safety settings</p>
+          </div>
+          <a href="forgot-password.html" class="text-xs text-secondary font-bold hover:underline">Change password →</a>
+        </div>
+        <div class="bg-surface rounded-xl p-6 flex flex-col gap-3 shadow-card">
+          <div class="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center">
+            <span class="material-symbols-outlined text-success">language</span>
+          </div>
+          <div>
+            <h4 class="font-bold text-ink">Language</h4>
+            <p class="text-sm text-ink-muted mt-1">English (Malaysia)</p>
+          </div>
+          <span class="text-xs text-ink-muted font-medium">Coming soon</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/profile.js"></script>
+</body>
+</html>

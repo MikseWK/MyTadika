@@ -4,25 +4,28 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
-@Table(name = "account")
+@Table(name = "accounts")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Account {
 
+    /**
+     * 28-char application-generated id (UUID without dashes, truncated).
+     * Matches the teammate's schema so both modules share one accounts table.
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "auth_user_id", nullable = false, unique = true, columnDefinition = "uuid")
-    private UUID authUserId;
+    @Column(name = "account_id", length = 28)
+    private String accountId;
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
     @Column(nullable = false, unique = true, length = 100)
     private String email;
+
+    @Column(nullable = false, length = 255)
+    private String password; // BCrypt hashed
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role_type", nullable = false, length = 20)

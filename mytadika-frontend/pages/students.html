@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="TEACHER,ADMIN">
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center justify-between px-8 py-4">
+    <h1 class="text-xl font-bold text-ink">Students</h1>
+    <div class="flex items-center gap-3">
+      <div class="relative">
+        <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <span class="material-symbols-outlined text-ink-muted" style="font-size:18px">search</span>
+        </span>
+        <input id="search-input" type="text" placeholder="Search name, code, parent…"
+          class="pl-9 pr-4 py-2 bg-surface-high border-0 rounded-full text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary w-64 transition-all">
+      </div>
+      <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full">
+
+    <div class="flex items-center justify-between mb-5">
+      <p class="text-sm text-ink-muted">
+        Showing <span id="shown-count" class="font-bold text-ink">—</span> of
+        <span id="total-count" class="font-bold text-ink">—</span> students
+      </p>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-surface rounded-xl overflow-hidden shadow-card">
+      <div id="table-container">
+        <div class="flex items-center justify-center gap-3 py-16 text-ink-muted" id="loading-state">
+          <span class="material-symbols-outlined animate-spin">progress_activity</span>
+          <span class="font-medium">Loading students…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 gap-4">
+      <span class="material-symbols-outlined text-5xl text-ink-muted">group_off</span>
+      <p class="font-bold text-ink-muted">No students found</p>
+      <p class="text-sm text-ink-muted">Try a different search term</p>
+    </div>
+
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/students.js"></script>
+</body>
+</html>

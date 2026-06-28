@@ -4,12 +4,10 @@ import com.mytadika.model.Account;
 import com.mytadika.model.Role;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public class AccountResponseDTO {
 
-    private Long id;
-    private UUID authUserId;
+    private String accountId;
     private String fullName;
     private String email;
     private Role role;
@@ -20,8 +18,7 @@ public class AccountResponseDTO {
 
     public static AccountResponseDTO from(Account account) {
         AccountResponseDTO dto = new AccountResponseDTO();
-        dto.id = account.getId();
-        dto.authUserId = account.getAuthUserId();
+        dto.accountId = account.getAccountId();
         dto.fullName = account.getFullName();
         dto.email = account.getEmail();
         dto.role = account.getRole();
@@ -32,39 +29,12 @@ public class AccountResponseDTO {
         return dto;
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public UUID getAuthUserId() {
-        return authUserId;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public String getAccountId() { return accountId; }
+    public String getFullName() { return fullName; }
+    public String getEmail() { return email; }
+    public Role getRole() { return role; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public String getAddress() { return address; }
+    public String getProfileImageUrl() { return profileImageUrl; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }

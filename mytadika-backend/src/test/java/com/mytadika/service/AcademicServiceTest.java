@@ -41,8 +41,8 @@ class AcademicServiceTest {
     void setUp() {
         academicService = new AcademicService(academicRecordRepository, studentRepository, new GradeCalculationService());
 
-        owningParent = Account.builder().id(1L).fullName("Owning Parent").role(Role.PARENT).build();
-        otherParent = Account.builder().id(2L).fullName("Other Parent").role(Role.PARENT).build();
+        owningParent = Account.builder().accountId("parent01").fullName("Owning Parent").role(Role.PARENT).build();
+        otherParent = Account.builder().accountId("parent02").fullName("Other Parent").role(Role.PARENT).build();
         student = Student.builder()
                 .id(10L)
                 .parent(owningParent)
@@ -87,7 +87,7 @@ class AcademicServiceTest {
 
     @Test
     void listForStudent_allowsTeacher() {
-        Account teacher = Account.builder().id(3L).fullName("Teacher").role(Role.TEACHER).build();
+        Account teacher = Account.builder().accountId("teacher01").fullName("Teacher").role(Role.TEACHER).build();
         when(studentRepository.findById(10L)).thenReturn(Optional.of(student));
         when(academicRecordRepository.findByStudentIdOrderByCreatedAtDesc(10L)).thenReturn(List.of(record));
 

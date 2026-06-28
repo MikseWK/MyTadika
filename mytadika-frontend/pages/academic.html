@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Report | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <style>
+    @media print {
+      #sidebar, header, #no-records, #submit-section, #loading-state,
+      #print-section, .blob, #term-selector-wrap { display: none !important; }
+      .ml-64 { margin-left: 0 !important; }
+      body, main { background: #fff !important; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      main { padding: 0.5rem 1.5rem !important; }
+      #report-section {
+        display: grid !important;
+        grid-template-columns: 2fr 1fr !important;
+        gap: 1rem !important;
+        align-items: start !important;
+      }
+      #term-badge, #grade-badge { display: inline-block !important; }
+      #radar-chart { display: none !important; }
+      #radar-chart-print { display: block !important; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT,TEACHER,ADMIN">
+
+<div class="fixed -top-12 -left-12 w-64 h-64 bg-secondary-cont/20 blob -z-10 blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-10 right-10 w-48 h-48 bg-primary/10 blob -z-10 blur-2xl pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center gap-4 px-8 py-4">
+    <a id="back-btn" href="#" onclick="history.back()" class="p-2 rounded-full hover:bg-surface-high transition-colors">
+      <span class="material-symbols-outlined text-ink-muted">arrow_back</span>
+    </a>
+    <h1 class="text-xl font-bold text-ink">Academic Report</h1>
+    <div class="ml-auto flex items-center gap-3">
+      <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-6xl mx-auto w-full space-y-8">
+
+    <!-- Parent: child switcher — shown only when parent has > 1 child -->
+    <div id="child-switcher" class="hidden flex-wrap items-center gap-2 bg-surface rounded-xl px-6 py-4 shadow-card print:hidden">
+      <span class="text-xs font-bold text-ink-muted uppercase tracking-wide mr-1">Switch child:</span>
+    </div>
+
+    <!-- Student header -->
+    <div class="bg-surface rounded-xl p-8 flex flex-col md:flex-row items-center gap-6"
+      style="box-shadow:0 12px 32px -4px rgba(74,63,53,.08)">
+      <div class="w-24 h-24 rounded-full border-4 border-primary bg-surface-high flex items-center justify-center text-3xl font-extrabold text-ink" id="student-avatar">?</div>
+      <div class="text-center md:text-left">
+        <h1 id="student-name" class="text-3xl font-extrabold text-ink mb-1">—</h1>
+        <p id="student-meta" class="text-ink-muted font-medium">—</p>
+        <div class="flex gap-2 mt-3 flex-wrap justify-center md:justify-start">
+          <span id="term-badge" class="px-4 py-1 bg-primary/20 text-ink text-xs font-bold rounded-full uppercase tracking-wide hidden">—</span>
+          <span id="grade-badge" class="px-4 py-1 bg-success/15 text-success text-xs font-bold rounded-full uppercase tracking-wide hidden">—</span>
+        </div>
+      </div>
+      <!-- Term selector -->
+      <div id="term-selector-wrap" class="ml-auto flex flex-col items-end gap-2">
+        <label class="text-xs font-bold text-ink-muted">Select Term</label>
+        <select id="term-select"
+          class="bg-surface-high border-0 rounded-xl px-4 py-2 font-bold text-ink text-sm outline-none focus:ring-2 focus:ring-primary">
+          <option value="">— No records yet —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main grid: chart + stats + scores -->
+    <div id="report-section" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Radar chart -->
+      <div class="lg:col-span-2 bg-surface rounded-xl p-8 flex flex-col items-center shadow-card">
+        <div class="w-full flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-ink">Subject Performance</h2>
+          <span class="material-symbols-outlined text-ink-muted">analytics</span>
+        </div>
+        <div class="relative w-72 h-72 md:w-80 md:h-80">
+          <canvas id="radar-chart"></canvas>
+          <img id="radar-chart-print" alt="" style="display:none;width:100%;height:100%;position:absolute;top:0;left:0">
+        </div>
+        <!-- Score breakdown table -->
+        <div class="w-full mt-6 border-t border-outline pt-6">
+          <h3 class="text-sm font-bold text-ink-muted uppercase tracking-wider mb-3">Subject Scores</h3>
+          <div id="scores-table" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Stats + actions -->
+      <div class="flex flex-col gap-6">
+
+        <!-- Grade summary card -->
+        <div class="bg-primary rounded-xl p-6 relative overflow-hidden shadow-card">
+          <div class="absolute top-0 right-0 p-3 opacity-20 pointer-events-none">
+            <span class="material-symbols-outlined" style="font-size:60px;font-variation-settings:'FILL' 1">trending_up</span>
+          </div>
+          <p class="text-xs font-bold text-ink/60 uppercase tracking-wider mb-2">Average Score</p>
+          <div id="avg-mark" class="text-5xl font-extrabold text-ink mb-1">—</div>
+          <div class="flex items-center gap-2">
+            <span id="final-grade" class="text-2xl font-black text-ink">—</span>
+            <span id="grade-label" class="text-sm font-medium text-ink/70">—</span>
+          </div>
+        </div>
+
+        <!-- Print button (always visible for parent) -->
+        <div id="print-section" class="bg-surface rounded-xl p-6 text-center shadow-card">
+          <div class="w-14 h-14 bg-surface-high rounded-full flex items-center justify-center mx-auto mb-3">
+            <span class="material-symbols-outlined text-ink text-2xl">picture_as_pdf</span>
+          </div>
+          <h4 class="font-bold text-ink mb-1">Need a printed copy?</h4>
+          <p class="text-xs text-ink-muted mb-4">Download the full academic report.</p>
+          <button onclick="window.print()"
+            class="w-full py-3 bg-ink text-surface font-bold rounded-full text-sm hover:bg-ink/80 transition-colors flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">download</span>
+            Download PDF
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- No records state -->
+    <div id="no-records" class="hidden flex flex-col items-center justify-center py-16 gap-4 text-center">
+      <span class="material-symbols-outlined text-5xl text-ink-muted">assignment</span>
+      <p class="font-bold text-ink-muted">No academic records yet</p>
+      <p id="no-records-sub" class="text-sm text-ink-muted max-w-xs">Academic records will appear here once a teacher submits scores.</p>
+    </div>
+
+    <!-- TEACHER: submit form (outside report-section so it shows even with no records) -->
+    <div id="submit-section" class="hidden bg-surface rounded-xl p-6 shadow-card">
+      <h3 class="font-bold text-ink mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-secondary">edit_document</span>
+        Submit Academic Record
+      </h3>
+      <div id="submit-error" class="error-banner hidden mb-4"></div>
+      <div id="submit-success" class="success-banner hidden mb-4"></div>
+      <form id="submit-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-secondary mb-1 px-1">Academic Term</label>
+          <input id="input-term" type="text" placeholder="e.g. Term 1 - 2026"
+            class="w-full bg-surface-high border-0 rounded-xl px-4 py-3 text-sm font-medium text-ink outline-none focus:ring-2 focus:ring-primary">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-secondary mb-2 px-1">Subject Scores</label>
+          <div id="score-rows" class="space-y-2">
+            <!-- dynamic rows injected by JS -->
+          </div>
+          <button type="button" id="add-subject-btn"
+            class="mt-2 flex items-center gap-1 text-xs font-bold text-secondary hover:underline">
+            <span class="material-symbols-outlined" style="font-size:16px">add_circle</span>
+            Add Subject
+          </button>
+        </div>
+        <button type="submit" id="submit-btn" class="btn-primary py-3 text-sm">
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          Submit &amp; Calculate Grade
+        </button>
+      </form>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loading-state" class="flex items-center justify-center gap-3 py-16 text-ink-muted">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      <span class="font-medium">Loading report…</span>
+    </div>
+
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/academic.js"></script>
+</body>
+</html>

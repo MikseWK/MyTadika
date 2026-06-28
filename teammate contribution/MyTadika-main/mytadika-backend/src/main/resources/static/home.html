@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>LittleSprouts Portal - Home</title>
+    <script>
+        // Auth guard — redirect to login if not logged in
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#006b1b",
+                        "surface-container-high": "#e9e3cc",
+                        "secondary": "#8c4a00",
+                        "on-surface": "#312f23",
+                        "secondary-fixed-dim": "#ffb375",
+                        "tertiary-container": "#91f78e",
+                        "on-error": "#ffefec",
+                        "outline": "#7a7768",
+                        "inverse-primary": "#ffd709",
+                        "secondary-fixed": "#ffc69a",
+                        "error-container": "#f95630",
+                        "surface": "#fcf6e3",
+                        "secondary-dim": "#7b4000",
+                        "on-tertiary-fixed": "#00480f",
+                        "on-primary-fixed": "#453900",
+                        "on-background": "#312f23",
+                        "on-tertiary": "#d1ffc8",
+                        "tertiary-fixed": "#91f78e",
+                        "surface-container": "#eee8d3",
+                        "secondary-container": "#ffc69a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#005e17",
+                        "surface-container-low": "#f7f1dc",
+                        "surface-bright": "#fcf6e3",
+                        "on-primary-fixed-variant": "#665500",
+                        "primary-fixed-dim": "#efc900",
+                        "background": "#fcf6e3",
+                        "inverse-on-surface": "#a19d8c",
+                        "tertiary-dim": "#005d16",
+                        "inverse-surface": "#100e05",
+                        "surface-variant": "#e3ddc5",
+                        "on-surface-variant": "#5f5c4d",
+                        "on-primary-container": "#5b4b00",
+                        "on-secondary-fixed": "#532a00",
+                        "surface-tint": "#6c5a00",
+                        "on-error-container": "#520c00",
+                        "surface-dim": "#dbd5bc",
+                        "on-secondary-container": "#6f3a00",
+                        "primary-container": "#ffd709",
+                        "on-primary": "#fff2cd",
+                        "on-secondary": "#fff0e7",
+                        "tertiary-fixed-dim": "#83e881",
+                        "on-tertiary-fixed-variant": "#00691a",
+                        "on-secondary-fixed-variant": "#7c4100",
+                        "outline-variant": "#b2ad9c",
+                        "surface-container-highest": "#e3ddc5",
+                        "primary-fixed": "#ffd709",
+                        "primary": "#6c5a00",
+                        "error-dim": "#b92902",
+                        "error": "#b02500",
+                        "primary-dim": "#5e4e00"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "label": ["Be Vietnam Pro"]
+                    },
+                    borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .scrapbook-bg {
+            background-image: radial-gradient(circle at 2px 2px, rgba(178, 173, 156, 0.1) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface scrapbook-bg min-h-screen">
+    <!-- Sidebar Navigation Shell -->
+    <aside
+        class="fixed left-0 top-0 h-full flex flex-col py-8 z-40 bg-[#fcf6e3] dark:bg-stone-950 h-screen w-64 rounded-r-[3rem] shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)]">
+        <div class="px-8 mb-10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary" data-icon="school">school</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-[#6c5a00] dark:text-[#ffd709] font-headline tracking-tight">
+                        MyTadika</h1>
+                    <p class="text-xs text-stone-600 dark:text-stone-400 font-medium">Pre-K Class A</p>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 space-y-2 px-2">
+            <!-- Active Tab: Home -->
+            <a class="flex items-center gap-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full px-4 py-3 mx-2 transition-all translate-x-1 duration-200"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="home"
+                    style="font-variation-settings: 'FILL' 1;">home</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Home</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">View Report</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Messages</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Memory Box</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Events</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Health</span>
+            </a>
+            <a class="flex items-center gap-3 text-stone-600 dark:text-stone-400 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="school">school</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Classroom</span>
+            </a>
+        </nav>
+        <div class="px-2 mt-auto space-y-1">
+            <a href="#" onclick="navigateToProfile(); return false;"
+                class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined">account_circle</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Profile</span>
+            </a>
+            <button
+                class="w-full flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined">help</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Help</span>
+            </button>
+        </div>
+    </aside>
+    <!-- Top App Bar Shell -->
+    <header
+        class="fixed top-0 left-64 right-0 z-30 flex justify-between items-center w-[calc(100%-16rem)] px-6 py-4 bg-[#fcf6e3] dark:bg-stone-950 font-['Plus_Jakarta_Sans'] font-bold text-lg no-border background-shift-tonal">
+        <div class="flex-1 flex items-center">
+            <div class="relative w-full max-w-md">
+                <span class="absolute inset-y-0 left-3 flex items-center text-stone-400">
+                    <span class="material-symbols-outlined">search</span>
+                </span>
+                <input
+                    class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full text-sm focus:ring-2 focus:ring-primary-container"
+                    placeholder="Search school updates..." type="text">
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button
+                class="p-2 text-stone-600 hover:bg-[#ffd709]/10 rounded-full transition-colors active:scale-95 duration-150">
+                <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+            </button>
+            <a href="#" onclick="navigateToProfile(); return false;"
+                class="flex items-center gap-3 pl-4 border-l border-outline-variant/15 hover:opacity-75 transition-opacity cursor-pointer">
+                <div class="w-10 h-10 rounded-full bg-primary-container border-2 border-primary-container flex items-center justify-center overflow-hidden"
+                    id="nav-avatar-wrap">
+                    <img id="nav-avatar-img" class="w-full h-full object-cover hidden">
+                    <span id="nav-avatar-icon" class="material-symbols-outlined text-primary text-2xl"
+                        style="font-variation-settings: 'FILL' 1;">account_circle</span>
+                </div>
+                <div class="flex flex-col items-end gap-1 leading-none">
+                    <span class="text-base font-bold leading-tight" style="color:#005312;" id="user-name">Parent</span>
+                    <span class="text-[10px] font-bold tracking-wider uppercase leading-tight" style="color:#eeab00;"
+                        id="user-role-badge"></span>
+                </div>
+            </a>
+        </div>
+    </header>
+    <!-- Main Content Area -->
+    <main class="ml-64 pt-24 px-8 pb-12">
+        <div class="max-w-7xl mx-auto space-y-10">
+            <!-- Hero Section: Bento Layout -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div
+                    class="md:col-span-2 relative overflow-hidden bg-primary-container rounded-xl p-10 flex flex-col justify-center min-h-[300px]">
+                    <!-- Decorative Bloom Blob -->
+                    <div class="absolute -top-20 -right-20 w-64 h-64 bg-secondary-container/30 rounded-full blur-3xl">
+                    </div>
+                    <div class="relative z-10">
+                        <h2 class="text-4xl md:text-5xl font-extrabold text-primary font-headline leading-tight mb-4">
+                            Good Morning, Sarah!</h2>
+                        <p class="text-on-primary-container text-lg max-w-md font-medium">Jamie is having a "Growth
+                            &amp; Giggles" kind of day. He’s already settled into the creative corner!</p>
+                    </div>
+                    <div class="mt-8 flex gap-4">
+                        <span
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-tertiary-container rounded-full text-on-tertiary-container font-bold shadow-sm">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Checked In: 8:15 AM
+                        </span>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-low rounded-xl p-8 flex flex-col items-center justify-center text-center space-y-4">
+                    <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                        <img alt="Child Avatar" class="w-full h-full object-cover"
+                            data-alt="A high-quality, realistic photo of a 4-5 year old girl with a bright, happy smile."
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtyQ-6hLWOVJAYcnmAVNj3Cp6dPuIAPVXWY1EapazSNJ21CB5PRwrNtGcY7s8FMYfuvRO5kau0D-L4ciRlR2KgdxtR3oQXwyyT_7ZFX110W8xrXiNBDETSEN2Jiv3SOSupcTB6Jf3MyCo7cCiZq4kiK3Abkydd0JEoKndkqSXi4r6jlYgbACrGZ3D5Xy9SL-Hl0SQKaaGGZD185stScpZ3f1BZm_wH5uxpfQKw4Ks7Lg1RzUIgyJPrr85hFyVzPJCb1cs9Rs1vfUY">
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-on-surface">Jamie's Today</h3>
+                        <p class="text-sm text-outline font-medium">Pre-K Class A</p>
+                    </div>
+                    <button
+                        class="w-full py-3 bg-surface-container-lowest text-secondary font-bold rounded-full border border-secondary/10 hover:bg-secondary/5 transition-colors">
+                        Change Child
+                    </button>
+                </div>
+            </section>
+            <!-- Grid: Schedule & Highlights -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Today's Schedule (7 Columns) -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-2xl font-bold text-primary font-headline">Today's Schedule</h3>
+                        <span class="text-secondary font-bold text-sm">October 24, 2023</span>
+                    </div>
+                    <div class="space-y-4">
+                        <!-- Activity Card 1 -->
+                        <div class="flex gap-6 items-start group">
+                            <div class="flex flex-col items-center pt-1">
+                                <span class="text-xs font-bold text-outline uppercase tracking-wider">09:00</span>
+                                <div class="w-0.5 h-16 bg-outline-variant/30 mt-2"></div>
+                            </div>
+                            <div
+                                class="flex-1 bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_12px_rgba(49,47,35,0.04)] group-hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed">
+                                        <span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-lg text-on-surface">Story Time &amp; Phonics</h4>
+                                        <p class="text-sm text-outline">Theme: Ocean Adventures</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Activity Card 2 - Active -->
+                        <div class="flex gap-6 items-start group">
+                            <div class="flex flex-col items-center pt-1">
+                                <span class="text-xs font-bold text-primary uppercase tracking-wider">10:30</span>
+                                <div class="w-0.5 h-16 bg-primary-container mt-2"></div>
+                            </div>
+                            <div class="flex-1 bg-primary-container p-6 rounded-lg shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-4">
+                                        <div
+                                            class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-primary">
+                                            <span class="material-symbols-outlined"
+                                                data-icon="nature_people">nature_people</span>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-lg text-on-primary-container">Outdoor Explorations
+                                            </h4>
+                                            <p class="text-sm text-on-primary-container/80">Happening Now • Garden Area
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span
+                                        class="px-3 py-1 bg-white/50 text-primary text-xs font-black rounded-full uppercase">LIVE</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Activity Card 3 -->
+                        <div class="flex gap-6 items-start group">
+                            <div class="flex flex-col items-center pt-1">
+                                <span class="text-xs font-bold text-outline uppercase tracking-wider">12:00</span>
+                                <div class="w-0.5 h-16 bg-outline-variant/30 mt-2"></div>
+                            </div>
+                            <div
+                                class="flex-1 bg-surface-container-lowest p-6 rounded-lg shadow-[0_4px_12px_rgba(49,47,35,0.04)]">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+                                        <span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-lg text-on-surface">Nutritious Lunch</h4>
+                                        <p class="text-sm text-outline">Chicken Stew &amp; Organic Veggies</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Highlights (5 Columns) -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-2xl font-bold text-primary font-headline">Memory Box</h3>
+                        <a class="text-sm font-bold text-secondary hover:underline" href="#">View All</a>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div
+                            class="relative group aspect-square rounded-lg overflow-hidden bg-surface-container-high shadow-md">
+                            <img alt="Class activity"
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                data-alt="Children enthusiastically painting on a large communal canvas with vibrant finger paints"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJupPsxyEZTmeT2GxVhfXuYMxvT9nRCqzu4dmw2iBJgpxXKon-iKf947nVdsfZO1lfwX4dC7PWn0ZW0R5waj0O0z_24h5b7sjPVa7jkjLTLvyhfOSy83lfutdPFzMq6zCatLwrY5RFcAud4s6BFks37Cv-hZg8JgHgvSxXlPuUhc2hDEgxkd44aqcwvyQw4pi6Muy6RSKpzAz2GgYuWKEGt79gJT7NNv_h0utX8NoA4TV3ixOGxfTkYVmgo4MS7Iq0C7JAncA2hYQ">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                <p class="text-white text-xs font-medium">Art Class Friday</p>
+                            </div>
+                        </div>
+                        <div
+                            class="relative group aspect-square rounded-lg overflow-hidden bg-surface-container-high shadow-md">
+                            <img alt="Class activity"
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                data-alt="A group of kindergarten children sitting in a circle listening to a teacher reading a colorful storybook"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwJisbv_fYlFIswjMIL8rRK96ln3GvSRvM2w0Xedo_eEGjjLRAssWP_2W_iC5oDE0Z1IuMFml9TvZk-6n4WqGvyLg1PY5uBT3jE75ptHLg9zOx62hgZYZAa0GFPH9hureUYxcCkNd0WNFgrmMu3uGBa4t3-ZRkMhBc3CPFjsCkhJxqVEOrukmj02NhfRUIObpBS0FcXJOWd-Q0A6hpP6QmmzYBX4KpDPXBfiSXvZQz9dcwKg-DwOnSwUlcxXN6rFthyCvwVW67HMo">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                                <p class="text-white text-xs font-medium">Morning Circle</p>
+                            </div>
+                        </div>
+                        <div
+                            class="col-span-2 relative h-48 rounded-lg overflow-hidden bg-surface-container-high shadow-md">
+                            <img alt="Class activity" class="w-full h-full object-cover"
+                                data-alt="Close up of a child's hands playing with wooden building blocks on a sunlit classroom floor"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetsyvZFH8Zk_cub72sWn0aeKkMx92GS8v3f1j6iQ_p53kug6Y52zLrY6UZ7wGN0sqEwXge66pRaNpmNwGXaOyuTpZtldzTsXRY5OD_d23985nid-n6FpEVxjnS29Km9kWGU219377cz-UamSfhYXRk0h-4z_i-pqkNv2aGqtUjXiv7dkV3dT6VDbXUuSWbxCR6FxlWY8w4td1OecPj9LF9R5JXwht42RoyFzuxvLgvqCjdeIryZvrFgPOP2syMVmjfSLc_6yGN1E">
+                            <div class="absolute top-4 right-4">
+                                <span
+                                    class="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-primary shadow-sm">+5
+                                    more today</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Upcoming Events & Quick Actions -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Events -->
+                <div class="lg:col-span-8 space-y-6">
+                    <h3 class="text-2xl font-bold text-primary font-headline">Upcoming Reminders</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="p-6 bg-surface-container-low rounded-xl flex gap-4 items-start border-l-4 border-secondary-fixed">
+                            <div class="bg-white p-3 rounded-md shadow-sm text-center min-w-[60px]">
+                                <span class="block text-xs font-bold text-outline uppercase">Oct</span>
+                                <span class="block text-2xl font-black text-secondary">27</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-on-surface">School Picture Day</h4>
+                                <p class="text-sm text-outline mt-1">Please dress in smart casual. Photos start at 9:00
+                                    AM.</p>
+                            </div>
+                        </div>
+                        <div
+                            class="p-6 bg-surface-container-low rounded-xl flex gap-4 items-start border-l-4 border-tertiary-fixed">
+                            <div class="bg-white p-3 rounded-md shadow-sm text-center min-w-[60px]">
+                                <span class="block text-xs font-bold text-outline uppercase">Nov</span>
+                                <span class="block text-2xl font-black text-tertiary">02</span>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-on-surface">Parent-Teacher Meet</h4>
+                                <p class="text-sm text-outline mt-1">Slot confirmed: 4:30 PM with Ms. Jenny.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quick Actions -->
+                <div class="lg:col-span-4 space-y-6">
+                    <h3 class="text-2xl font-bold text-primary font-headline">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button
+                            class="w-full flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors group shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary group-hover:bg-white">
+                                    <span class="material-symbols-outlined" data-icon="chat">chat</span>
+                                </div>
+                                <span class="font-bold text-on-surface">Message Teacher</span>
+                            </div>
+                            <span class="material-symbols-outlined text-outline">chevron_right</span>
+                        </button>
+                        <button
+                            class="w-full flex items-center justify-between p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors group shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-error-container/10 flex items-center justify-center text-error group-hover:bg-white">
+                                    <span class="material-symbols-outlined" data-icon="event_busy">event_busy</span>
+                                </div>
+                                <span class="font-bold text-on-surface">Report Absence</span>
+                            </div>
+                            <span class="material-symbols-outlined text-outline">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <!-- FAB: Post a Question / Support -->
+    <script>
+        const fullName = sessionStorage.getItem('fullName') || localStorage.getItem('fullName') || 'Parent';
+        document.getElementById('user-name').textContent = fullName;
+
+        const roleBadge = document.getElementById('user-role-badge');
+        const roleType = sessionStorage.getItem('roleType') || localStorage.getItem('roleType');
+        if (roleBadge && roleType) roleBadge.textContent = roleType + ' ACCOUNT';
+
+        // Load profile image for top-right avatar
+        (async () => {
+            const aid = sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
+            if (!aid) return;
+            try {
+                const res = await fetch(`/api/profile/${aid}`);
+                if (!res.ok) return;
+                const p = await res.json();
+                if (p.profileImageUrl) {
+                    const img = document.getElementById('nav-avatar-img');
+                    img.src = p.profileImageUrl;
+                    img.classList.remove('hidden');
+                    document.getElementById('nav-avatar-icon').classList.add('hidden');
+                }
+            } catch (_) { }
+        })();
+
+        function navigateToProfile() {
+            const role = sessionStorage.getItem('roleType') || localStorage.getItem('roleType');
+            if (role === 'PARENT') {
+                window.location.href = 'parentprofile.html';
+            } else if (role === 'TEACHER') {
+                window.location.href = 'teacherprofile.html';
+            } else if (role === 'ADMIN') {
+                window.location.href = 'adminprofile.html';
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+
+</html>

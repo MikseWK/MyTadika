@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink min-h-screen flex items-center justify-center p-4 md:p-8 overflow-x-hidden">
+
+<!-- Background blobs -->
+<div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 blob -z-10"></div>
+<div class="fixed bottom-[-5%] right-[-5%] w-[30rem] h-[30rem] bg-secondary-cont opacity-50 blob -z-10"></div>
+
+<main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-0 bg-surface rounded-xl overflow-hidden" style="box-shadow: var(--shadow-float)">
+
+  <!-- Left — Branding panel -->
+  <section class="hidden md:flex md:col-span-6 lg:col-span-7 bg-surface-low p-12 flex-col justify-between relative overflow-hidden">
+    <div class="z-10">
+      <div class="flex items-center gap-4 mb-10">
+        <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-md">
+          <span class="material-symbols-outlined text-ink text-3xl" style="font-variation-settings:'FILL' 1">wb_sunny</span>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold text-ink tracking-tight">MyTadika</h1>
+          <p class="text-[10px] font-bold text-secondary uppercase tracking-[.2em]">Nurturing Growth</p>
+        </div>
+      </div>
+      <div class="max-w-md">
+        <h2 class="text-4xl lg:text-5xl font-extrabold text-ink leading-tight mb-6">
+          Join a Community<br>That <span class="text-secondary italic">Cares</span>.
+        </h2>
+        <p class="text-lg text-ink-muted leading-relaxed">
+          Stay connected with your child's teachers, track their growth, and celebrate every little win together.
+        </p>
+      </div>
+    </div>
+
+    <!-- Decorative cards -->
+    <div class="relative h-64 lg:h-72 mt-12">
+      <div class="absolute top-0 left-0 w-64 h-64 bg-white rounded-xl shadow-xl p-5 rotate-[-4deg] z-20 border-4 border-white flex flex-col gap-3">
+        <div class="w-full h-36 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#FFD700,#FF8C42)">
+          <span class="material-symbols-outlined text-white text-6xl" style="font-variation-settings:'FILL' 1">favorite</span>
+        </div>
+        <p class="font-extrabold text-ink text-sm">Trusted by Parents</p>
+        <p class="text-ink-muted text-xs">Safe, secure, simple</p>
+      </div>
+      <div class="absolute top-8 left-48 w-52 h-56 bg-white rounded-xl shadow-lg p-5 rotate-[5deg] z-10 border-4 border-white flex flex-col gap-3">
+        <div class="w-full h-28 rounded-lg flex items-center justify-center" style="background:linear-gradient(135deg,#6BCB77,#4CAF50)">
+          <span class="material-symbols-outlined text-white text-5xl" style="font-variation-settings:'FILL' 1">health_and_safety</span>
+        </div>
+        <p class="font-extrabold text-ink text-sm">Health Tracking</p>
+        <p class="text-ink-muted text-xs">AI-powered insights</p>
+      </div>
+    </div>
+
+    <footer class="mt-auto z-10">
+      <p class="text-sm text-ink-muted/60 font-semibold">© 2025 MyTadika. Grow with us.</p>
+    </footer>
+    <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/20 rounded-full blur-3xl"></div>
+  </section>
+
+  <!-- Right — Register form -->
+  <section class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-16 flex flex-col justify-center bg-surface">
+
+    <!-- Mobile logo -->
+    <div class="md:hidden flex justify-center mb-6">
+      <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg">
+        <span class="material-symbols-outlined text-ink text-4xl" style="font-variation-settings:'FILL' 1">wb_sunny</span>
+      </div>
+    </div>
+
+    <div class="mb-8 text-center md:text-left">
+      <a href="/pages/login.html" class="inline-flex items-center gap-1 text-secondary hover:underline font-bold text-sm mb-4">
+        <span class="material-symbols-outlined text-lg">arrow_back</span> Back to Login
+      </a>
+      <h2 class="text-3xl font-extrabold text-ink mb-2">Create Parent Account</h2>
+      <p class="text-ink-muted font-medium">Join our blooming community of families.</p>
+    </div>
+
+    <!-- Error / success messages -->
+    <div id="error-msg"   class="error-banner   mb-4 hidden"></div>
+    <div id="success-msg" class="success-banner mb-4 hidden"></div>
+
+    <form id="register-form" class="space-y-4">
+      <!-- Full Name -->
+      <div class="space-y-1">
+        <label class="block text-sm font-bold text-ink-muted px-2" for="name">Full Name</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">person</span>
+          <input id="name" type="text" required autocomplete="name" placeholder="Ahmad bin Abdullah"
+            class="input-pill" style="padding-left:3rem">
+        </div>
+      </div>
+      <!-- Email -->
+      <div class="space-y-1">
+        <label class="block text-sm font-bold text-ink-muted px-2" for="email">Email Address</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">mail</span>
+          <input id="email" type="email" required autocomplete="email" placeholder="hello@example.com"
+            class="input-pill" style="padding-left:3rem">
+        </div>
+      </div>
+      <!-- Password -->
+      <div class="space-y-1">
+        <label class="block text-sm font-bold text-ink-muted px-2" for="password">Password</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">key</span>
+          <input id="password" type="password" required autocomplete="new-password"
+            placeholder="At least 8 characters"
+            class="input-pill" style="padding-left:3rem;padding-right:3rem">
+          <button type="button" id="toggle-pw"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors">
+            <span id="toggle-pw-icon" class="material-symbols-outlined">visibility</span>
+          </button>
+        </div>
+        <p class="text-[10px] px-2 text-ink-muted/70 font-semibold uppercase tracking-wider">Minimum 8 characters</p>
+      </div>
+      <!-- Confirm Password -->
+      <div class="space-y-1">
+        <label class="block text-sm font-bold text-ink-muted px-2" for="confirm-password">Confirm Password</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none">lock</span>
+          <input id="confirm-password" type="password" required autocomplete="new-password"
+            placeholder="Repeat your password"
+            class="input-pill" style="padding-left:3rem;padding-right:3rem">
+          <button type="button" id="toggle-cpw"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors">
+            <span id="toggle-cpw-icon" class="material-symbols-outlined">visibility</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" id="submit-btn" class="btn-primary mt-2">
+        <span id="btn-text">Start the Adventure</span>
+        <span class="material-symbols-outlined text-2xl">rocket_launch</span>
+      </button>
+    </form>
+
+    <div class="mt-8 text-center">
+      <p class="text-ink-muted font-bold">
+        Already have an account?
+        <a href="/pages/login.html" class="text-secondary hover:underline ml-1 underline underline-offset-4">Sign In</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="../js/pages/register.js"></script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Home | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="TEACHER,ADMIN">
+
+<div class="fixed -top-40 -left-24 w-[500px] h-[500px] bg-primary/10 blob -z-10 pointer-events-none"></div>
+<div class="fixed -bottom-24 -right-24 w-80 h-80 bg-secondary-cont/30 blob -z-10 pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center justify-between px-8 py-4">
+    <div class="text-sm font-medium text-ink-muted" id="header-date"></div>
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-ink-muted select-none cursor-pointer">notifications</span>
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-ink" id="header-name"></span>
+        <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full space-y-8">
+
+    <!-- Hero -->
+    <section class="relative overflow-hidden bg-primary rounded-xl p-8 md:p-10 flex flex-col md:flex-row items-start justify-between gap-6"
+      style="box-shadow:0 8px 24px rgba(255,215,0,.25)">
+      <div class="relative z-10 flex-1">
+        <h2 id="greeting-text" class="text-3xl md:text-4xl font-extrabold text-ink leading-tight mb-2">Good morning, Teacher!</h2>
+        <p class="text-ink/70 font-medium mb-6">Let's make today another wonderful day of learning.</p>
+        <div class="inline-flex items-center gap-4 bg-surface/70 backdrop-blur rounded-xl p-4 shadow-sm">
+          <div class="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-success text-2xl" style="font-variation-settings:'FILL' 1">check_circle</span>
+          </div>
+          <div>
+            <p class="text-xs text-ink-muted font-medium">Today's Summary</p>
+            <p id="student-count-hero" class="text-2xl font-extrabold text-ink">— <span class="text-base font-normal text-ink-muted">students</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="absolute -top-8 -right-8 text-primary-dim opacity-20 pointer-events-none">
+        <span class="material-symbols-outlined" style="font-size:140px">wb_sunny</span>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Left 2-col -->
+      <div class="lg:col-span-2 space-y-8">
+
+        <!-- Quick Actions -->
+        <section>
+          <h3 class="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">bolt</span>
+            Quick Actions
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="students.html" class="bg-surface rounded-xl p-4 flex flex-col items-center gap-3 hover:bg-primary/10 transition-colors text-center h-28 shadow-card group">
+              <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-ink">groups</span>
+              </div>
+              <span class="text-sm font-semibold text-ink">Student Reports</span>
+            </a>
+            <a href="health.html" class="bg-surface rounded-xl p-4 flex flex-col items-center gap-3 hover:bg-success/10 transition-colors text-center h-28 shadow-card group">
+              <div class="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-success">medical_services</span>
+              </div>
+              <span class="text-sm font-semibold text-ink">Health Records</span>
+            </a>
+            <div class="bg-surface rounded-xl p-4 flex flex-col items-center gap-3 text-center h-28 shadow-card opacity-50 cursor-not-allowed">
+              <div class="w-12 h-12 rounded-full bg-surface-high flex items-center justify-center">
+                <span class="material-symbols-outlined text-ink-muted">campaign</span>
+              </div>
+              <span class="text-sm font-semibold text-ink-muted">Broadcast</span>
+            </div>
+            <div class="bg-surface rounded-xl p-4 flex flex-col items-center gap-3 text-center h-28 shadow-card opacity-50 cursor-not-allowed">
+              <div class="w-12 h-12 rounded-full bg-surface-high flex items-center justify-center">
+                <span class="material-symbols-outlined text-ink-muted">photo_camera</span>
+              </div>
+              <span class="text-sm font-semibold text-ink-muted">Add Photo</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Active Classes -->
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-ink flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary">groups</span>
+              Active Classes
+            </h3>
+            <span class="text-xs text-ink-muted bg-surface-high px-3 py-1 rounded-full">Managed by school admin</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-surface rounded-xl p-6 relative overflow-hidden hover:-translate-y-1 transition-transform shadow-card">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-success/10 rounded-bl-full pointer-events-none"></div>
+              <span class="inline-block px-3 py-1 bg-success/15 text-success text-xs font-bold rounded-full mb-3">In Session</span>
+              <h4 class="font-bold text-ink">Pre-K Class A</h4>
+              <p class="text-sm text-ink-muted mb-4">Ages 4–5 · Room 102</p>
+              <a href="students.html" class="text-sm font-bold text-secondary hover:underline">View Students →</a>
+            </div>
+            <div class="bg-surface rounded-xl p-6 relative overflow-hidden hover:-translate-y-1 transition-transform shadow-card opacity-70">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-surface-high rounded-bl-full pointer-events-none"></div>
+              <span class="inline-block px-3 py-1 bg-surface-high text-ink-muted text-xs font-bold rounded-full mb-3">Upcoming</span>
+              <h4 class="font-bold text-ink">Toddler Room 1</h4>
+              <p class="text-sm text-ink-muted mb-4">Ages 2–3 · Room 104</p>
+              <p class="text-xs text-ink-muted flex items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:14px">schedule</span>Starts 1:00 PM
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Today's Schedule -->
+        <section>
+          <h3 class="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">calendar_today</span>
+            Today's Schedule
+          </h3>
+          <div class="bg-surface rounded-xl p-6 shadow-card">
+            <div class="relative border-l-2 border-outline ml-4 space-y-8 pb-2">
+              <div class="relative pl-8">
+                <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-surface-high border-2 border-outline"></div>
+                <p class="text-xs font-bold text-ink-muted mb-0.5">08:30 – 09:00 AM</p>
+                <h4 class="font-semibold text-ink-muted line-through">Arrival &amp; Free Play</h4>
+                <span class="text-[10px] font-bold text-ink-muted bg-surface-high px-2 py-0.5 rounded-full">Completed</span>
+              </div>
+              <div class="relative pl-8">
+                <div class="absolute -left-[11px] top-1 w-5 h-5 rounded-full bg-success/20 border-4 border-surface animate-pulse"></div>
+                <div class="bg-success/10 -ml-4 p-4 rounded-xl border border-success/20">
+                  <p class="text-xs font-bold text-success mb-0.5">09:00 – 10:00 AM</p>
+                  <h4 class="font-bold text-ink">Morning Circle Time</h4>
+                  <p class="text-sm text-ink-muted">Pre-K Class A · Room 102</p>
+                  <span class="text-[10px] font-bold text-success bg-success/15 px-3 py-0.5 rounded-full mt-2 inline-block">Happening Now</span>
+                </div>
+              </div>
+              <div class="relative pl-8">
+                <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary/40 border-2 border-surface"></div>
+                <p class="text-xs font-bold text-ink mb-0.5">10:00 – 10:30 AM</p>
+                <h4 class="font-semibold text-ink">Snack Break</h4>
+                <p class="text-sm text-ink-muted">Cafeteria</p>
+              </div>
+              <div class="relative pl-8">
+                <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-primary/40 border-2 border-surface"></div>
+                <p class="text-xs font-bold text-ink mb-0.5">10:30 – 11:30 AM</p>
+                <h4 class="font-semibold text-ink">Outdoor Play</h4>
+                <p class="text-sm text-ink-muted">Playground</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right column -->
+      <div class="space-y-8">
+
+        <!-- Needs Attention -->
+        <section>
+          <h3 class="text-xl font-bold mb-4 flex items-center gap-2" style="color:#b02500">
+            <span class="material-symbols-outlined" style="color:#f95630;font-variation-settings:'FILL' 1">notifications_active</span>
+            Needs Attention
+          </h3>
+          <div id="alerts-panel" class="rounded-xl p-4 border space-y-3 min-h-[80px]"
+            style="background:#fff5f5;border-color:#fce4ec">
+            <div class="flex items-center gap-2 text-ink-muted text-sm py-2">
+              <span class="material-symbols-outlined animate-spin text-base">progress_activity</span>
+              Loading alerts…
+            </div>
+          </div>
+        </section>
+
+        <!-- Recent Messages -->
+        <section>
+          <h3 class="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">forum</span>
+            Recent Messages
+          </h3>
+          <div class="bg-surface rounded-xl p-5 shadow-card">
+            <p class="text-sm text-ink-muted text-center py-4">Messages module coming soon.</p>
+            <div class="pt-3 border-t border-outline">
+              <a href="#" class="w-full block text-center text-sm font-bold text-secondary hover:underline">
+                View All Messages
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Milestone -->
+        <section class="bg-secondary-cont rounded-2xl p-6 text-center relative overflow-hidden">
+          <div class="absolute -top-4 -right-4 w-16 h-16 bg-secondary/10 rounded-full blur-xl pointer-events-none"></div>
+          <div class="relative z-10">
+            <div class="w-14 h-14 mx-auto bg-surface rounded-full flex items-center justify-center mb-3 shadow-sm">
+              <span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings:'FILL' 1">star</span>
+            </div>
+            <h4 class="font-bold text-ink">Keep it up!</h4>
+            <p class="text-sm text-ink-muted mt-2 mb-4">Your students are making great progress this term.</p>
+            <a href="students.html" class="inline-block px-5 py-2 bg-surface text-secondary font-bold text-sm rounded-full shadow-sm hover:bg-primary/10 transition-colors">
+              View Students
+            </a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/dashboard-teacher.js"></script>
+</body>
+</html>

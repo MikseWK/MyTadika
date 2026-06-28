@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classroom | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT,TEACHER,ADMIN">
+
+<div class="fixed -top-20 -right-20 w-72 h-72 bg-primary/8 blob -z-10 blur-3xl pointer-events-none"></div>
+<div class="fixed bottom-0 left-20 w-48 h-48 bg-secondary-cont/20 blob -z-10 blur-2xl pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center justify-between px-8 py-4">
+    <h1 class="text-xl font-bold text-ink">Classroom</h1>
+    <div id="header-avatar" class="w-9 h-9 rounded-full bg-primary flex items-center justify-center font-bold text-ink text-sm">?</div>
+  </header>
+
+  <main class="flex-1 px-8 py-8 max-w-6xl mx-auto w-full space-y-8">
+
+    <!-- Hero banner -->
+    <section class="relative overflow-hidden bg-primary rounded-xl p-8 md:p-10"
+      style="box-shadow:0 8px 24px rgba(255,215,0,.20)">
+      <div class="relative z-10">
+        <h2 id="hero-title" class="text-3xl font-extrabold text-ink mb-2">Your Classroom</h2>
+        <p id="hero-sub" class="text-ink/70 font-medium">Where learning and growth happen every day.</p>
+      </div>
+      <div class="absolute -top-8 -right-8 text-primary-dim opacity-15 pointer-events-none">
+        <span class="material-symbols-outlined" style="font-size:140px;font-variation-settings:'FILL' 1">school</span>
+      </div>
+    </section>
+
+    <!-- Loading state -->
+    <div id="loading-state" class="flex items-center justify-center gap-3 py-16 text-ink-muted">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      <span class="font-medium">Loading…</span>
+    </div>
+
+    <!-- Classroom cards grid -->
+    <div id="classroom-grid" class="hidden">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="grid-title" class="text-xl font-bold text-ink flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary">groups</span>
+          Active Classrooms
+        </h3>
+        <span id="grid-count" class="text-xs text-ink-muted bg-surface-high px-3 py-1 rounded-full font-bold"></span>
+      </div>
+      <div id="cards-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+    </div>
+
+    <!-- Coming soon features (shared across all roles) -->
+    <div id="coming-soon-section" class="hidden">
+      <h3 class="text-xl font-bold text-ink mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-ink-muted">pending</span>
+        More Features Coming Soon
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-surface rounded-xl p-6 shadow-card opacity-60">
+          <div class="w-12 h-12 rounded-full bg-surface-high flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-ink-muted">photo_library</span>
+          </div>
+          <h4 class="font-bold text-ink mb-1">Memory Box</h4>
+          <p class="text-sm text-ink-muted">Photos and milestones from the classroom.</p>
+          <span class="inline-block mt-3 px-3 py-1 bg-surface-high text-ink-muted text-xs font-bold rounded-full">Coming Soon</span>
+        </div>
+        <div class="bg-surface rounded-xl p-6 shadow-card opacity-60">
+          <div class="w-12 h-12 rounded-full bg-surface-high flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-ink-muted">campaign</span>
+          </div>
+          <h4 class="font-bold text-ink mb-1">Announcements</h4>
+          <p class="text-sm text-ink-muted">Stay updated with classroom news and events.</p>
+          <span class="inline-block mt-3 px-3 py-1 bg-surface-high text-ink-muted text-xs font-bold rounded-full">Coming Soon</span>
+        </div>
+        <div class="bg-surface rounded-xl p-6 shadow-card opacity-60">
+          <div class="w-12 h-12 rounded-full bg-surface-high flex items-center justify-center mb-3">
+            <span class="material-symbols-outlined text-ink-muted">forum</span>
+          </div>
+          <h4 class="font-bold text-ink mb-1">Messages</h4>
+          <p class="text-sm text-ink-muted">Direct messages between parents and teachers.</p>
+          <span class="inline-block mt-3 px-3 py-1 bg-surface-high text-ink-muted text-xs font-bold rounded-full">Coming Soon</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20 gap-4 text-center">
+      <span class="material-symbols-outlined text-5xl text-ink-muted">school</span>
+      <p class="font-bold text-ink-muted">No classrooms found</p>
+      <p class="text-sm text-ink-muted max-w-xs">Classrooms are assigned by the school administrator.</p>
+    </div>
+
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/classroom.js"></script>
+</body>
+</html>

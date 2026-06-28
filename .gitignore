@@ -1,5 +1,6 @@
 # Secrets / local config
 mytadika-backend/src/main/resources/application.properties
+mytadika-backend/src/main/resources/application-local.properties
 .env
 
 # Maven build output

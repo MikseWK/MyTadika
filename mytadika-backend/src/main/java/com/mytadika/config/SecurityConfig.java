@@ -1,63 +1,50 @@
 package com.mytadika.config;
 
-import com.mytadika.security.SupabaseJwtAuthConverter;
-import org.springframework.beans.factory.annotation.Value;
+import com.mytadika.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
-/**
- * Spring Boot never issues tokens here — Supabase Auth does that client-side.
- * This config only verifies the Supabase-issued JWT (as an OAuth2 Resource
- * Server, via JWKS) and maps it to a local Account/role through
- * {@link SupabaseJwtAuthConverter}.
- */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final SupabaseJwtAuthConverter supabaseJwtAuthConverter;
+    private final JwtAuthenticationFilter jwtFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
-    public SecurityConfig(SupabaseJwtAuthConverter supabaseJwtAuthConverter,
-                           CorsConfigurationSource corsConfigurationSource) {
-        this.supabaseJwtAuthConverter = supabaseJwtAuthConverter;
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter,
+                          CorsConfigurationSource corsConfigurationSource) {
+        this.jwtFilter = jwtFilter;
         this.corsConfigurationSource = corsConfigurationSource;
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtDecoder jwtDecoder) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/accounts/complete-profile", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt
-                                .decoder(jwtDecoder)
-                                .jwtAuthenticationConverter(supabaseJwtAuthConverter)));
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    // Supabase's asymmetric signing-keys system issues ES256 tokens, but
-    // NimbusJwtDecoder.withJwkSetUri(...) defaults to trusting RS256 only —
-    // without this, every Supabase JWT is rejected with "Signed JWT rejected:
-    // Another algorithm expected, or no matching key(s) found", even though
-    // the token itself is perfectly valid.
     @Bean
-    public JwtDecoder jwtDecoder(
-            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") String jwkSetUri) {
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri)
-                .jwsAlgorithm(SignatureAlgorithm.ES256)
-                .build();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

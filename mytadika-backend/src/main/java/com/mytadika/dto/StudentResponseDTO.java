@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public class StudentResponseDTO {
 
     private Long id;
-    private Long parentId;
+    private String parentId;
     private String parentName;
     private Long classroomId;
     private String className;
@@ -24,7 +24,7 @@ public class StudentResponseDTO {
     public static StudentResponseDTO from(Student student) {
         StudentResponseDTO dto = new StudentResponseDTO();
         dto.id = student.getId();
-        dto.parentId = student.getParent().getId();
+        dto.parentId = student.getParent().getAccountId();
         dto.parentName = student.getParent().getFullName();
         if (student.getClassroom() != null) {
             dto.classroomId = student.getClassroom().getId();
@@ -44,7 +44,7 @@ public class StudentResponseDTO {
         return id;
     }
 
-    public Long getParentId() {
+    public String getParentId() {
         return parentId;
     }
 

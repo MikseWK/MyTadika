@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile | MyTadika</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FFD700', 'primary-dim': '#E6C200',
+            secondary: '#FF8C42', 'secondary-cont': '#FFF4E1',
+            bg: '#FFFDF5', surface: '#FFFFFF',
+            'surface-low': '#FFF9EB', 'surface-high': '#F7F2E9',
+            ink: '#4A3F35', 'ink-muted': '#857668', outline: '#E8E2D9',
+            success: '#4CAF50', warning: '#FF9F43', danger: '#FF6B6B'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+          borderRadius: { DEFAULT: '2rem', lg: '2.5rem', full: '9999px' },
+          boxShadow: { card: '0 2px 8px rgba(0,0,0,.08)' }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-bg text-ink" data-roles="PARENT,TEACHER,ADMIN">
+
+<div class="fixed top-[-10%] right-[-5%] w-[40vw] h-[40vw] blob bg-primary/10 -z-10 pointer-events-none"></div>
+<div class="fixed bottom-[-10%] left-[-5%] w-[30vw] h-[30vw] blob bg-secondary-cont/30 -z-10 pointer-events-none"></div>
+
+<aside id="sidebar" class="fixed left-0 top-0 h-screen w-64 bg-surface flex flex-col py-8 z-40 rounded-r-2xl"
+  style="box-shadow:0 12px 32px -4px rgba(74,63,53,.10)"></aside>
+
+<div class="ml-64 min-h-screen flex flex-col">
+  <header class="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-outline flex items-center gap-4 px-8 py-4">
+    <a href="profile.html" class="p-2 rounded-full hover:bg-surface-high transition-colors">
+      <span class="material-symbols-outlined text-ink-muted">arrow_back</span>
+    </a>
+    <h1 class="text-xl font-bold text-ink">Edit Profile</h1>
+  </header>
+
+  <main class="flex-1 px-8 py-10 max-w-3xl mx-auto w-full">
+    <div id="error-msg" class="error-banner hidden mb-6"></div>
+    <div id="success-msg" class="success-banner hidden mb-6"></div>
+
+    <div class="bg-surface rounded-xl p-8 md:p-12 relative overflow-hidden"
+      style="box-shadow:0 12px 32px -4px rgba(74,63,53,.08)">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-secondary-cont/20 rounded-bl-full pointer-events-none"></div>
+
+      <form id="edit-form" class="space-y-8 relative">
+
+        <!-- Avatar -->
+        <div class="flex flex-col items-center gap-2 mb-4">
+          <div class="relative cursor-pointer">
+            <div id="avatar-preview"
+              class="w-28 h-28 rounded-full border-4 border-white ring-4 ring-primary/30 bg-surface-high flex items-center justify-center text-4xl font-extrabold text-ink overflow-hidden"
+              style="box-shadow:0 4px 12px rgba(0,0,0,.12)">?</div>
+            <label for="photo-input"
+              class="absolute bottom-0 right-0 bg-primary text-ink p-2 rounded-full cursor-pointer shadow-md"
+              style="transform:translate(4px,4px)">
+              <span class="material-symbols-outlined" style="font-size:18px">photo_camera</span>
+            </label>
+            <input type="file" id="photo-input" accept="image/*" class="hidden">
+          </div>
+          <span class="text-sm font-semibold text-ink-muted">Change Profile Photo</span>
+        </div>
+
+        <!-- Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-bold text-secondary mb-2 px-1">Full Name</label>
+            <div class="relative">
+              <input id="input-name" type="text" placeholder="Your full name"
+                class="w-full bg-surface-high border-0 rounded-xl px-5 py-4 font-medium text-ink outline-none focus:ring-2 focus:ring-primary transition-all">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-ink-muted" style="font-size:18px">person</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-secondary mb-2 px-1">Email Address</label>
+            <div class="relative">
+              <input id="input-email" type="email" disabled
+                class="w-full bg-surface-high border-0 rounded-xl px-5 py-4 font-medium text-ink-muted italic cursor-not-allowed opacity-60">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-ink-muted opacity-50" style="font-size:18px">lock</span>
+            </div>
+            <p class="mt-1 text-xs text-ink-muted px-1">Email cannot be changed. Contact admin to update.</p>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-secondary mb-2 px-1">Phone Number</label>
+            <div class="relative">
+              <input id="input-phone" type="tel" placeholder="+60 12 345 6789"
+                class="w-full bg-surface-high border-0 rounded-xl px-5 py-4 font-medium text-ink outline-none focus:ring-2 focus:ring-primary transition-all">
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-ink-muted" style="font-size:18px">call</span>
+            </div>
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-bold text-secondary mb-2 px-1">Home Address</label>
+            <div class="relative">
+              <textarea id="input-address" rows="3" placeholder="Your home address"
+                class="w-full bg-surface-high border-0 rounded-xl px-5 py-4 font-medium text-ink outline-none focus:ring-2 focus:ring-primary transition-all resize-none"></textarea>
+              <span class="absolute right-4 top-4 material-symbols-outlined text-ink-muted" style="font-size:18px">location_on</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col-reverse md:flex-row items-center justify-end gap-4 pt-8 border-t border-outline">
+          <a href="profile.html"
+            class="w-full md:w-auto px-10 py-4 rounded-full font-bold text-ink-muted hover:bg-surface-high transition-colors text-center text-sm">
+            Cancel
+          </a>
+          <button type="submit" id="save-btn" class="btn-primary max-w-xs md:max-w-none md:w-auto px-12 text-base">
+            <span class="material-symbols-outlined text-lg">check_circle</span>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script type="module" src="../js/auth/authGuard.js"></script>
+<script type="module" src="../js/pages/edit-profile.js"></script>
+</body>
+</html>
