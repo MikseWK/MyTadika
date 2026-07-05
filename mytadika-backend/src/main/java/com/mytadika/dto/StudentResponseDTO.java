@@ -2,6 +2,7 @@ package com.mytadika.dto;
 
 import com.mytadika.model.Gender;
 import com.mytadika.model.Student;
+import jakarta.persistence.EntityNotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,8 +28,15 @@ public class StudentResponseDTO {
         dto.parentId = student.getParent().getAccountId();
         dto.parentName = student.getParent().getFullName();
         if (student.getClassroom() != null) {
-            dto.classroomId = student.getClassroom().getId();
-            dto.className = student.getClassroom().getClassName();
+            try {
+                dto.classroomId = student.getClassroom().getId();
+                dto.className = student.getClassroom().getClassName();
+            } catch (EntityNotFoundException e) {
+                // Dangling classroom_id (classroom was deleted but student wasn't reassigned) —
+                // surface the student without a class instead of failing the whole list.
+                dto.classroomId = null;
+                dto.className = null;
+            }
         }
         dto.fullName = student.getFullName();
         dto.dateOfBirth = student.getDateOfBirth();

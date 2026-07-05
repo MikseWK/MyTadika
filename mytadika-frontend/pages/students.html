@@ -49,22 +49,22 @@
     </div>
   </header>
 
-  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full">
+  <main class="flex-1 px-8 py-8 max-w-7xl mx-auto w-full space-y-6">
 
-    <div class="flex items-center justify-between mb-5">
+    <!-- Classroom filter + count row -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
       <p class="text-sm text-ink-muted">
         Showing <span id="shown-count" class="font-bold text-ink">—</span> of
         <span id="total-count" class="font-bold text-ink">—</span> students
       </p>
+      <div id="classroom-filter" class="flex flex-wrap gap-2 sm:ml-auto"></div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-surface rounded-xl overflow-hidden shadow-card">
-      <div id="table-container">
-        <div class="flex items-center justify-center gap-3 py-16 text-ink-muted" id="loading-state">
-          <span class="material-symbols-outlined animate-spin">progress_activity</span>
-          <span class="font-medium">Loading students…</span>
-        </div>
+    <!-- Card grid (rendered by JS) -->
+    <div id="table-container">
+      <div class="flex items-center justify-center gap-3 py-20 text-ink-muted" id="loading-state">
+        <span class="material-symbols-outlined animate-spin">progress_activity</span>
+        <span class="font-medium">Loading students…</span>
       </div>
     </div>
 

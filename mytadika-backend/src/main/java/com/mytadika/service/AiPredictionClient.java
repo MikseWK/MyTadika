@@ -75,9 +75,14 @@ public class AiPredictionClient {
         int encoded;
         double confidence = 0.50;
 
+        // Mirrors the trained model's scope: BMI 10-25 is its "normal" range for
+        // undernutrition screening. Outside that range (either direction) the model
+        // was never trained/validated, so flag rather than silently report "normal".
         if (bmi < 12.0)      { status = "severe";   encoded = 2; }
         else if (bmi < 13.5) { status = "moderate";  encoded = 1; }
-        else                 { status = "normal";    encoded = 0; }
+        else if (bmi <= 25.0) { status = "normal";   encoded = 0; }
+        else if (bmi <= 30.0) { status = "moderate"; encoded = 1; }
+        else                  { status = "severe";   encoded = 2; }
 
         boolean isStunted = request.height_cm() < (95.0 - (72 - request.age_months()) * 0.4);
         boolean isWasted  = bmi < 13.0;

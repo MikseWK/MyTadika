@@ -12,13 +12,19 @@ Start-Process powershell -ArgumentList @("-NoExit", "-Command", $backendCmd)
 # Short pause so backend window opens first
 Start-Sleep -Seconds 2
 
+# AI microservice — FastAPI on port 8001 (health advice predictions)
+$aiPython = "C:\Users\Wai Kit Liew\AppData\Local\Programs\Python\Python312\python.exe"
+$aiCmd = "Write-Host 'MyTadika AI Service (FastAPI :8001)' -ForegroundColor Magenta; Set-Location '$root\AI\api'; & '$aiPython' main.py"
+Start-Process powershell -ArgumentList @("-NoExit", "-Command", $aiCmd)
+
 # Frontend — static file server on port 3000
 $frontendCmd = "Write-Host 'MyTadika Frontend (static :3000)' -ForegroundColor Yellow; Set-Location '$root\mytadika-frontend'; npx serve . --listen 3000 --no-clipboard"
 Start-Process powershell -ArgumentList @("-NoExit", "-Command", $frontendCmd)
 
 Write-Host ""
-Write-Host "Two windows launched:" -ForegroundColor Cyan
+Write-Host "Three windows launched:" -ForegroundColor Cyan
 Write-Host "  Backend  -> http://localhost:8080" -ForegroundColor Green
+Write-Host "  AI       -> http://localhost:8001/health" -ForegroundColor Magenta
 Write-Host "  Frontend -> http://localhost:3000/pages/login.html" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "To stop: close the two terminal windows." -ForegroundColor Gray
+Write-Host "To stop: close the three terminal windows." -ForegroundColor Gray

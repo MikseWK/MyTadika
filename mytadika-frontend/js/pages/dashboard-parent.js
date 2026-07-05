@@ -27,6 +27,14 @@ try {
       <h3 class="text-lg font-bold text-ink">${child.fullName}</h3>
       <p class="text-sm text-ink-muted mt-1">${child.className ?? 'No class assigned'}${age != null ? ` · ${age} yrs` : ''}</p>
     `;
+    // Show initials avatar once we know the child's name
+    const childAvatarEl = document.getElementById('child-avatar');
+    const childIconEl = document.getElementById('child-avatar-icon');
+    if (childAvatarEl && childIconEl && child.fullName) {
+      const childInitials = child.fullName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      childIconEl.remove();
+      childAvatarEl.textContent = childInitials;
+    }
     document.getElementById('greeting-sub').textContent =
       `${child.fullName} is ready for a great day of learning!`;
 

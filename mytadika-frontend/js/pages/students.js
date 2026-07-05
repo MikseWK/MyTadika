@@ -6,13 +6,14 @@ initSidebar('students');
 document.getElementById('header-avatar').textContent = (profile.fullName?.[0] ?? '?').toUpperCase();
 
 let allStudents = [];
+let activeClassFilter = '';
 
 function calcAge(dob) {
   if (!dob) return '—';
   return Math.floor((Date.now() - new Date(dob)) / 31_557_600_000) + ' yrs';
 }
 
-function renderTable(students) {
+function renderCards(students) {
   const container = document.getElementById('table-container');
   const emptyState = document.getElementById('empty-state');
   document.getElementById('shown-count').textContent = students.length;
@@ -25,84 +26,121 @@ function renderTable(students) {
   emptyState.classList.add('hidden');
 
   container.innerHTML = `
-    <table class="w-full">
-      <thead class="bg-surface-high">
-        <tr class="text-left text-xs font-bold text-ink-muted uppercase tracking-wider">
-          <th class="px-6 py-4">Student</th>
-          <th class="px-6 py-4">Age</th>
-          <th class="px-6 py-4">Gender</th>
-          <th class="px-6 py-4">Parent</th>
-          <th class="px-6 py-4">Class</th>
-          <th class="px-6 py-4">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-outline">
-        ${students.map(s => `
-          <tr class="hover:bg-surface-low transition-colors cursor-pointer" data-student-id="${s.id}">
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center font-bold text-ink text-sm flex-shrink-0">
-                  ${s.fullName?.[0]?.toUpperCase() ?? '?'}
-                </div>
-                <div>
-                  <p class="font-bold text-ink text-sm">${s.fullName}</p>
-                  ${s.studentCode ? `<p class="text-xs text-ink-muted">${s.studentCode}</p>` : ''}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      ${students.map(s => {
+        const initials = s.fullName?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() ?? '?';
+        const age = calcAge(s.dateOfBirth);
+        const gender = s.gender ? (s.gender.charAt(0) + s.gender.slice(1).toLowerCase()) : null;
+        return `
+          <div class="bg-surface rounded-2xl p-6 flex flex-col gap-4 shadow-card hover:-translate-y-1 hover:shadow-lg transition-all duration-200 cursor-pointer" data-student-id="${s.id}">
+            <div class="flex items-start gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center font-extrabold text-xl text-ink flex-shrink-0">
+                ${initials}
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="font-bold text-ink text-base truncate">${s.fullName}</h3>
+                ${s.studentCode ? `<p class="text-xs text-ink-muted mt-0.5">${s.studentCode}</p>` : ''}
+                <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                  ${s.className
+                    ? `<span class="px-2.5 py-0.5 bg-primary/20 text-ink text-xs font-bold rounded-full">${s.className}</span>`
+                    : '<span class="text-xs text-ink-muted">No class</span>'}
                 </div>
               </div>
-            </td>
-            <td class="px-6 py-4 text-sm text-ink-muted">${calcAge(s.dateOfBirth)}</td>
-            <td class="px-6 py-4 text-sm text-ink-muted">${s.gender ?? '—'}</td>
-            <td class="px-6 py-4 text-sm text-ink-muted">${s.parentName ?? '—'}</td>
-            <td class="px-6 py-4">
-              ${s.className
-                ? `<span class="px-3 py-1 bg-primary/20 text-ink text-xs font-bold rounded-full">${s.className}</span>`
-                : '<span class="text-xs text-ink-muted">No class</span>'}
-            </td>
-            <td class="px-6 py-4 js-action-cell">
-              <div class="flex items-center gap-1">
-                <button data-go="academic" class="p-2 rounded-full hover:bg-primary/20 transition-colors" title="Academic report">
-                  <span class="material-symbols-outlined text-ink" style="font-size:18px">assessment</span>
-                </button>
-                <button data-go="health" class="p-2 rounded-full hover:bg-success/15 transition-colors" title="Health record">
-                  <span class="material-symbols-outlined text-success" style="font-size:18px">medical_services</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-ink-muted flex-wrap">
+              <span class="flex items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:14px">cake</span>
+                ${age}
+              </span>
+              ${gender ? `<span class="flex items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:14px">person</span>
+                ${gender}
+              </span>` : ''}
+              ${s.parentName ? `<span class="flex items-center gap-1 min-w-0">
+                <span class="material-symbols-outlined flex-shrink-0" style="font-size:14px">family_restroom</span>
+                <span class="truncate">${s.parentName}</span>
+              </span>` : ''}
+            </div>
+            <div class="flex items-center gap-2 pt-3 border-t border-outline card-actions">
+              <button data-go="academic" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface-high rounded-xl text-xs font-bold text-ink hover:bg-primary/20 transition-colors">
+                <span class="material-symbols-outlined" style="font-size:15px">assessment</span>
+                Academic
+              </button>
+              <button data-go="health" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-surface-high rounded-xl text-xs font-bold text-ink hover:bg-success/15 transition-colors">
+                <span class="material-symbols-outlined text-success" style="font-size:15px">medical_services</span>
+                Health
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
   `;
 
   container.addEventListener('click', (e) => {
-    const row = e.target.closest('tr[data-student-id]');
-    if (!row) return;
-    const id = row.dataset.studentId;
+    const card = e.target.closest('[data-student-id]');
+    if (!card) return;
+    const id = card.dataset.studentId;
     const actionBtn = e.target.closest('[data-go]');
     if (actionBtn) {
       const dest = actionBtn.dataset.go === 'health' ? 'health' : 'academic';
-      console.log(`[students] ${dest} button clicked — id:`, id);
       localStorage.setItem('selectedStudentId', id);
       location.href = `${dest}.html?id=${id}`;
       return;
     }
-    if (!e.target.closest('.js-action-cell')) {
-      console.log('[students] row clicked — id:', id);
+    if (!e.target.closest('.card-actions')) {
       localStorage.setItem('selectedStudentId', id);
       location.href = `academic.html?id=${id}`;
     }
   });
 }
 
+function buildClassroomFilter(students) {
+  const classrooms = [...new Set(students.map(s => s.className).filter(Boolean))].sort();
+  const filterContainer = document.getElementById('classroom-filter');
+  if (!filterContainer || classrooms.length < 2) return;
+
+  const btnBase = 'px-4 py-1.5 rounded-full text-xs font-bold transition-colors';
+  const btnActive = `${btnBase} bg-primary text-ink`;
+  const btnInactive = `${btnBase} bg-surface-high text-ink-muted hover:bg-primary/20`;
+
+  const renderFilter = () => {
+    filterContainer.innerHTML = [
+      { label: 'All Classes', value: '' },
+      ...classrooms.map(c => ({ label: c, value: c })),
+    ].map(f => `
+      <button class="${f.value === activeClassFilter ? btnActive : btnInactive}" data-class="${f.value}">
+        ${f.label}
+      </button>
+    `).join('');
+    filterContainer.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeClassFilter = btn.dataset.class;
+        renderFilter();
+        const filtered = activeClassFilter
+          ? allStudents.filter(s => s.className === activeClassFilter)
+          : allStudents;
+        const q = document.getElementById('search-input').value.toLowerCase();
+        renderCards(q ? filtered.filter(s =>
+          s.fullName?.toLowerCase().includes(q) ||
+          s.studentCode?.toLowerCase().includes(q) ||
+          s.parentName?.toLowerCase().includes(q)
+        ) : filtered);
+      });
+    });
+  };
+  renderFilter();
+}
+
 // Load
 try {
   const { data } = await api.get('/students');
   allStudents = data;
-  console.log('[students] loaded:', allStudents.length, 'first item:', allStudents[0]);
   document.getElementById('total-count').textContent = allStudents.length;
   document.getElementById('shown-count').textContent = allStudents.length;
-  document.getElementById('table-container').innerHTML = '';
-  renderTable(allStudents);
+  document.getElementById('loading-state')?.remove();
+  renderCards(allStudents);
+  buildClassroomFilter(allStudents);
 } catch {
   document.getElementById('table-container').innerHTML = `
     <div class="text-center py-12 font-medium" style="color:#FF6B6B">
@@ -113,11 +151,14 @@ try {
 // Live search
 document.getElementById('search-input').addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase();
-  const filtered = allStudents.filter(s =>
+  const base = activeClassFilter
+    ? allStudents.filter(s => s.className === activeClassFilter)
+    : allStudents;
+  const filtered = base.filter(s =>
     s.fullName?.toLowerCase().includes(q) ||
     s.studentCode?.toLowerCase().includes(q) ||
     s.parentName?.toLowerCase().includes(q) ||
     s.className?.toLowerCase().includes(q)
   );
-  renderTable(filtered);
+  renderCards(filtered);
 });

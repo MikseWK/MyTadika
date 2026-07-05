@@ -49,6 +49,10 @@ public class AuthService {
             throw new InvalidInputException("Incorrect email or password. Please try again.");
         }
 
+        if (account.getRole() != request.getRole()) {
+            throw new InvalidInputException("Incorrect email or password. Please try again.");
+        }
+
         String token = jwtService.generateToken(account);
         return new LoginResponseDTO(
                 token,

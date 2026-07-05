@@ -86,20 +86,39 @@
             <span id="nutrition-badge" class="hidden px-3 py-1 text-xs font-bold rounded-full">—</span>
           </div>
         </div>
-        <!-- Latest stats -->
-        <div class="hidden md:flex gap-4">
-          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
-            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">BMI</p>
-            <p id="stat-bmi" class="text-2xl font-extrabold text-ink">—</p>
+      </div>
+
+      <!-- Metric cards row -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="bg-surface rounded-2xl p-5 shadow-card">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-ink" style="font-size:16px;font-variation-settings:'FILL' 1">height</span>
+            </div>
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider">Height</p>
           </div>
-          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
-            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">Weight</p>
-            <p id="stat-weight" class="text-2xl font-extrabold text-ink">—</p>
+          <p id="stat-height" class="text-3xl font-extrabold text-ink leading-none">—</p>
+          <p class="text-xs text-ink-muted mt-1.5">centimetres</p>
+        </div>
+        <div class="bg-surface rounded-2xl p-5 shadow-card">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-secondary/15 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-secondary" style="font-size:16px;font-variation-settings:'FILL' 1">monitor_weight</span>
+            </div>
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider">Weight</p>
           </div>
-          <div class="text-center px-4 py-3 bg-surface-high rounded-xl">
-            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider mb-1">Height</p>
-            <p id="stat-height" class="text-2xl font-extrabold text-ink">—</p>
+          <p id="stat-weight" class="text-3xl font-extrabold text-ink leading-none">—</p>
+          <p class="text-xs text-ink-muted mt-1.5">kilograms</p>
+        </div>
+        <div class="bg-surface rounded-2xl p-5 shadow-card">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-8 h-8 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-success" style="font-size:16px;font-variation-settings:'FILL' 1">straighten</span>
+            </div>
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider">BMI</p>
           </div>
+          <p id="stat-bmi" class="text-3xl font-extrabold text-ink leading-none">—</p>
+          <p class="text-xs text-ink-muted mt-1.5">body mass index</p>
         </div>
       </div>
 

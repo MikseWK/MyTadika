@@ -60,3 +60,9 @@ if (profile.role === 'PARENT') {
     grid.innerHTML = '<p class="text-sm col-span-full" style="color:#FF6B6B">Could not load children.</p>';
   }
 }
+
+// Profile page logout button
+document.getElementById('profile-logout-btn')?.addEventListener('click', () => {
+  localStorage.clear();
+  window.location.href = 'login.html';
+});

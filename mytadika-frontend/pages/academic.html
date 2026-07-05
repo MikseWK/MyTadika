@@ -133,6 +133,18 @@
           </div>
         </div>
 
+        <!-- Monthly growth — shown only when 2+ records exist -->
+        <div id="growth-card" class="hidden bg-surface rounded-xl p-6 shadow-card">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-full bg-success/15 flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-success" style="font-size:16px;font-variation-settings:'FILL' 1">trending_up</span>
+            </div>
+            <p class="text-xs font-bold text-ink-muted uppercase tracking-wider">vs Last Term</p>
+          </div>
+          <div id="growth-value" class="text-4xl font-extrabold text-success leading-none">—</div>
+          <p class="text-xs text-ink-muted mt-2">Monthly growth trend</p>
+        </div>
+
         <!-- Print button (always visible for parent) -->
         <div id="print-section" class="bg-surface rounded-xl p-6 text-center shadow-card">
           <div class="w-14 h-14 bg-surface-high rounded-full flex items-center justify-center mx-auto mb-3">

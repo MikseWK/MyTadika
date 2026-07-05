@@ -12,7 +12,7 @@ if (existingToken) {
   } catch { /* invalid token — fall through to login */ }
 }
 
-// Role selector (visual feedback only)
+// Role selector — determines which role the credentials are checked against
 let selectedRole = null;
 document.querySelectorAll('.role-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -46,11 +46,18 @@ form.addEventListener('submit', async (e) => {
   const password = document.getElementById('password').value;
 
   errorMsg.classList.add('hidden');
+
+  if (!selectedRole) {
+    errorMsg.textContent = 'Please select whether you are a Parent, Teacher, or Admin.';
+    errorMsg.classList.remove('hidden');
+    return;
+  }
+
   submitBtn.disabled = true;
   btnText.textContent = 'Signing in…';
 
   try {
-    const { role } = await login(email, password);
+    const { role } = await login(email, password, selectedRole);
     const dest = role === 'PARENT' ? '/pages/dashboard-parent.html' : '/pages/dashboard-teacher.html';
     window.location.href = dest;
   } catch (err) {

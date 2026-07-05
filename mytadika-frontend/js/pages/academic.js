@@ -193,6 +193,24 @@ if (!studentId) {
         `<option value="${i}">${r.academicTerm}</option>`
       ).join('');
       renderRecord(allRecords[0]);
+
+      // Monthly growth card — compare latest vs previous term
+      const growthCard = document.getElementById('growth-card');
+      if (growthCard && allRecords.length >= 2) {
+        const current = allRecords[0].averageMark ?? 0;
+        const prev = allRecords[1].averageMark ?? 0;
+        if (prev > 0) {
+          const growth = ((current - prev) / prev * 100);
+          const isPositive = growth >= 0;
+          const growthEl = document.getElementById('growth-value');
+          growthEl.textContent = `${isPositive ? '+' : ''}${growth.toFixed(1)}%`;
+          growthEl.style.color = isPositive ? '#4CAF50' : '#FF6B6B';
+          growthCard.querySelector('.w-8').style.background = isPositive ? 'rgba(76,175,80,.15)' : 'rgba(255,107,107,.15)';
+          growthCard.querySelector('.material-symbols-outlined').style.color = isPositive ? '#4CAF50' : '#FF6B6B';
+          growthCard.querySelector('.material-symbols-outlined').textContent = isPositive ? 'trending_up' : 'trending_down';
+          growthCard.classList.remove('hidden');
+        }
+      }
     }
 
     // Teacher-only: show submit form
