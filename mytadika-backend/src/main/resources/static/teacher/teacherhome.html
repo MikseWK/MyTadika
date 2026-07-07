@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Nurturing Canvas - Teacher Classroom Hub</title>
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Be+Vietnam+Pro:ital,wght@0,100..900;1,100..900&amp;display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#d1ffc8",
+                        "secondary-fixed": "#ffc69a",
+                        "secondary": "#8c4a00",
+                        "on-secondary-container": "#6f3a00",
+                        "inverse-on-surface": "#a19d8c",
+                        "error": "#b02500",
+                        "on-primary": "#fff2cd",
+                        "tertiary-dim": "#005d16",
+                        "surface-container-low": "#f7f1dc",
+                        "primary-dim": "#5e4e00",
+                        "outline": "#7a7768",
+                        "on-surface-variant": "#5f5c4d",
+                        "error-dim": "#b92902",
+                        "on-secondary-fixed-variant": "#7c4100",
+                        "surface-container-high": "#e9e3cc",
+                        "tertiary-container": "#91f78e",
+                        "on-primary-container": "#5b4b00",
+                        "primary-fixed": "#ffd709",
+                        "primary": "#6c5a00",
+                        "on-tertiary-container": "#005e17",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#ffc69a",
+                        "on-error": "#ffefec",
+                        "on-tertiary-fixed": "#00480f",
+                        "outline-variant": "#b2ad9c",
+                        "on-error-container": "#520c00",
+                        "tertiary-fixed-dim": "#83e881",
+                        "error-container": "#f95630",
+                        "inverse-primary": "#ffd709",
+                        "on-surface": "#312f23",
+                        "secondary-dim": "#7b4000",
+                        "primary-fixed-dim": "#efc900",
+                        "on-secondary-fixed": "#532a00",
+                        "primary-container": "#ffd709",
+                        "on-tertiary-fixed-variant": "#00691a",
+                        "surface-container-highest": "#e3ddc5",
+                        "surface": "#fcf6e3",
+                        "on-primary-fixed-variant": "#665500",
+                        "surface-variant": "#e3ddc5",
+                        "surface-container": "#eee8d3",
+                        "surface-bright": "#fcf6e3",
+                        "background": "#fcf6e3",
+                        "surface-tint": "#6c5a00",
+                        "on-background": "#312f23",
+                        "tertiary": "#006b1b",
+                        "on-primary-fixed": "#453900",
+                        "inverse-surface": "#100e05",
+                        "surface-dim": "#dbd5bc",
+                        "tertiary-fixed": "#91f78e",
+                        "secondary-fixed-dim": "#ffb375",
+                        "on-secondary": "#fff0e7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "label": ["Be Vietnam Pro"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .organic-blob {
+            clip-path: circle(50% at 50% 50%);
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #fcf6e3;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e3ddc5;
+            border-radius: 10px;
+        }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+
+<body class="bg-surface font-body text-on-surface flex min-h-screen overflow-x-hidden">
+    <main class="flex-grow flex flex-col h-screen overflow-y-auto ml-64">
+        <!-- Content Canvas -->
+        <div class="px-6 pb-6 pt-20 md:px-10 md:pb-10 md:pt-20 flex flex-col gap-10">
+            <!-- Welcome Section -->
+            <section
+                class="relative overflow-hidden bg-primary-container/20 rounded-xl p-8 md:p-12 border border-primary-container/10">
+                <div class="relative z-10 max-w-2xl flex flex-col md:flex-row md:items-center justify-between w-full">
+                    <div>
+                        <h1 class="text-4xl md:text-5xl font-black text-primary font-headline mb-4 leading-tight">
+                            Teacher's Classroom Hub</h1>
+                        <p class="text-on-surface text-lg leading-relaxed opacity-80 mb-6 md:mb-0">Manage your students,
+                            share memories, and track growth across all your classes.</p>
+                    </div>
+                </div>
+                <!-- Abstract Blobs -->
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-secondary-container/30 rounded-full blur-3xl"></div>
+                <div class="absolute right-10 -bottom-10 w-48 h-48 bg-tertiary-container/20 rounded-full blur-3xl">
+                </div>
+            </section>
+            <!-- Main Layout: Grid of Classroom Cards -->
+            <div class="flex flex-col gap-8">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-primary font-headline flex items-center gap-3">
+                        <span class="material-symbols-outlined text-secondary" data-icon="school">school</span>
+                        My Managed Classrooms
+                    </h3>
+                    <div class="flex gap-2">
+                        <button
+                            class="p-2 bg-surface-container-low rounded-full hover:bg-primary-container/20 transition-colors">
+                            <span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                        </button>
+                        <button class="p-2 text-outline rounded-full hover:bg-primary-container/20 transition-colors">
+                            <span class="material-symbols-outlined" data-icon="view_list">view_list</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    <!-- Classroom Card 1 -->
+                    <div
+                        class="bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-hidden group hover:-translate-y-2 transition-all duration-300">
+                        <div class="h-40 bg-primary-container relative">
+                            <img alt="Classroom" class="w-full h-full object-cover mix-blend-overlay opacity-60"
+                                data-alt="sunny preschool classroom corner with vibrant art supplies, colorful paper, and child-sized wooden easels in warm morning light"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_1yJgYJa6tQCGLB5j9aWTn4-zmM1q7R1EaCupjl8kNjVl-twMn96zaEfuIsprKpkl69Dqc_wdaTjoGzWgXCqAp33OK2cXzelzv0M3KA00PnepSOOleweVZDyeZ0dL-Qbb6nDzeZA3eACYBJE6ZOZ4hrbDPjHf0K0WncKyknTFvaapgCcPc2FtcGZJtKENXZqEWm2oZdMKDksLx1inYP-6emXXMEbGUiNO-CwB1exGjg3pfOvCqaJNwRMODn0VQ1fUsM3zJ8VWFgg">
+                            <div
+                                class="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-primary">
+                                Active</div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="text-xl font-bold font-headline text-on-surface">Pre-K Class A</h4>
+                                    <p class="text-sm text-secondary">Early Childhood Foundation</p>
+                                </div>
+                                <div class="bg-primary/10 p-2 rounded-lg">
+                                    <span class="material-symbols-outlined text-primary"
+                                        data-icon="groups">groups</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-6 mb-6">
+                                <div class="flex flex-col gap-1">
+                                    <span
+                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Students</span>
+                                    <span class="text-sm font-medium">15 Enrolled</span>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <span
+                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Status</span>
+                                    <span class="text-sm font-medium flex items-center gap-1">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> Live
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="flex-grow bg-primary text-on-primary py-3 rounded-full font-bold text-sm hover:brightness-95 transition-all">Manage
+                                    Class</button>
+                                <button
+                                    class="p-3 border border-outline-variant/20 rounded-full hover:bg-surface-container-high transition-colors">
+                                    <span class="material-symbols-outlined text-on-surface"
+                                        data-icon="settings">settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Classroom Card 2 -->
+                    <div
+                        class="bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-hidden group hover:-translate-y-2 transition-all duration-300">
+                        <div class="h-40 bg-secondary-container relative">
+                            <img alt="Classroom" class="w-full h-full object-cover mix-blend-overlay opacity-60"
+                                data-alt="cozy toddler library area with oversized plush floor cushions, low bookshelves, and a soft braided rug in warm pastel tones"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4oL5T61sdvMog7bd3_apm_KqkWQCAwFz4is6TsXAH4tNzmU8zeKKWM9YeWFqOMVb5D_ShnGUdKOwXMggQkuvJB2Qqy4z6AFxbTuQi-AqSP30yV-IRPlfWl3UUdxq9aodFSqzUH4GFsceZYHeoAoRstsJq3-RyVEAlXBphbJp4fOvAaSAC-3Uhy4mwU0iv0gb5w-5qGKI7--QWPcTyF0ToYRLavyXSXOMYX5BNebBqZ0CRvdjKjl-vSpbmwnCgMEObagwtD7QnUp8">
+                            <div
+                                class="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-secondary">
+                                Morning Session</div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="text-xl font-bold font-headline text-on-surface">Toddler Room 1</h4>
+                                    <p class="text-sm text-secondary">Sensory &amp; Play Exploration</p>
+                                </div>
+                                <div class="bg-secondary/10 p-2 rounded-lg">
+                                    <span class="material-symbols-outlined text-secondary"
+                                        data-icon="palette">palette</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-6 mb-6">
+                                <div class="flex flex-col gap-1">
+                                    <span
+                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Students</span>
+                                    <span class="text-sm font-medium">12 Enrolled</span>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[10px] uppercase font-bold text-outline tracking-wider">Next
+                                        Event</span>
+                                    <span class="text-sm font-medium">Finger Painting (2pm)</span>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button
+                                    class="flex-grow bg-secondary-container text-on-secondary-container py-3 rounded-full font-bold text-sm hover:brightness-95 transition-all">Manage
+                                    Class</button>
+                                <button
+                                    class="p-3 border border-outline-variant/20 rounded-full hover:bg-surface-container-high transition-colors">
+                                    <span class="material-symbols-outlined text-on-surface"
+                                        data-icon="settings">settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Classroom Card 3 (Planning) -->
+                    <div
+                        class="bg-surface-container-low border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center p-8 gap-4 group cursor-pointer hover:bg-primary-container/10 transition-all min-h-[380px]">
+                        <div
+                            class="w-20 h-20 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-primary text-5xl" data-icon="add">add</span>
+                        </div>
+                        <div class="text-center">
+                            <h4 class="font-bold text-xl text-primary font-headline">Add Classroom</h4>
+                            <p class="text-sm text-outline mt-2">Expand your teaching reach</p>
+                        </div>
+                    </div>
+                    <!-- Add New Room Card -->
+                    <div
+                        class="bg-surface-container-low border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center p-8 gap-6 group cursor-pointer hover:bg-primary-container/10 transition-all min-h-[380px]">
+                        <div
+                            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined text-primary text-4xl"
+                                data-icon="add_circle">add_circle</span>
+                        </div>
+                        <div class="text-center">
+                            <h4 class="font-bold text-xl text-primary font-headline">Create New Classroom</h4>
+                            <p class="text-sm text-outline max-w-[200px] mx-auto mt-2">Set up a new space for your
+                                students to learn and thrive.</p>
+                        </div>
+                        <button class="px-6 py-2 bg-primary text-on-primary rounded-full font-bold text-sm">Get
+                            Started</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Mobile Navigation (Visible only on mobile) -->
+    <nav
+        class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest backdrop-blur-lg border-t-0 flex items-center justify-around px-4 shadow-[0_-8px_32px_-4px_rgba(49,47,35,0.1)] z-50">
+        <button class="flex flex-col items-center gap-1 text-outline">
+            <span class="material-symbols-outlined" data-icon="home">home</span>
+            <span class="text-[10px]">Home</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined" data-icon="school"
+                style="font-variation-settings: &quot;FILL&quot; 1;">school</span>
+            <span class="text-[10px] font-bold">Class</span>
+        </button>
+        <button class="flex flex-col items-center gap-1 text-outline">
+            <span class="material-symbols-outlined" data-icon="chat">chat</span>
+            <span class="text-[10px]">Chat</span>
+        </button>
+        <a href="teacherprofile.html" class="flex flex-col items-center gap-1 text-outline">
+            <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+            <span class="text-[10px]">Profile</span>
+        </a>
+    </nav>
+    <script>loadSidebar('teacher', 'home'); loadTopbar('teacher');</script>
+</body>
+
+</html>
+
+
+
+

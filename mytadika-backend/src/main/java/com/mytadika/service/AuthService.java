@@ -2,6 +2,7 @@ package com.mytadika.service;
 
 import com.mytadika.dto.AuthRequest;
 import com.mytadika.dto.AuthResponse;
+import com.mytadika.dto.ChangePasswordRequest;
 import com.mytadika.dto.ForgotPasswordRequest;
 import com.mytadika.dto.RegisterRequest;
 import com.mytadika.dto.ResetPasswordRequest;
@@ -11,8 +12,10 @@ import com.mytadika.repository.AccountRepository;
 import com.mytadika.repository.PasswordResetTokenRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -21,14 +24,17 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
+    private final NotificationService notificationService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthService(AccountRepository accountRepository,
                        PasswordResetTokenRepository resetTokenRepository,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       NotificationService notificationService) {
         this.accountRepository = accountRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.emailService = emailService;
+        this.notificationService = notificationService;
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -67,6 +73,15 @@ public class AuthService {
                 .build();
 
         accountRepository.save(account);
+        notifyAdminsOfNewRegistration(account);
+    }
+
+    private void notifyAdminsOfNewRegistration(Account account) {
+        List<Account> admins = accountRepository.findByRoleType(Account.RoleType.ADMIN);
+        String title = "New parent registered: " + account.getFullName();
+        String body = account.getEmail() + " just created a parent account.";
+        for (Account admin : admins)
+            notificationService.create(admin.getAccountId(), title, body, "/admin/adminaccounts.html?role=PARENT");
     }
 
     public void forgotPassword(ForgotPasswordRequest request) {
@@ -85,6 +100,7 @@ public class AuthService {
         });
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = resetTokenRepository.findByToken(request.getToken())
                 .orElseThrow(() -> new RuntimeException("Invalid or expired reset link"));
@@ -105,5 +121,20 @@ public class AuthService {
 
         resetToken.setUsed(true);
         resetTokenRepository.save(resetToken);
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+        Account account = accountRepository.findById(request.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters");
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
     }
 }

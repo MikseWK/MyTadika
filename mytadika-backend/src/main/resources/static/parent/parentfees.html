@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Fees – MyTadika</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<main class="ml-64 pt-20 p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Page header -->
+        <div class="mb-4">
+            <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Fees</h1>
+            <p class="text-stone-500 text-sm mt-1">Tuition fee status &amp; payment history</p>
+        </div>
+
+        <!-- Child switcher -->
+        <div id="child-switcher" class="hidden flex gap-2 mb-4 flex-wrap"></div>
+
+        <div id="page-loading" class="py-24 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+
+        <div id="empty-state" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">payments</span>
+            <p class="mt-3 text-sm">No children linked yet.</p>
+        </div>
+
+        <div id="fees-wrap" class="hidden">
+            <!-- Pending status banner -->
+            <div id="status-banner" class="rounded-2xl shadow-sm p-6 mb-6 flex items-center gap-4"></div>
+
+            <!-- History -->
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-stone-100">
+                    <h3 class="text-sm font-bold text-[#312f23] font-headline">Payment History</h3>
+                </div>
+                <div id="history-empty" class="hidden py-12 text-center text-stone-400 text-sm">No fee records yet.</div>
+                <div id="history-list" class="divide-y divide-stone-50"></div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Mock Payment Checkout Modal -->
+<div id="pay-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div id="pay-form-view">
+            <h2 class="text-xl font-black text-[#312f23] mb-1 font-headline">Pay Fee</h2>
+            <p class="text-sm text-stone-500 mb-5"><span id="pay-description"></span> — <span class="font-bold text-[#6c5a00]" id="pay-amount"></span></p>
+            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-4">Sample checkout — no real payment is processed</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Card Number</label>
+                    <input id="pay-card-number" type="text" autocomplete="off" maxlength="19" placeholder="4242 4242 4242 4242"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-1">Expiry</label>
+                        <input id="pay-card-expiry" type="text" maxlength="5" placeholder="MM/YY"
+                            class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 mb-1">CVV</label>
+                        <input id="pay-card-cvv" type="text" maxlength="3" placeholder="123"
+                            class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Cardholder Name</label>
+                    <input id="pay-card-name" type="text" placeholder="e.g. Leow Kai Zhen"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+            </div>
+            <p id="pay-error" class="hidden text-xs text-red-500 mt-3"></p>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closePayModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+                <button onclick="submitPayment()" id="pay-submit-btn" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Pay Now</button>
+            </div>
+        </div>
+        <div id="pay-processing-view" class="hidden py-10 flex flex-col items-center gap-4">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            <p class="text-sm font-semibold text-stone-500">Processing payment…</p>
+        </div>
+        <div id="pay-success-view" class="hidden py-6 flex flex-col items-center gap-3 text-center">
+            <span class="material-symbols-outlined text-5xl text-emerald-500">check_circle</span>
+            <p class="font-black text-emerald-700 font-headline text-lg">Payment Successful</p>
+            <p class="text-sm text-stone-500">Your receipt has been recorded. Thank you!</p>
+            <button onclick="closePayModal()" class="mt-2 px-6 py-2.5 rounded-full bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Done</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    let children = [];
+    let selectedStudentId = null;
+    let fees = [];
+
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function fmtMoney(n) { return Number(n||0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+    function isOverdue(fee) { return fee.status === 'PENDING' && fee.dueDate && fee.dueDate < new Date().toISOString().slice(0,10); }
+    function totalOf(f) { return f.totalAmount != null ? f.totalAmount : f.amount; }
+
+    async function loadChildren() {
+        try {
+            const res = await fetch(`/api/student/by-parent/${myAccountId}`);
+            children = res.ok ? await res.json() : [];
+        } catch (e) { children = []; }
+
+        document.getElementById('page-loading').classList.add('hidden');
+        if (!children.length) {
+            document.getElementById('empty-state').classList.remove('hidden');
+            return;
+        }
+
+        renderChildSwitcher();
+        const requestedId = Number(new URLSearchParams(location.search).get('studentId'));
+        const preselect = children.find(c => c.id === requestedId);
+        selectChild(preselect ? preselect.id : children[0].id);
+    }
+
+    function renderChildSwitcher() {
+        const wrap = document.getElementById('child-switcher');
+        if (children.length <= 1) { wrap.classList.add('hidden'); return; }
+        wrap.classList.remove('hidden');
+        wrap.innerHTML = children.map(c => `
+            <button onclick="selectChild(${c.id})" data-child-id="${c.id}"
+                class="child-tab px-4 py-2 rounded-full text-sm font-bold transition-colors ${c.id === selectedStudentId ? 'bg-[#ffd709] text-[#6c5a00]' : 'bg-white border border-stone-200 text-stone-500 hover:bg-stone-50'}">
+                ${esc(c.fullName)}
+            </button>`).join('');
+    }
+
+    async function selectChild(studentId) {
+        selectedStudentId = studentId;
+        renderChildSwitcher();
+
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('fees-wrap').classList.remove('hidden');
+
+        await loadFees();
+    }
+
+    async function loadFees() {
+        try {
+            const res = await fetch(`/api/fees/students/${selectedStudentId}`);
+            fees = res.ok ? await res.json() : [];
+        } catch (e) { fees = []; }
+
+        renderBanner();
+        renderHistory();
+    }
+
+    function renderBanner() {
+        const banner = document.getElementById('status-banner');
+        const pending = fees.filter(f => f.status === 'PENDING').sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+
+        if (!pending.length) {
+            banner.className = 'rounded-2xl shadow-sm p-6 mb-6 flex items-center gap-4 bg-emerald-50 border border-emerald-100';
+            banner.innerHTML = `
+                <span class="material-symbols-outlined text-4xl text-emerald-500">check_circle</span>
+                <div>
+                    <p class="font-black text-emerald-700 font-headline">All fees paid</p>
+                    <p class="text-sm text-emerald-600/80">There's nothing pending right now.</p>
+                </div>`;
+            return;
+        }
+
+        const next = pending[0];
+        const overdue = isOverdue(next);
+        const lateFeeNote = next.lateFeeAmount
+            ? `RM ${fmtMoney(next.amount)} + RM ${fmtMoney(next.lateFeeAmount)} late fee = <span class="font-bold">RM ${fmtMoney(totalOf(next))}</span> · Due ${fmtDate(next.dueDate)}`
+            : `RM ${fmtMoney(next.amount)} · Due ${fmtDate(next.dueDate)}`;
+        banner.className = `rounded-2xl shadow-sm p-6 mb-6 flex items-center gap-4 ${overdue ? 'bg-red-50 border border-red-100' : 'bg-amber-50 border border-amber-100'}`;
+        banner.innerHTML = `
+            <span class="material-symbols-outlined text-4xl ${overdue ? 'text-red-500' : 'text-amber-500'}">${overdue ? 'error' : 'payments'}</span>
+            <div class="flex-1">
+                <p class="font-black ${overdue ? 'text-red-700' : 'text-amber-700'} font-headline">${overdue ? 'Overdue: ' : 'Pending: '}${esc(next.description)}</p>
+                <p class="text-sm ${overdue ? 'text-red-600/80' : 'text-amber-600/80'}">${lateFeeNote}</p>
+                <p class="text-xs ${overdue ? 'text-red-600/70' : 'text-amber-600/70'} mt-1">${next.lateFeeAmount ? 'A 5% late fee has been added because this is overdue.' : 'A 5% late fee applies automatically if unpaid after the due date.'}</p>
+            </div>
+            ${pending.length > 1 ? `<span class="text-xs font-bold ${overdue ? 'text-red-600' : 'text-amber-600'} bg-white/60 px-3 py-1 rounded-full mr-1">+${pending.length - 1} more</span>` : ''}
+            <button onclick="openPayModal(${next.id})" class="px-5 py-2.5 rounded-full bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors flex-shrink-0">Pay Now</button>`;
+    }
+
+    function renderHistory() {
+        const list = document.getElementById('history-list');
+        const empty = document.getElementById('history-empty');
+        if (!fees.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+
+        const sorted = [...fees].sort((a,b) => b.dueDate.localeCompare(a.dueDate));
+        list.innerHTML = sorted.map(f => {
+            const overdue = isOverdue(f);
+            let badge;
+            if (f.status === 'PAID') badge = '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Paid</span>';
+            else if (overdue) badge = '<span class="text-xs font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">Overdue</span>';
+            else badge = '<span class="text-xs font-bold text-amber-500 bg-amber-50 px-2.5 py-1 rounded-full">Pending</span>';
+
+            return `
+            <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-semibold text-stone-800">${esc(f.description)}</p>
+                    <p class="text-xs text-stone-400 mt-0.5">Due ${fmtDate(f.dueDate)}${f.paidAt ? ` · Paid ${esc(f.paidAt.slice(0,10))}` : ''}</p>
+                    ${f.lateFeeAmount ? `<p class="text-xs text-red-500 font-semibold mt-0.5">+ RM ${fmtMoney(f.lateFeeAmount)} late fee added</p>` : ''}
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm font-bold text-stone-800">RM ${fmtMoney(totalOf(f))}</span>
+                    ${badge}
+                    ${f.status === 'PENDING' ? `<button onclick="openPayModal(${f.id})" class="px-4 py-1.5 rounded-full bg-[#ffd709] text-[#6c5a00] font-bold text-xs hover:bg-[#f5cc00] transition-colors">Pay Now</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Mock payment checkout (sample only — no real gateway/charge happens) ──
+    let payingFeeId = null;
+
+    function openPayModal(feeId) {
+        const fee = fees.find(f => f.id === feeId);
+        if (!fee) return;
+        payingFeeId = feeId;
+
+        document.getElementById('pay-description').textContent = fee.description;
+        document.getElementById('pay-amount').textContent = `RM ${fmtMoney(totalOf(fee))}${fee.lateFeeAmount ? ' (incl. late fee)' : ''}`;
+        document.getElementById('pay-card-number').value = '';
+        document.getElementById('pay-card-expiry').value = '';
+        document.getElementById('pay-card-cvv').value = '';
+        document.getElementById('pay-card-name').value = '';
+        document.getElementById('pay-error').classList.add('hidden');
+
+        document.getElementById('pay-form-view').classList.remove('hidden');
+        document.getElementById('pay-processing-view').classList.add('hidden');
+        document.getElementById('pay-success-view').classList.add('hidden');
+        document.getElementById('pay-modal').classList.remove('hidden');
+    }
+
+    function closePayModal() {
+        document.getElementById('pay-modal').classList.add('hidden');
+        if (document.getElementById('pay-success-view').classList.contains('hidden') === false) {
+            loadFees(); // refresh list if a payment just completed
+        }
+    }
+
+    async function submitPayment() {
+        const cardNumber = document.getElementById('pay-card-number').value.replace(/\s/g, '');
+        const expiry = document.getElementById('pay-card-expiry').value;
+        const cvv = document.getElementById('pay-card-cvv').value;
+        const name = document.getElementById('pay-card-name').value.trim();
+        const errEl = document.getElementById('pay-error');
+
+        if (!cardNumber || cardNumber.length < 12) { errEl.textContent = 'Enter a valid card number.'; errEl.classList.remove('hidden'); return; }
+        if (!/^\d{2}\/\d{2}$/.test(expiry)) { errEl.textContent = 'Enter expiry as MM/YY.'; errEl.classList.remove('hidden'); return; }
+        if (!/^\d{3}$/.test(cvv)) { errEl.textContent = 'Enter a valid 3-digit CVV.'; errEl.classList.remove('hidden'); return; }
+        if (!name) { errEl.textContent = 'Enter the cardholder name.'; errEl.classList.remove('hidden'); return; }
+
+        document.getElementById('pay-form-view').classList.add('hidden');
+        document.getElementById('pay-processing-view').classList.remove('hidden');
+
+        // Simulated gateway round-trip — this is a sample checkout for demo purposes only,
+        // no real card processing happens. It just marks the fee paid on success.
+        await new Promise(r => setTimeout(r, 1500));
+
+        try {
+            const res = await fetch(`/api/fees/${payingFeeId}/pay`, { method: 'PUT' });
+            document.getElementById('pay-processing-view').classList.add('hidden');
+            if (res.ok) {
+                document.getElementById('pay-success-view').classList.remove('hidden');
+            } else {
+                document.getElementById('pay-form-view').classList.remove('hidden');
+                errEl.textContent = 'Payment failed. Please try again.';
+                errEl.classList.remove('hidden');
+            }
+        } catch (e) {
+            document.getElementById('pay-processing-view').classList.add('hidden');
+            document.getElementById('pay-form-view').classList.remove('hidden');
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.classList.remove('hidden');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadSidebar('parent', 'fees');
+        loadTopbar('parent');
+        if (!myAccountId) { window.location.href = '/login.html'; return; }
+        await loadChildren();
+    });
+</script>
+</body>
+</html>

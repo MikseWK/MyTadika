@@ -32,6 +32,11 @@ public class ProfileService {
         profile.put("address", account.getAddress());
         profile.put("profileImageUrl", account.getProfileImageUrl());
         profile.put("roleType", account.getRoleType().name());
+        profile.put("description", account.getDescription());
+        profile.put("qualification", account.getQualification());
+        profile.put("experience", account.getExperience());
+        profile.put("focusArea", account.getFocusArea());
+        profile.put("meetLink", account.getMeetLink());
         return profile;
     }
 
@@ -42,8 +47,13 @@ public class ProfileService {
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             account.setFullName(request.getFullName());
         }
-        account.setPhoneNumber(request.getPhoneNumber());
-        account.setAddress(request.getAddress());
+        if (request.getPhoneNumber() != null) account.setPhoneNumber(request.getPhoneNumber());
+        if (request.getAddress() != null) account.setAddress(request.getAddress());
+        if (request.getDescription() != null) account.setDescription(request.getDescription());
+        if (request.getQualification() != null) account.setQualification(request.getQualification());
+        if (request.getExperience() != null) account.setExperience(request.getExperience());
+        if (request.getFocusArea() != null) account.setFocusArea(request.getFocusArea());
+        if (request.getMeetLink() != null) account.setMeetLink(request.getMeetLink());
         accountRepository.save(account);
     }
 

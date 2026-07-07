@@ -1,8 +1,16 @@
 # Maven build files
 mytadika-backend/target/
+mytadika-backend/effective-pom.xml
 
 # VS Code
 .vscode/
 
 # Logs
 *.log
+
+# Python
+__pycache__/
+*.pyc
+
+# Local file uploads (runtime data, not source)
+mytadika-backend/uploads/

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.mytadika.model.AllergyProfile;
 import com.mytadika.model.HealthRecord;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import com.mytadika.repository.AllergyProfileRepository;
@@ -119,6 +120,7 @@ public class HealthController {
          * Endpoint to record new measurement, run AI checks, and persist the record.
          */
         @PostMapping("/record")
+        @Transactional
         public ResponseEntity<RecordResponseDTO> recordMeasurement(
                         @Valid @RequestBody HealthRequestDTO request) {
                 log.info("REST request to record measurements and advise for student: {}", request.getChildId());

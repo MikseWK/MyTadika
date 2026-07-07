@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="light" lang="en">
 
 <head>
@@ -83,7 +83,7 @@
   </style>
 </head>
 
-<body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-4 md:p-8 overflow-x-hidden">
+<body class="bg-background text-on-surface min-h-screen flex items-start justify-center px-4 md:px-8 pb-2 -mt-3 overflow-x-hidden">
   <!-- Background Decorative Elements -->
   <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 asymmetric-blob -z-10"></div>
   <div
@@ -143,8 +143,8 @@
     </section>
     <!-- Login Form Side (Right) -->
     <section
-      class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-16 flex flex-col justify-center bg-surface-container-lowest">
-      <div class="mb-10 text-center md:text-left">
+      class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-10 pt-14 flex flex-col justify-start bg-surface-container-lowest" style="margin-top:21px">
+      <div class="mb-4 text-center md:text-left">
         <div class="md:hidden flex justify-center mb-6">
           <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg">
             <span class="material-symbols-outlined text-on-surface text-4xl"
@@ -155,7 +155,7 @@
         <p class="text-on-surface-variant font-medium">Step inside the garden of learning.</p>
       </div>
       <!-- Role Selection -->
-      <div class="mb-10">
+      <div class="mb-5">
         <label class="block text-sm font-bold text-on-surface-variant mb-4 px-1">
           I am a...
         </label>
@@ -245,9 +245,9 @@
         </button>
       </form>
       <!-- Alert Message -->
-      <div id="alert-msg" class="hidden rounded-full px-6 py-3 text-sm font-bold text-center mt-4"></div>
+      <div id="alert-msg" class="hidden rounded-full px-6 py-3 text-sm font-bold text-center mt-3"></div>
       <!-- Social/Register Footer -->
-      <div class="mt-12 text-center">
+      <div id="register-footer" class="mt-4 text-center">
         <p class="text-on-surface-variant font-medium">
           New to MyTadika?
           <a href="createparentaccount.html" class="text-secondary font-bold hover:underline underline-offset-4 transition-all ml-1">Create
@@ -297,7 +297,8 @@
         "scale-105"
       );
 
-      console.log("Selected role:", selectedBtn.dataset.role);
+      const hideRegister = selectedBtn.dataset.role === 'teacher' || selectedBtn.dataset.role === 'admin';
+      document.getElementById('register-footer').style.display = hideRegister ? 'none' : '';
     }
 
     roleButtons.forEach(btn => {
@@ -327,14 +328,15 @@
     function showAlert(message, isSuccess) {
       alertMsg.textContent = message;
       alertMsg.className = isSuccess
-        ? 'rounded-full px-6 py-3 text-sm font-bold text-center mt-4 bg-green-100 text-green-700'
-        : 'rounded-full px-6 py-3 text-sm font-bold text-center mt-4 bg-red-100 text-red-700';
+        ? 'rounded-full px-6 py-3 text-sm font-bold text-center mt-3 bg-green-100 text-green-700'
+        : 'rounded-full px-6 py-3 text-sm font-bold text-center mt-3 bg-red-100 text-red-700';
     }
 
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
+      const selectedRole = document.querySelector('.role-btn.selected')?.dataset.role || 'parent';
 
       if (!email || !password) {
         showAlert('Please enter your email and password.', false);
@@ -355,6 +357,21 @@
           return;
         }
 
+        // Role validation
+        const accountRole = data.roleType?.toUpperCase();
+        if (selectedRole === 'teacher' && accountRole !== 'TEACHER') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+        if (selectedRole === 'parent' && accountRole !== 'PARENT') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+        if (selectedRole === 'admin' && accountRole !== 'ADMIN') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+
         const rememberEl = document.getElementById('remember');
         const store = (rememberEl && rememberEl.checked) ? localStorage : sessionStorage;
         store.setItem('token', data.token);
@@ -363,7 +380,13 @@
         store.setItem('fullName', data.fullName);
         store.setItem('email', data.email || '');
 
-        window.location.href = 'home.html';
+        if (accountRole === 'TEACHER') {
+          window.location.href = '/teacher/teacherhome.html';
+        } else if (accountRole === 'ADMIN') {
+          window.location.href = '/admin/index.html';
+        } else {
+          window.location.href = '/parent/parenthome.html';
+        }
       } catch (err) {
         showAlert('Unable to connect to the server. Please try again.', false);
       }
@@ -373,3 +396,4 @@
 </body>
 
 </html>
+

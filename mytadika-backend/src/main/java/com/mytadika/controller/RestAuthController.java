@@ -2,6 +2,7 @@ package com.mytadika.controller;
 
 import com.mytadika.dto.AuthRequest;
 import com.mytadika.dto.AuthResponse;
+import com.mytadika.dto.ChangePasswordRequest;
 import com.mytadika.dto.ForgotPasswordRequest;
 import com.mytadika.dto.RegisterRequest;
 import com.mytadika.dto.ResetPasswordRequest;
@@ -56,6 +57,16 @@ public class RestAuthController {
         try {
             authService.resetPassword(request);
             return ResponseEntity.ok(Map.of("message", "Password reset successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request) {
+        try {
+            authService.changePassword(request);
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

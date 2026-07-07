@@ -14,37 +14,41 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
-                                "/login.html",
-                                "/login",
-                                "/forgotpassword.html",
-                                "/createparentaccount.html",
-                                "/resetpassword.html",
-                                "/home.html",
-                                "/parentprofile.html",
-                                "/editparentprofile.html",
-                                "/api/auth/**",
-                                "/api/profile/**",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/test.html")
-                        .permitAll()
-                        .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .loginPage("/login.html")
-                        .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/home.html", true)
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login.html"));
-
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/**", "/error").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/login.html",
+                    "/login",
+                    "/forgotpassword.html",
+                    "/createparentaccount.html",
+                    "/resetpassword.html",
+                    "/home.html",
+                    "/parentprofile.html",
+                    "/editparentprofile.html",
+                    "/parentchatwithtecher.html",
+                    "/teacherclassroom.html",
+                    "/parent/**",
+                    "/teacher/**",
+                    "/admin/**",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/components/**",
+                    "/uploads/**",
+                    "/test.html")
+                .permitAll()
+                .anyRequest().authenticated())
+            .formLogin(form -> form
+                .loginPage("/login.html")
+                .loginProcessingUrl("/login")
+                .defaultSuccessUrl("/home.html", true)
+                .permitAll())
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login.html"));
         return http.build();
     }
 

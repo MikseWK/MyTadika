@@ -100,6 +100,8 @@
         body {
             font-family: 'Be Vietnam Pro', sans-serif;
             background-color: #fcf6e3;
+            background-image: radial-gradient(circle at 2px 2px, rgba(178, 173, 156, 0.1) 1px, transparent 0);
+            background-size: 24px 24px;
         }
 
         .organic-blob {
@@ -119,60 +121,66 @@
         </div>
         <!-- SideNavBar -->
         <aside
-            class="h-full flex-none w-64 rounded-r-xl overflow-y-auto bg-surface dark:bg-stone-900 shadow-[12px_0_32px_-4px_rgba(49,47,35,0.08)] flex flex-col py-8 gap-2 z-50">
-            <div class="px-6 mb-8">
-                <h1 class="text-xl font-bold text-primary tracking-tight font-headline">MyTadika</h1>
-                <p class="text-xs text-secondary font-medium opacity-80 uppercase tracking-widest mt-1">The Living
-                    Scrapbook</p>
+            class="h-full flex-none w-64 rounded-r-[3rem] bg-[#fcf6e3] shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] flex flex-col py-8 z-50">
+            <div class="px-8 mb-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[#ffd709] flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[#6c5a00]">school</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-[#6c5a00] font-headline tracking-tight">MyTadika</h1>
+                        <p class="text-xs text-stone-600 font-medium">Pre-K Class A</p>
+                    </div>
+                </div>
             </div>
-            <nav class="flex-1 space-y-1">
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="home.html">
-                    <span class="material-symbols-outlined" data-icon="home">home</span>
-                    <span class="font-medium text-sm">Home</span>
+            <nav class="flex-1 space-y-2 px-2">
+                <a href="home.html"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">home</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Home</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="assessment">assessment</span>
-                    <span class="font-medium text-sm">View Report</span>
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">View Report</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="chat">chat</span>
-                    <span class="font-medium text-sm">Messages</span>
+                <a href="parentchatwithtecher.html"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">chat_bubble</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Messages</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
-                    <span class="font-medium text-sm">Memory Box</span>
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">auto_stories</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Memory Box</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="event">event</span>
-                    <span class="font-medium text-sm">Events</span>
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">calendar_today</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Events</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
-                    <span class="font-medium text-sm">Health</span>
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">medical_services</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Health</span>
                 </a>
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="school">school</span>
-                    <span class="font-medium text-sm">Classroom</span>
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">school</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Classroom</span>
                 </a>
             </nav>
-            <div class="mt-auto border-t border-outline-variant/10 pt-4">
-                <a class="flex items-center gap-3 text-secondary px-4 py-3 mx-2 hover:bg-secondary-container/20 rounded-full transition-all duration-300"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="help">help</span>
-                    <span class="font-medium text-sm">Help</span>
+            <div class="px-2 mt-auto space-y-1">
+                <a href="#"
+                    class="flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                    <span class="material-symbols-outlined">help</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Help</span>
                 </a>
-                <a class="flex items-center gap-3 bg-primary-container text-primary rounded-full px-4 py-3 mx-2 shadow-sm"
-                    href="#">
-                    <span class="material-symbols-outlined" data-icon="account_circle"
-                        style="font-variation-settings: 'FILL' 1;">account_circle</span>
-                    <span class="font-bold text-sm">Profile</span>
+                <a href="parentprofile.html"
+                    class="flex items-center gap-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full px-4 py-3 mx-2 transition-all translate-x-1 duration-200">
+                    <span class="material-symbols-outlined"
+                        style="font-variation-settings:'FILL' 1;">account_circle</span>
+                    <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Profile</span>
                 </a>
             </div>
         </aside>
@@ -208,7 +216,8 @@
                     <div class="relative">
                         <div
                             class="w-32 h-32 rounded-full border-4 border-primary-container overflow-hidden p-1 shadow-inner bg-primary-container flex items-center justify-center">
-                            <img id="profile-avatar" alt="Profile" class="w-full h-full object-cover rounded-full hidden">
+                            <img id="profile-avatar" alt="Profile"
+                                class="w-full h-full object-cover rounded-full hidden">
                             <span id="profile-avatar-icon" class="material-symbols-outlined text-primary text-6xl"
                                 style="font-variation-settings: 'FILL' 1;">account_circle</span>
                         </div>

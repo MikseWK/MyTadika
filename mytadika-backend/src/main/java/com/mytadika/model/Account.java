@@ -43,6 +43,24 @@ public class Account {
     @Column(length = 500)
     private String profileImageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(length = 100)
+    private String qualification;
+
+    @Column(length = 100)
+    private String experience;
+
+    @Column(length = 100)
+    private String focusArea;
+
+    @Column(length = 255)
+    private String meetLink;
+
+    @Column
+    private LocalDateTime lastActiveAt;
+
     public enum RoleType {
         TEACHER,
         PARENT,
