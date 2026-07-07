@@ -27,7 +27,7 @@
 
         <div class="mb-8">
             <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Academic Reports</h1>
-            <p class="text-stone-500 text-sm mt-1">Every student across your classes — pick one to view or submit term scores.</p>
+            <p class="text-stone-500 text-sm mt-1">Every student school-wide — pick one to view or submit term scores.</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
@@ -81,8 +81,7 @@ function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').su
 function fmtDob(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
 
 let allStudents = [];
-const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
-const FILTER_KEY = 'teacheracademiclist_filters';
+const FILTER_KEY = 'adminacademiclist_filters';
 
 function restoreFilterState() {
     // Only restore the previous search/class filter when arriving via the browser's Back/Forward
@@ -101,18 +100,15 @@ function restoreFilterState() {
 async function loadStudents() {
     try {
         const [studentsRes, classroomsRes] = await Promise.all([
-            fetch(`/api/classroom/my-students/${myAccountId}`),
-            fetch(`/api/classroom/my/${myAccountId}`)
+            fetch('/api/admin/students'),
+            fetch('/api/classroom/all')
         ]);
         allStudents = studentsRes.ok ? await studentsRes.json() : [];
-        const myClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
+        const allClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
 
-        // Show every class the teacher teaches, even ones with no students enrolled yet —
-        // not just the classes that happen to already have a student in them.
-        const classNames = [...new Set(myClassrooms.map(c => c.name).filter(Boolean))].sort();
         const select = document.getElementById('class-filter');
         select.innerHTML = '<option value="ALL">All Classes</option>' +
-            classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
+            allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
         restoreFilterState();
         filterStudents();
@@ -127,9 +123,9 @@ function filterStudents() {
     const classFilter = document.getElementById('class-filter').value;
     sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: document.getElementById('search-input').value, classFilter }));
     let list = allStudents;
-    if (q) list = list.filter(s => (s.studentName||'').toLowerCase().includes(q));
-    if (classFilter !== 'ALL') list = list.filter(s => s.classroomName === classFilter);
-    list = [...list].sort((a,b) => (a.classroomName||'zzz').localeCompare(b.classroomName||'zzz') || a.studentName.localeCompare(b.studentName));
+    if (q) list = list.filter(s => (s.fullName||'').toLowerCase().includes(q));
+    if (classFilter !== 'ALL') list = list.filter(s => (s.classroomIds||[]).some(id => String(id) === String(classFilter)));
+    list = [...list].sort((a,b) => (a.classroomName||'zzz').localeCompare(b.classroomName||'zzz') || a.fullName.localeCompare(b.fullName));
     renderStudents(list);
     document.getElementById('list-count').textContent = `${list.length} student${list.length !== 1 ? 's' : ''}`;
 }
@@ -148,16 +144,16 @@ function renderStudents(list) {
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full ${genderColor(s.gender)} flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-white">${esc(initials(s.studentName))}</span>
+                        <span class="text-xs font-bold text-white">${esc(initials(s.fullName))}</span>
                     </div>
-                    <span class="font-semibold text-sm text-stone-800">${esc(s.studentName)}</span>
+                    <span class="font-semibold text-sm text-stone-800">${esc(s.fullName)}</span>
                 </div>
             </td>
             <td class="px-6 py-4 text-sm text-stone-500">${s.classroomName ? esc(s.classroomName) : '<span class="text-stone-300">—</span>'}</td>
             <td class="px-6 py-4 text-xs font-medium ${s.gender === 'FEMALE' ? 'text-rose-500' : s.gender === 'MALE' ? 'text-sky-500' : 'text-stone-400'}">${esc(s.gender||'—')}</td>
             <td class="px-6 py-4 text-sm text-stone-400">${fmtDob(s.dateOfBirth)}</td>
             <td class="px-6 py-4 text-right">
-                <a href="/teacher/teacheracademic.html?studentId=${s.studentId}&studentName=${encodeURIComponent(s.studentName||'')}&className=${encodeURIComponent(s.classroomName||'')}"
+                <a href="/admin/adminacademic.html?studentId=${s.id}&studentName=${encodeURIComponent(s.fullName||'')}&className=${encodeURIComponent(s.classroomName||'')}"
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] hover:bg-[#ffd709]/40 text-xs font-bold transition-colors">
                     <span class="material-symbols-outlined text-sm">bar_chart</span>
                     View
@@ -169,6 +165,6 @@ function renderStudents(list) {
 loadStudents();
 </script>
 
-<script>loadSidebar('teacher', 'report'); loadTopbar('teacher');</script>
+<script>loadSidebar('admin', 'academic'); loadTopbar('admin');</script>
 </body>
 </html>

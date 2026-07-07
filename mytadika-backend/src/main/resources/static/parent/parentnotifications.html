@@ -32,9 +32,14 @@
                 <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Notifications</h1>
                 <p class="text-stone-500 text-sm mt-1">Announcements &amp; assignments from your child's classroom</p>
             </div>
-            <button id="notif-page-mark-all" class="px-4 py-2 rounded-full text-xs font-bold bg-white border border-stone-200 text-[#6c5a00] hover:bg-[#ffd709]/10 transition-colors">
-                Mark all read
-            </button>
+            <div class="flex items-center gap-2">
+                <button id="notif-page-mark-all" class="px-4 py-2 rounded-full text-xs font-bold bg-white border border-stone-200 text-[#6c5a00] hover:bg-[#ffd709]/10 transition-colors">
+                    Mark all read
+                </button>
+                <button id="notif-page-delete-all" class="px-4 py-2 rounded-full text-xs font-bold bg-white border border-stone-200 text-red-500 hover:bg-red-50 transition-colors">
+                    Delete all
+                </button>
+            </div>
         </div>
 
         <div id="notif-page-list"></div>

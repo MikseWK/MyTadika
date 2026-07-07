@@ -132,7 +132,7 @@
         <p id="cm-error" class="hidden text-xs text-red-500 mt-3"></p>
         <div class="flex gap-3 mt-6">
             <button onclick="closeClassroomModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
-            <button onclick="submitClassroomForm()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Save</button>
+            <button id="classroom-submit-btn" onclick="submitClassroomForm()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
         </div>
     </div>
 </div>
@@ -152,10 +152,11 @@
             <p class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Teachers</p>
             <div id="manage-teachers-list" class="space-y-2 mb-3"></div>
             <div class="flex gap-2">
-                <input id="manage-teacher-email" type="email" placeholder="Add teacher by email…"
+                <input id="manage-teacher-email" type="email" placeholder="Add teacher by email…" list="teacher-email-suggestions" autocomplete="off"
                     class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
                     onkeydown="if(event.key==='Enter') addManageTeacher()">
-                <button onclick="addManageTeacher()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap">Add</button>
+                <datalist id="teacher-email-suggestions"></datalist>
+                <button id="manage-teacher-add-btn" onclick="addManageTeacher()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-w-[68px] flex items-center justify-center">Add</button>
             </div>
             <p id="manage-teacher-error" class="hidden text-xs text-red-500 mt-2"></p>
         </div>
@@ -168,7 +169,7 @@
                 <input id="manage-student-code" type="text" placeholder="Add student by code (e.g. STU20001)…"
                     class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
                     onkeydown="if(event.key==='Enter') addManageStudent()">
-                <button onclick="addManageStudent()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap">Add</button>
+                <button id="manage-student-add-btn" onclick="addManageStudent()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-w-[68px] flex items-center justify-center">Add</button>
             </div>
             <p id="manage-student-error" class="hidden text-xs text-red-500 mt-2"></p>
         </div>
@@ -206,6 +207,8 @@ async function loadTeachers() {
         const select = document.getElementById('cm-teacher');
         select.innerHTML = '<option value="">— Select teacher —</option>' +
             allTeachers.map(t => `<option value="${t.accountId}">${esc(t.fullName)}</option>`).join('');
+        document.getElementById('teacher-email-suggestions').innerHTML =
+            allTeachers.map(t => `<option value="${esc(t.email)}">`).join('');
     } catch (e) { allTeachers = []; }
 }
 
@@ -318,7 +321,9 @@ function openEditModal(id) {
 
 function closeClassroomModal() { document.getElementById('classroom-modal').classList.add('hidden'); }
 
+let submittingClassroom = false;
 async function submitClassroomForm() {
+    if (submittingClassroom) return;
     const name = document.getElementById('cm-name').value.trim();
     const teacherAccountId = document.getElementById('cm-teacher').value;
     if (!name) { showErr('cm-error', 'Class name is required.'); return; }
@@ -331,6 +336,9 @@ async function submitClassroomForm() {
         teacherAccountId,
     };
 
+    submittingClassroom = true;
+    const btn = document.getElementById('classroom-submit-btn');
+    btn.disabled = true;
     try {
         const res = editingId
             ? await fetch(`/api/classroom/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -345,6 +353,7 @@ async function submitClassroomForm() {
             showErr('cm-error', msg);
         }
     } catch (e) { showErr('cm-error', 'Network error.'); }
+    finally { submittingClassroom = false; btn.disabled = false; }
 }
 
 async function deleteClassroom(id, name) {
@@ -416,6 +425,9 @@ async function addManageTeacher() {
     const errEl = document.getElementById('manage-teacher-error');
     errEl.classList.add('hidden');
     if (!email) { errEl.textContent = 'Please enter an email address.'; errEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('manage-teacher-add-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base spin">progress_activity</span>';
     try {
         const res = await fetch(`/api/classroom/${manageClassroomId}/teachers`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
@@ -424,12 +436,14 @@ async function addManageTeacher() {
             document.getElementById('manage-teacher-email').value = '';
             await loadManagePeople();
             await loadClassrooms();
+            showToast('Teacher added!');
         } else {
             let msg = 'Failed to add teacher.';
             try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
             errEl.textContent = msg; errEl.classList.remove('hidden');
         }
     } catch (e) { errEl.textContent = 'Network error.'; errEl.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = 'Add'; }
 }
 
 async function removeManageTeacher(accountId) {
@@ -444,6 +458,9 @@ async function addManageStudent() {
     const errEl = document.getElementById('manage-student-error');
     errEl.classList.add('hidden');
     if (!studentCode) { errEl.textContent = 'Please enter a Student Code.'; errEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('manage-student-add-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base spin">progress_activity</span>';
     try {
         const res = await fetch(`/api/classroom/${manageClassroomId}/enroll-by-code`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentCode })
@@ -452,12 +469,14 @@ async function addManageStudent() {
             document.getElementById('manage-student-code').value = '';
             await loadManagePeople();
             await loadClassrooms();
+            showToast('Student added!');
         } else {
             let msg = 'Failed to add student.';
             try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
             errEl.textContent = msg; errEl.classList.remove('hidden');
         }
     } catch (e) { errEl.textContent = 'Network error.'; errEl.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = 'Add'; }
 }
 
 async function removeManageStudent(studentId) {

@@ -158,7 +158,7 @@
                 <button onclick="setRecipientTypeFilter('TEACHER')" id="rt-TEACHER" class="recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Teachers</button>
             </div>
             <select id="recipient-class-filter" onchange="renderRecipientOptions()"
-                class="px-3 py-1.5 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                class="max-w-[130px] truncate pl-3 pr-7 py-1.5 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709] flex-shrink-0">
                 <option value="ALL">All Classes</option>
             </select>
         </div>
@@ -491,29 +491,42 @@ function renderRecipientOptions() {
     let html = '';
     sortedClassNames.forEach(cn => {
         html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">${esc(cn)}</p>`;
-        html += groups[cn].map(renderRecipientRow).join('');
+        html += groups[cn].map(p => renderRecipientRow(p, cn)).join('');
     });
     if (noClass.length) {
         html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">No Class Linked</p>`;
-        html += noClass.map(renderRecipientRow).join('');
+        html += noClass.map(p => renderRecipientRow(p, null)).join('');
     }
     if (teachers.length) {
         html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">Teachers</p>`;
-        html += teachers.map(renderRecipientRow).join('');
+        html += teachers.map(r => renderRecipientRow(r, null)).join('');
     }
     el.innerHTML = html || '<p class="text-center text-stone-400 text-sm py-8">No matches.</p>';
 }
 
-function renderRecipientRow(r) {
+// groupClassName: which classroom section this row is being rendered under (null for
+// "No Class Linked" / Teachers) — used to show only the child(ren) relevant to that
+// section instead of a parent's full child list, which gets unwieldy for parents with
+// several kids across different classes. Hovering still reveals the full list.
+function renderRecipientRow(r, groupClassName) {
     const avatar = r.profileImageUrl
         ? `<img src="${esc(r.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
         : `<span class="text-xs font-bold text-white">${esc((r.fullName||'?').charAt(0).toUpperCase())}</span>`;
-    const subtitle = r.roleType === 'PARENT' && r.childNames ? r.childNames : r.email;
+    let subtitle = r.email;
+    if (r.roleType === 'PARENT' && r.childNames) {
+        if (groupClassName && r.children) {
+            const namesInClass = r.children.filter(c => (c.classroomNames||[]).includes(groupClassName)).map(c => c.name);
+            subtitle = namesInClass.length ? namesInClass.join(', ') : r.childNames;
+        } else {
+            subtitle = r.childNames;
+        }
+    }
+    const titleAttr = r.roleType === 'PARENT' && r.childNames ? ` title="${escAttr(r.childNames)}"` : '';
     return `
     <div onclick="startConversation('${r.accountId}', '${escAttr(r.fullName)}')"
         class="flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer hover:bg-stone-50 transition-colors mb-1">
         <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center overflow-hidden flex-shrink-0">${avatar}</div>
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0"${titleAttr}>
             <p class="font-semibold text-sm text-stone-800 truncate">${esc(r.fullName)}</p>
             <p class="text-xs text-stone-400 truncate">${esc(subtitle)}</p>
         </div>
@@ -704,41 +717,46 @@ async function handleFileSelected(e) {
 document.getElementById('image-file-input').addEventListener('change', handleImageSelected);
 document.getElementById('file-file-input').addEventListener('change', handleFileSelected);
 
+let sendingMessage = false;
 async function sendMessage() {
-    if (!selectedContactId) return;
-
-    if (pendingImageUrl) {
-        try {
-            const r = await fetch('/api/chat/send', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content: pendingImageUrl, messageType: 'image' })
-            });
-            if (!r.ok) {
-                const err = await r.json().catch(() => ({}));
-                alert('Failed to send image: ' + (err.error || r.status));
+    if (!selectedContactId || sendingMessage) return;
+    sendingMessage = true;
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    try {
+        if (pendingImageUrl) {
+            try {
+                const r = await fetch('/api/chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content: pendingImageUrl, messageType: 'image' })
+                });
+                if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    alert('Failed to send image: ' + (err.error || r.status));
+                    return;
+                }
+            } catch (e) {
+                alert('Failed to send image. Check your connection.');
                 return;
             }
-        } catch (e) {
-            alert('Failed to send image. Check your connection.');
-            return;
+            cancelImage();
         }
-        cancelImage();
-    }
 
-    const input = document.getElementById('message-input');
-    const content = input.value.trim();
-    if (content) {
-        input.value = '';
-        try {
-            await fetch('/api/chat/send', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'text' })
-            });
-        } catch (e) {}
-    }
+        const input = document.getElementById('message-input');
+        const content = input.value.trim();
+        if (content) {
+            input.value = '';
+            try {
+                await fetch('/api/chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'text' })
+                });
+            } catch (e) {}
+        }
 
-    loadMessages();
-    loadContacts();
+        loadMessages();
+        loadContacts();
+    } finally { sendingMessage = false; sendBtn.disabled = false; }
 }
 
 document.getElementById('send-btn').addEventListener('click', sendMessage);

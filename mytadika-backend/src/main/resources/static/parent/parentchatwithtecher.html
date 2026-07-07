@@ -838,56 +838,61 @@
             if (shouldScroll) setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
         }
 
+        let sendingMessage = false;
         async function sendMessage() {
-            if (!selectedTeacherId) return;
-
-            // Send pending image if any
-            if (pendingImageUrl) {
-                try {
-                    const r = await fetch('/api/chat/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            senderId: myAccountId,
-                            receiverId: selectedTeacherId,
-                            content: pendingImageUrl,
-                            messageType: 'image'
-                        })
-                    });
-                    if (!r.ok) {
-                        const err = await r.json().catch(() => ({}));
-                        alert('Failed to send image: ' + (err.error || r.status));
+            if (!selectedTeacherId || sendingMessage) return;
+            sendingMessage = true;
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.disabled = true;
+            try {
+                // Send pending image if any
+                if (pendingImageUrl) {
+                    try {
+                        const r = await fetch('/api/chat/send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                senderId: myAccountId,
+                                receiverId: selectedTeacherId,
+                                content: pendingImageUrl,
+                                messageType: 'image'
+                            })
+                        });
+                        if (!r.ok) {
+                            const err = await r.json().catch(() => ({}));
+                            alert('Failed to send image: ' + (err.error || r.status));
+                            return;
+                        }
+                    } catch (e) {
+                        alert('Failed to send image. Check your connection.');
+                        console.error(e);
                         return;
                     }
-                } catch (e) {
-                    alert('Failed to send image. Check your connection.');
-                    console.error(e);
-                    return;
+                    cancelImage();
                 }
-                cancelImage();
-            }
 
-            // Send text if any
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
-            if (content) {
-                input.value = '';
-                input.style.height = 'auto';
-                try {
-                    await fetch('/api/chat/send', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            senderId: myAccountId,
-                            receiverId: selectedTeacherId,
-                            content,
-                            messageType: 'text'
-                        })
-                    });
-                } catch (e) { console.error('Failed to send message', e); }
-            }
+                // Send text if any
+                const input = document.getElementById('message-input');
+                const content = input.value.trim();
+                if (content) {
+                    input.value = '';
+                    input.style.height = 'auto';
+                    try {
+                        await fetch('/api/chat/send', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                senderId: myAccountId,
+                                receiverId: selectedTeacherId,
+                                content,
+                                messageType: 'text'
+                            })
+                        });
+                    } catch (e) { console.error('Failed to send message', e); }
+                }
 
-            await loadMessages();
+                await loadMessages();
+            } finally { sendingMessage = false; sendBtn.disabled = false; }
         }
 
         function toggleAttachPopup() {

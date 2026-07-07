@@ -154,7 +154,7 @@
     <div class="fixed top-[-10%] right-[-5%] w-[40vw] h-[40vw] organic-blob bg-primary-container/20 -z-10"></div>
     <div class="fixed bottom-[-10%] left-[-5%] w-[30vw] h-[30vw] organic-blob bg-secondary-container/30 -z-10"></div>
 
-    <div class="flex h-screen overflow-hidden">
+    <div class="relative flex h-screen overflow-hidden">
 
         <!-- Main Content Canvas -->
         <main class="flex-1 h-full overflow-y-auto ml-64">
@@ -436,6 +436,9 @@
             alertEl.className = success
                 ? 'rounded-lg px-6 py-4 text-sm font-bold text-center mb-6 bg-green-100 text-green-700'
                 : 'rounded-lg px-6 py-4 text-sm font-bold text-center mb-6 bg-red-100 text-red-700';
+        }
+        if (new URLSearchParams(location.search).get('incomplete') === '1') {
+            showAlert('Please complete your profile (phone number & address) to continue — a photo is optional.', false);
         }
 
         // Load profile from API and pre-fill form

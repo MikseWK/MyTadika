@@ -4,6 +4,7 @@ import com.mytadika.dto.ChatMessageRequest;
 import com.mytadika.model.Account;
 import com.mytadika.model.ChatContact;
 import com.mytadika.model.ChatMessage;
+import com.mytadika.model.ClassMember;
 import com.mytadika.model.Classroom;
 import com.mytadika.model.Student;
 import com.mytadika.model.StudentClassroom;
@@ -11,6 +12,7 @@ import com.mytadika.model.TeacherContact;
 import com.mytadika.repository.AccountRepository;
 import com.mytadika.repository.ChatContactRepository;
 import com.mytadika.repository.ChatMessageRepository;
+import com.mytadika.repository.ClassMemberRepository;
 import com.mytadika.repository.ClassroomRepository;
 import com.mytadika.repository.StudentClassroomRepository;
 import com.mytadika.repository.StudentRepository;
@@ -43,6 +45,7 @@ public class ChatService {
     private final StudentRepository studentRepository;
     private final StudentClassroomRepository studentClassroomRepository;
     private final ClassroomRepository classroomRepository;
+    private final ClassMemberRepository classMemberRepository;
     private final SupabaseStorageService storageService;
     private final NotificationService notificationService;
 
@@ -53,6 +56,7 @@ public class ChatService {
                        StudentRepository studentRepository,
                        StudentClassroomRepository studentClassroomRepository,
                        ClassroomRepository classroomRepository,
+                       ClassMemberRepository classMemberRepository,
                        SupabaseStorageService storageService,
                        NotificationService notificationService) {
         this.chatMessageRepository = chatMessageRepository;
@@ -62,6 +66,7 @@ public class ChatService {
         this.studentRepository = studentRepository;
         this.studentClassroomRepository = studentClassroomRepository;
         this.classroomRepository = classroomRepository;
+        this.classMemberRepository = classMemberRepository;
         this.storageService = storageService;
         this.notificationService = notificationService;
     }
@@ -373,25 +378,43 @@ public class ChatService {
 
                     List<Student> kids = studentsByParent.getOrDefault(p.getAccountId(), Collections.emptyList());
                     Set<String> classNames = new LinkedHashSet<>();
-                    for (Student kid : kids)
-                        for (Classroom c : classroomsByStudent.getOrDefault(kid.getId(), Collections.emptyList()))
-                            classNames.add(c.getName());
+                    List<Map<String, Object>> children = new ArrayList<>();
+                    for (Student kid : kids) {
+                        List<Classroom> kidClassrooms = classroomsByStudent.getOrDefault(kid.getId(), Collections.emptyList());
+                        List<String> kidClassNames = kidClassrooms.stream().map(Classroom::getName).collect(Collectors.toList());
+                        classNames.addAll(kidClassNames);
+                        Map<String, Object> childMap = new LinkedHashMap<>();
+                        childMap.put("name", kid.getFullName());
+                        childMap.put("classroomNames", kidClassNames);
+                        children.add(childMap);
+                    }
                     map.put("childNames", kids.stream().map(Student::getFullName).collect(Collectors.joining(", ")));
+                    map.put("children", children);
                     map.put("classroomNames", new ArrayList<>(classNames));
                     return map;
                 })
                 .collect(Collectors.toList());
     }
 
-    // Enriched with the classes each teacher owns, so the "new message" recipient
-    // picker can filter teachers by classroom too — batched (one query for all
-    // classrooms) rather than one lookup per teacher.
+    // Enriched with the classes each teacher teaches — as owner OR co-teacher — so the
+    // "new message" recipient picker can filter teachers by classroom too. Batched
+    // (one query for all classrooms/memberships) rather than one lookup per teacher.
     public List<Map<String, Object>> getTeachers() {
+        List<Classroom> allClassrooms = classroomRepository.findAll();
         Map<String, List<String>> classroomNamesByTeacher = new HashMap<>();
-        for (Classroom c : classroomRepository.findAll()) {
+        for (Classroom c : allClassrooms) {
             if (c.getTeacherAccountId() != null) {
                 classroomNamesByTeacher.computeIfAbsent(c.getTeacherAccountId(), k -> new ArrayList<>()).add(c.getName());
             }
+        }
+        Map<Long, Classroom> classroomsById = allClassrooms.stream()
+                .collect(Collectors.toMap(Classroom::getId, c -> c));
+        for (ClassMember m : classMemberRepository.findAll()) {
+            if (!"teacher".equals(m.getRole())) continue;
+            Classroom c = classroomsById.get(m.getClassroomId());
+            if (c == null) continue;
+            List<String> names = classroomNamesByTeacher.computeIfAbsent(m.getAccountId(), k -> new ArrayList<>());
+            if (!names.contains(c.getName())) names.add(c.getName());
         }
 
         return accountRepository.findByRoleType(Account.RoleType.TEACHER)

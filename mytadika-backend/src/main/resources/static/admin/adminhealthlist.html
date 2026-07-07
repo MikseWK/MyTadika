@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyTadika – Academic Reports</title>
+    <title>MyTadika – Health Records</title>
     <script>
         if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
             window.location.replace('/login.html');
@@ -26,8 +26,8 @@
     <div class="max-w-6xl mx-auto">
 
         <div class="mb-8">
-            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Academic Reports</h1>
-            <p class="text-stone-500 text-sm mt-1">Every student across your classes — pick one to view or submit term scores.</p>
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Health Records</h1>
+            <p class="text-stone-500 text-sm mt-1">Every student school-wide — pick one to view or log a measurement.</p>
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
@@ -53,7 +53,7 @@
                 <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
             </div>
             <div id="list-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
-                <span class="material-symbols-outlined text-4xl">bar_chart</span>
+                <span class="material-symbols-outlined text-4xl">favorite</span>
                 <p class="text-sm">No students found.</p>
             </div>
 
@@ -81,12 +81,11 @@ function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').su
 function fmtDob(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
 
 let allStudents = [];
-const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
-const FILTER_KEY = 'teacheracademiclist_filters';
+const FILTER_KEY = 'adminhealthlist_filters';
 
 function restoreFilterState() {
     // Only restore the previous search/class filter when arriving via the browser's Back/Forward
-    // button — a fresh visit (e.g. clicking "Academic" in the sidebar) should always start at the
+    // button — a fresh visit (e.g. clicking "Health" in the sidebar) should always start at the
     // "All Classes" default rather than whatever was selected last time.
     const navEntries = performance.getEntriesByType('navigation');
     const isBackForward = navEntries.length > 0 && navEntries[0].type === 'back_forward';
@@ -101,18 +100,15 @@ function restoreFilterState() {
 async function loadStudents() {
     try {
         const [studentsRes, classroomsRes] = await Promise.all([
-            fetch(`/api/classroom/my-students/${myAccountId}`),
-            fetch(`/api/classroom/my/${myAccountId}`)
+            fetch('/api/admin/students'),
+            fetch('/api/classroom/all')
         ]);
         allStudents = studentsRes.ok ? await studentsRes.json() : [];
-        const myClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
+        const allClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
 
-        // Show every class the teacher teaches, even ones with no students enrolled yet —
-        // not just the classes that happen to already have a student in them.
-        const classNames = [...new Set(myClassrooms.map(c => c.name).filter(Boolean))].sort();
         const select = document.getElementById('class-filter');
         select.innerHTML = '<option value="ALL">All Classes</option>' +
-            classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
+            allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
 
         restoreFilterState();
         filterStudents();
@@ -127,9 +123,9 @@ function filterStudents() {
     const classFilter = document.getElementById('class-filter').value;
     sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: document.getElementById('search-input').value, classFilter }));
     let list = allStudents;
-    if (q) list = list.filter(s => (s.studentName||'').toLowerCase().includes(q));
-    if (classFilter !== 'ALL') list = list.filter(s => s.classroomName === classFilter);
-    list = [...list].sort((a,b) => (a.classroomName||'zzz').localeCompare(b.classroomName||'zzz') || a.studentName.localeCompare(b.studentName));
+    if (q) list = list.filter(s => (s.fullName||'').toLowerCase().includes(q));
+    if (classFilter !== 'ALL') list = list.filter(s => (s.classroomIds||[]).some(id => String(id) === String(classFilter)));
+    list = [...list].sort((a,b) => (a.classroomName||'zzz').localeCompare(b.classroomName||'zzz') || a.fullName.localeCompare(b.fullName));
     renderStudents(list);
     document.getElementById('list-count').textContent = `${list.length} student${list.length !== 1 ? 's' : ''}`;
 }
@@ -148,18 +144,18 @@ function renderStudents(list) {
             <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full ${genderColor(s.gender)} flex items-center justify-center flex-shrink-0">
-                        <span class="text-xs font-bold text-white">${esc(initials(s.studentName))}</span>
+                        <span class="text-xs font-bold text-white">${esc(initials(s.fullName))}</span>
                     </div>
-                    <span class="font-semibold text-sm text-stone-800">${esc(s.studentName)}</span>
+                    <span class="font-semibold text-sm text-stone-800">${esc(s.fullName)}</span>
                 </div>
             </td>
             <td class="px-6 py-4 text-sm text-stone-500">${s.classroomName ? esc(s.classroomName) : '<span class="text-stone-300">—</span>'}</td>
             <td class="px-6 py-4 text-xs font-medium ${s.gender === 'FEMALE' ? 'text-rose-500' : s.gender === 'MALE' ? 'text-sky-500' : 'text-stone-400'}">${esc(s.gender||'—')}</td>
             <td class="px-6 py-4 text-sm text-stone-400">${fmtDob(s.dateOfBirth)}</td>
             <td class="px-6 py-4 text-right">
-                <a href="/teacher/teacheracademic.html?studentId=${s.studentId}&studentName=${encodeURIComponent(s.studentName||'')}&className=${encodeURIComponent(s.classroomName||'')}"
+                <a href="/admin/adminhealth.html?studentId=${s.id}&studentName=${encodeURIComponent(s.fullName||'')}&className=${encodeURIComponent(s.classroomName||'')}&dob=${encodeURIComponent(s.dateOfBirth||'')}&gender=${encodeURIComponent(s.gender||'')}"
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] hover:bg-[#ffd709]/40 text-xs font-bold transition-colors">
-                    <span class="material-symbols-outlined text-sm">bar_chart</span>
+                    <span class="material-symbols-outlined text-sm">favorite</span>
                     View
                 </a>
             </td>
@@ -169,6 +165,6 @@ function renderStudents(list) {
 loadStudents();
 </script>
 
-<script>loadSidebar('teacher', 'report'); loadTopbar('teacher');</script>
+<script>loadSidebar('admin', 'health'); loadTopbar('admin');</script>
 </body>
 </html>

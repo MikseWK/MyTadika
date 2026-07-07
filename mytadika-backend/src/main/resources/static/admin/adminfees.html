@@ -90,6 +90,11 @@
                         <span class="material-symbols-outlined text-base">edit_note</span>
                         Bulk Edit Class
                     </button>
+                    <button id="bulk-delete-btn" onclick="submitBulkDelete()" disabled
+                        class="flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors">
+                        <span class="material-symbols-outlined text-base">delete_sweep</span>
+                        Bulk Delete Class
+                    </button>
                     <span class="text-xs text-stone-400" id="list-count"></span>
                 </div>
             </div>
@@ -169,7 +174,7 @@
         <p id="fm-error" class="hidden text-xs text-red-500 mt-3"></p>
         <div class="flex gap-3 mt-6">
             <button onclick="closeFeeModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
-            <button onclick="submitFee()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Save</button>
+            <button id="fee-submit-btn" onclick="submitFee()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
         </div>
     </div>
 </div>
@@ -202,7 +207,7 @@
         <p id="bulk-edit-error" class="hidden text-xs text-red-500 mt-3"></p>
         <div class="flex gap-3 mt-6">
             <button onclick="closeBulkEditModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
-            <button onclick="submitBulkEdit()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Save All</button>
+            <button id="bulk-edit-submit-btn" onclick="submitBulkEdit()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save All</button>
         </div>
     </div>
 </div>
@@ -267,12 +272,17 @@ function classNameOf(f) {
 function onClassFilterChange() {
     classFilter = document.getElementById('class-filter').value;
     const btn = document.getElementById('bulk-edit-btn');
+    const delBtn = document.getElementById('bulk-delete-btn');
     if (classFilter === 'ALL') {
         btn.disabled = true;
         btn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors';
+        delBtn.disabled = true;
+        delBtn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors';
     } else {
         btn.disabled = false;
         btn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] text-xs font-bold hover:bg-[#f5cc00] transition-colors';
+        delBtn.disabled = false;
+        delBtn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors';
     }
     filterFees();
 }
@@ -432,7 +442,9 @@ function openEditModal(id) {
 
 function closeFeeModal() { document.getElementById('fee-modal').classList.add('hidden'); }
 
+let submittingFee = false;
 async function submitFee() {
+    if (submittingFee) return;
     const body = {
         description: document.getElementById('fm-description').value.trim(),
         amount: parseFloat(document.getElementById('fm-amount').value),
@@ -455,6 +467,9 @@ async function submitFee() {
         url = `/api/fees/students/${studentId}`; method = 'POST';
     }
 
+    submittingFee = true;
+    const btn = document.getElementById('fee-submit-btn');
+    btn.disabled = true;
     try {
         const res = await fetch(url, {
             method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -472,6 +487,7 @@ async function submitFee() {
             showErr('fm-error', msg);
         }
     } catch(e) { showErr('fm-error', 'Network error.'); }
+    finally { submittingFee = false; btn.disabled = false; }
 }
 
 function openBulkEditModal() {
@@ -488,7 +504,9 @@ function openBulkEditModal() {
 
 function closeBulkEditModal() { document.getElementById('bulk-edit-modal').classList.add('hidden'); }
 
+let submittingBulkEdit = false;
 async function submitBulkEdit() {
+    if (submittingBulkEdit) return;
     const body = {
         feeIds: currentFilteredFees.map(f => f.id),
         description: document.getElementById('bulk-description').value.trim(),
@@ -500,6 +518,9 @@ async function submitBulkEdit() {
     if (!body.amount || body.amount <= 0) { showErr('bulk-edit-error', 'Enter a valid amount.'); return; }
     if (!body.dueDate) { showErr('bulk-edit-error', 'Due date is required.'); return; }
 
+    submittingBulkEdit = true;
+    const btn = document.getElementById('bulk-edit-submit-btn');
+    btn.disabled = true;
     try {
         const res = await fetch('/api/fees/bulk', {
             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
@@ -515,6 +536,35 @@ async function submitBulkEdit() {
             showErr('bulk-edit-error', msg);
         }
     } catch(e) { showErr('bulk-edit-error', 'Network error.'); }
+    finally { submittingBulkEdit = false; btn.disabled = false; }
+}
+
+let bulkDeleting = false;
+async function submitBulkDelete() {
+    if (bulkDeleting || classFilter === 'ALL' || !currentFilteredFees.length) return;
+    const className = allClassrooms.find(c => String(c.id) === String(classFilter));
+    const count = currentFilteredFees.length;
+    if (!confirm(`Delete all ${count} fee record${count !== 1 ? 's' : ''} for ${className ? className.name : 'this class'}? This cannot be undone.`)) return;
+
+    bulkDeleting = true;
+    const btn = document.getElementById('bulk-delete-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/fees/bulk', {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feeIds: currentFilteredFees.map(f => f.id) })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`Deleted ${data.deleted != null ? data.deleted : count} fee records.`);
+            await loadFees();
+        } else {
+            let msg = 'Failed to delete.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showToast(msg);
+        }
+    } catch(e) { showToast('Network error.'); }
+    finally { bulkDeleting = false; btn.disabled = false; }
 }
 
 async function markPaid(id) {

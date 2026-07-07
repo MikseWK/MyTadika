@@ -86,6 +86,12 @@ public class StudentService {
                 if (t != null) {
                     cm.put("teacherName", t.getFullName());
                     cm.put("teacherImage", t.getProfileImageUrl());
+                    cm.put("teacherEmail", t.getEmail());
+                    cm.put("teacherPhone", t.getPhoneNumber());
+                    cm.put("teacherQualification", t.getQualification());
+                    cm.put("teacherExperience", t.getExperience());
+                    cm.put("teacherFocusArea", t.getFocusArea());
+                    cm.put("teacherDescription", t.getDescription());
                 }
 
                 List<Assignment> upcoming = upcomingByClassroom.getOrDefault(c.getId(), Collections.emptyList())

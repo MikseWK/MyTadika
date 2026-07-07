@@ -47,6 +47,26 @@ public class FeeService {
                 .collect(Collectors.toList());
     }
 
+    // Count of unpaid fees across every child linked to this parent — powers the sidebar badge.
+    public int getPendingCountForParent(String parentAccountId) {
+        List<Long> studentIds = studentRepository.findByParentId(parentAccountId).stream()
+                .map(Student::getId).collect(Collectors.toList());
+        if (studentIds.isEmpty()) return 0;
+        return (int) feeRepository.findByStudentIdIn(studentIds).stream()
+                .filter(f -> "PENDING".equals(f.getStatus()))
+                .count();
+    }
+
+    // Per-child breakdown of unpaid fee counts — powers the child-switcher badges on the Fees page.
+    public Map<Long, Long> getPendingCountsByStudentForParent(String parentAccountId) {
+        List<Long> studentIds = studentRepository.findByParentId(parentAccountId).stream()
+                .map(Student::getId).collect(Collectors.toList());
+        if (studentIds.isEmpty()) return Map.of();
+        return feeRepository.findByStudentIdIn(studentIds).stream()
+                .filter(f -> "PENDING".equals(f.getStatus()))
+                .collect(Collectors.groupingBy(f -> f.getStudentId(), Collectors.counting()));
+    }
+
     public Map<String, Object> createFee(Long studentId, String description, Double amount, String dueDate) {
         validateFeeFields(description, amount, dueDate);
 
@@ -160,9 +180,30 @@ public class FeeService {
     }
 
     public void deleteFee(Long id) {
-        if (!feeRepository.existsById(id))
-            throw new RuntimeException("Fee record not found");
+        Fee fee = feeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Fee record not found"));
         feeRepository.deleteById(id);
+        notifyParentOfDeletion(fee);
+    }
+
+    public int bulkDeleteFees(List<Long> feeIds) {
+        if (feeIds == null || feeIds.isEmpty())
+            throw new IllegalArgumentException("No fee records selected");
+        List<Fee> existing = feeRepository.findAllById(feeIds);
+        feeRepository.deleteAll(existing);
+        existing.forEach(this::notifyParentOfDeletion);
+        return existing.size();
+    }
+
+    private void notifyParentOfDeletion(Fee fee) {
+        Student student = studentRepository.findById(fee.getStudentId()).orElse(null);
+        if (student == null || student.getParentId() == null) return;
+
+        String title = "Fee removed: " + fee.getDescription() + " for " + student.getFullName();
+        String body = "The RM " + String.format("%.2f", fee.getAmount()) + " fee due " + fee.getDueDate()
+                + " has been removed and no longer needs to be paid.";
+        String link = "/parent/parentfees.html?studentId=" + student.getId();
+        notificationService.create(student.getParentId(), title, body, link);
     }
 
     private Map<String, Object> toMap(Fee fee) {

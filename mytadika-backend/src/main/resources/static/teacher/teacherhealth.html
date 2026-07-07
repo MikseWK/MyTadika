@@ -35,7 +35,10 @@
 <div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-black/30 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100 flex-shrink-0">
-            <h3 class="text-lg font-black text-[#312f23] font-headline">Log Measurement</h3>
+            <div>
+                <h3 class="text-lg font-black text-[#312f23] font-headline">Log Measurement</h3>
+                <p id="modal-student-name" class="text-sm font-bold text-[#6c5a00] mt-0.5"></p>
+            </div>
             <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-500">
                 <span class="material-symbols-outlined text-xl">close</span>
             </button>
@@ -67,7 +70,7 @@
         </div>
         <div class="flex gap-3 px-6 py-4 bg-stone-50 border-t border-stone-100 flex-shrink-0">
             <button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-100 transition-colors">Cancel</button>
-            <button onclick="submitMeasurement()" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors">Save</button>
+            <button id="measurement-submit-btn" onclick="submitMeasurement()" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
         </div>
     </div>
 </div>
@@ -113,9 +116,9 @@
                     <div id="allergy-tags" class="flex flex-wrap gap-2 mb-3"></div>
                     <div class="flex gap-2">
                         <input id="allergy-input" type="text" placeholder="Add an allergy (e.g. peanut, milk)…"
+                            onkeydown="if(event.key==='Enter') addAllergyTag()"
                             class="flex-1 px-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
-                        <button onclick="addAllergyTag()" class="px-4 py-2 rounded-xl bg-stone-100 text-stone-600 font-bold text-sm hover:bg-stone-200 transition-colors">Add</button>
-                        <button onclick="saveAllergies()" class="px-4 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors">Save</button>
+                        <button id="allergy-add-btn" onclick="addAllergyTag()" class="px-4 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Add</button>
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 flex flex-col justify-center">
@@ -293,22 +296,26 @@
             : '<p class="text-xs text-stone-400">No allergies recorded.</p>';
     }
 
-    function addAllergyTag() {
+    async function addAllergyTag() {
         const input = document.getElementById('allergy-input');
         const val = input.value.trim().toLowerCase();
-        if (val && !allergyTags.includes(val)) {
-            allergyTags.push(val);
-            renderAllergyTags();
-        }
+        if (!val) return;
         input.value = '';
+        if (allergyTags.includes(val)) return;
+        allergyTags.push(val);
+        renderAllergyTags();
+        await saveAllergies();
     }
 
-    function removeAllergyTag(tag) {
+    async function removeAllergyTag(tag) {
         allergyTags = allergyTags.filter(a => a !== tag);
         renderAllergyTags();
+        await saveAllergies();
     }
 
     async function saveAllergies() {
+        const btn = document.getElementById('allergy-add-btn');
+        if (btn) btn.disabled = true;
         try {
             await fetch(`/api/health/allergies/${selectedStudentId}`, {
                 method: 'PUT',
@@ -317,6 +324,7 @@
             });
             await loadAdvice();
         } catch (e) { alert('Failed to save allergies.'); }
+        finally { if (btn) btn.disabled = false; }
     }
 
     async function loadAdvice() {
@@ -381,12 +389,15 @@
         document.getElementById('log-muac').value = '';
         document.getElementById('log-activity').value = '1';
         document.getElementById('modal-error').classList.add('hidden');
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
         document.getElementById('modal-overlay').classList.remove('hidden');
     }
     function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
     document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 
+    let submittingMeasurement = false;
     async function submitMeasurement() {
+        if (submittingMeasurement) return;
         const errEl = document.getElementById('modal-error');
         const weightKg = parseFloat(document.getElementById('log-weight').value);
         const heightCm = parseFloat(document.getElementById('log-height').value);
@@ -399,6 +410,9 @@
             return;
         }
 
+        submittingMeasurement = true;
+        const btn = document.getElementById('measurement-submit-btn');
+        btn.disabled = true;
         try {
             const res = await fetch('/api/health/record', {
                 method: 'POST',
@@ -423,7 +437,7 @@
         } catch (e) {
             errEl.textContent = 'Network error. Please try again.';
             errEl.classList.remove('hidden');
-        }
+        } finally { submittingMeasurement = false; btn.disabled = false; }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {

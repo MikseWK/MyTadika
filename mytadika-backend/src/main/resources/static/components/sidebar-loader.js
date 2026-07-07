@@ -1,4 +1,28 @@
+// Parents and teachers must fill in the required profile fields (everything except the
+// photo) before using the rest of the system. Skipped for the profile/edit-profile pages
+// themselves so there's always a way in to actually complete it, and skipped entirely for
+// admin. Fails open (doesn't block) if the profile fetch itself errors.
+async function enforceProfileComplete(role, activeNav) {
+    if (activeNav === 'profile') return;
+    if (role !== 'parent' && role !== 'teacher') return;
+    const accountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    if (!accountId) return;
+    try {
+        const res = await fetch('/api/profile/' + accountId);
+        if (!res.ok) return;
+        const p = await res.json();
+        const required = role === 'teacher'
+            ? ['phoneNumber', 'address', 'qualification', 'experience', 'focusArea', 'description']
+            : ['phoneNumber', 'address'];
+        const incomplete = required.some(f => !p[f] || !String(p[f]).trim());
+        if (incomplete) {
+            window.location.replace('/' + role + '/' + role + 'editprofile.html?incomplete=1');
+        }
+    } catch (e) { /* fail open — don't block access if the check itself errors */ }
+}
+
 async function loadSidebar(role, activeNav) {
+    await enforceProfileComplete(role, activeNav);
     try {
         const res = await fetch('/components/sidebar-' + role + '.html');
         const html = await res.text();
@@ -23,8 +47,33 @@ async function loadSidebar(role, activeNav) {
         updateSidebarBadge(role);
         setInterval(() => updateSidebarBadge(role), 5000);
 
+        if (role === 'parent') {
+            updateFeesBadge();
+            setInterval(updateFeesBadge, 5000);
+        }
+
     } catch (e) {
         console.error('Sidebar load failed:', e);
+    }
+}
+
+async function updateFeesBadge() {
+    const accountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    const badge = document.getElementById('nav-fees-badge');
+    if (!accountId || !badge) return;
+
+    try {
+        const res = await fetch('/api/fees/pending-count/' + accountId);
+        const data = res.ok ? await res.json() : { count: 0 };
+        const count = data.count || 0;
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    } catch (e) {
+        // silently ignore network errors
     }
 }
 
@@ -178,6 +227,21 @@ async function initNotificationsPage(role, accountId) {
             try {
                 await fetch('/api/notifications/read-all/' + accountId, { method: 'POST' });
                 _notifPageData.forEach(n => n.isRead = true);
+                renderNotifPage();
+                _fetchNotifCount();
+            } catch (_) {}
+        });
+    }
+
+    const deleteAllBtn = document.getElementById('notif-page-delete-all');
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', async () => {
+            if (!_notifPageData.length) return;
+            if (!confirm('Delete all notifications? This cannot be undone.')) return;
+            try {
+                await fetch('/api/notifications/all/' + accountId, { method: 'DELETE' });
+                _notifPageData = [];
+                _expandedNotifId = null;
                 renderNotifPage();
                 _fetchNotifCount();
             } catch (_) {}

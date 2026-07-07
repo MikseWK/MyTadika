@@ -9,6 +9,7 @@ import java.util.List;
 public interface MemoryPostRepository extends JpaRepository<MemoryPost, Long> {
     List<MemoryPost> findByClassroomIdOrderByCreatedAtDesc(Long classroomId);
     List<MemoryPost> findByClassroomIdInOrderByCreatedAtDesc(List<Long> classroomIds);
+    List<MemoryPost> findAllByOrderByCreatedAtDesc();
 
     @Modifying
     @Query("DELETE FROM MemoryPost m WHERE m.classroomId = :classroomId")

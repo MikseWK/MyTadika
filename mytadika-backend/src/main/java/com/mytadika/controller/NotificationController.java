@@ -42,4 +42,10 @@ public class NotificationController {
         notifService.delete(id);
         return ResponseEntity.ok(Map.of("status", "ok"));
     }
+
+    @DeleteMapping("/all/{accountId}")
+    public ResponseEntity<?> deleteAll(@PathVariable String accountId) {
+        notifService.deleteAll(accountId);
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
 }

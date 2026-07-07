@@ -82,17 +82,39 @@ function fmtDob(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const
 
 let allStudents = [];
 const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+const FILTER_KEY = 'teacherhealthlist_filters';
+
+function restoreFilterState() {
+    // Only restore the previous search/class filter when arriving via the browser's Back/Forward
+    // button — a fresh visit (e.g. clicking "Health" in the sidebar) should always start at the
+    // "All Classes" default rather than whatever was selected last time.
+    const navEntries = performance.getEntriesByType('navigation');
+    const isBackForward = navEntries.length > 0 && navEntries[0].type === 'back_forward';
+    if (!isBackForward) return;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(FILTER_KEY) || '{}');
+        if (saved.search) document.getElementById('search-input').value = saved.search;
+        if (saved.classFilter) document.getElementById('class-filter').value = saved.classFilter;
+    } catch (e) { /* ignore malformed state */ }
+}
 
 async function loadStudents() {
     try {
-        const res = await fetch(`/api/classroom/my-students/${myAccountId}`);
-        allStudents = res.ok ? await res.json() : [];
+        const [studentsRes, classroomsRes] = await Promise.all([
+            fetch(`/api/classroom/my-students/${myAccountId}`),
+            fetch(`/api/classroom/my/${myAccountId}`)
+        ]);
+        allStudents = studentsRes.ok ? await studentsRes.json() : [];
+        const myClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
 
-        const classNames = [...new Set(allStudents.map(s => s.classroomName).filter(Boolean))].sort();
+        // Show every class the teacher teaches, even ones with no students enrolled yet —
+        // not just the classes that happen to already have a student in them.
+        const classNames = [...new Set(myClassrooms.map(c => c.name).filter(Boolean))].sort();
         const select = document.getElementById('class-filter');
         select.innerHTML = '<option value="ALL">All Classes</option>' +
             classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
 
+        restoreFilterState();
         filterStudents();
     } catch (e) {
         allStudents = [];
@@ -103,6 +125,7 @@ async function loadStudents() {
 function filterStudents() {
     const q = (document.getElementById('search-input').value || '').toLowerCase();
     const classFilter = document.getElementById('class-filter').value;
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: document.getElementById('search-input').value, classFilter }));
     let list = allStudents;
     if (q) list = list.filter(s => (s.studentName||'').toLowerCase().includes(q));
     if (classFilter !== 'ALL') list = list.filter(s => s.classroomName === classFilter);

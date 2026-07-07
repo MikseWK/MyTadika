@@ -112,7 +112,7 @@
 </head>
 
 <body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
-    <div class="flex h-screen overflow-hidden">
+    <div class="relative flex h-screen overflow-hidden">
         <!-- Abstract Background Blobs -->
         <div
             class="absolute -top-24 -right-24 w-96 h-96 bg-secondary-container opacity-20 organic-blob blur-3xl pointer-events-none">
@@ -121,7 +121,7 @@
             class="absolute bottom-40 -left-20 w-80 h-80 bg-tertiary-container opacity-10 organic-blob blur-3xl pointer-events-none">
         </div>
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto p-8 md:p-12 z-10 ml-64">
+        <main class="flex-1 overflow-y-auto px-8 pb-8 md:px-12 md:pb-12 pt-24 z-10 ml-64">
             <!-- Header Section -->
             <header class="mb-12">
                 <div class="flex justify-between items-center">
@@ -221,20 +221,8 @@
                     Account Preferences
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
-                        <div
-                            class="w-12 h-12 rounded-full bg-primary-container/30 flex items-center justify-center text-primary">
-                            <span class="material-symbols-outlined"
-                                data-icon="notifications_active">notifications_active</span>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-on-surface">Notifications</h4>
-                            <p class="text-sm text-on-surface-variant">Manage daily reports and alerts</p>
-                        </div>
-                    </div>
-                    <div
-                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
+                    <button onclick="openPasswordModal()"
+                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4 text-left">
                         <div
                             class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
                             <span class="material-symbols-outlined" data-icon="security">security</span>
@@ -243,18 +231,7 @@
                             <h4 class="font-bold text-on-surface">Privacy &amp; Security</h4>
                             <p class="text-sm text-on-surface-variant">Update password and safety</p>
                         </div>
-                    </div>
-                    <div
-                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4">
-                        <div
-                            class="w-12 h-12 rounded-full bg-tertiary-container/30 flex items-center justify-center text-tertiary">
-                            <span class="material-symbols-outlined" data-icon="language">language</span>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-on-surface">Language</h4>
-                            <p class="text-sm text-on-surface-variant">English (US)</p>
-                        </div>
-                    </div>
+                    </button>
                 </div>
             </section>
             <!-- Sign Out Section -->
@@ -267,6 +244,39 @@
             </footer>
         </main>
     </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-black text-on-surface mb-5 font-headline">Change Password</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Current Password</label>
+                    <input id="pw-current" type="password"
+                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">New Password</label>
+                    <input id="pw-new" type="password"
+                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Confirm New Password</label>
+                    <input id="pw-confirm" type="password"
+                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                </div>
+            </div>
+            <p id="pw-error" class="hidden text-xs text-error mt-3"></p>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closePasswordModal()" class="flex-1 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:bg-surface">Cancel</button>
+                <button id="pw-submit-btn" onclick="submitPasswordChange()" class="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:bg-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
     <script>
         const accountId = sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
 
@@ -301,6 +311,73 @@
             }
         })();
 
+        // Change Password modal
+        function showToast(msg, ms = 2500) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), ms);
+        }
+
+        function openPasswordModal() {
+            document.getElementById('pw-current').value = '';
+            document.getElementById('pw-new').value = '';
+            document.getElementById('pw-confirm').value = '';
+            document.getElementById('pw-error').classList.add('hidden');
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        let submittingPassword = false;
+        async function submitPasswordChange() {
+            if (submittingPassword) return;
+            const currentPassword = document.getElementById('pw-current').value;
+            const newPassword = document.getElementById('pw-new').value;
+            const confirmPassword = document.getElementById('pw-confirm').value;
+            const errEl = document.getElementById('pw-error');
+
+            if (!currentPassword || !newPassword) {
+                errEl.textContent = 'Please fill in all fields.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (newPassword.length < 6) {
+                errEl.textContent = 'New password must be at least 6 characters.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errEl.textContent = 'New passwords do not match.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            submittingPassword = true;
+            const btn = document.getElementById('pw-submit-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/change-password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId, currentPassword, newPassword })
+                });
+                if (res.ok) {
+                    closePasswordModal();
+                    showToast('Password changed successfully.');
+                } else {
+                    const err = await res.json();
+                    errEl.textContent = err.error || 'Failed to change password.';
+                    errEl.classList.remove('hidden');
+                }
+            } catch (_) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.classList.remove('hidden');
+            } finally { submittingPassword = false; btn.disabled = false; }
+        }
+
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => {
             sessionStorage.clear();
@@ -308,7 +385,7 @@
             window.location.href = '/login.html';
         });
     </script>
-    <script>loadSidebar('teacher', 'profile');</script>
+    <script>loadSidebar('teacher', 'profile'); loadTopbar('teacher');</script>
 </body>
 
 </html>

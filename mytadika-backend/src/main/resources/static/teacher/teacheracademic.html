@@ -39,7 +39,10 @@
 <div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-black/30 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100 flex-shrink-0">
-            <h3 id="modal-heading" class="text-lg font-black text-[#312f23] font-headline">Submit Term Scores</h3>
+            <div>
+                <h3 id="modal-heading" class="text-lg font-black text-[#312f23] font-headline">Submit Term Scores</h3>
+                <p id="modal-student-name" class="text-sm font-bold text-[#6c5a00] mt-0.5"></p>
+            </div>
             <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-500">
                 <span class="material-symbols-outlined text-xl">close</span>
             </button>
@@ -58,7 +61,7 @@
         </div>
         <div class="flex gap-3 px-6 py-4 bg-stone-50 border-t border-stone-100 flex-shrink-0">
             <button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-100 transition-colors">Cancel</button>
-            <button onclick="submitRecord()" id="modal-submit-btn" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors">Save</button>
+            <button onclick="submitRecord()" id="modal-submit-btn" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
         </div>
     </div>
 </div>
@@ -254,6 +257,7 @@
     function openModal() {
         editingId = null;
         document.getElementById('modal-heading').textContent = 'Submit Term Scores';
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
         document.getElementById('rec-term').value = '';
         renderSubjectRows();
         document.getElementById('modal-error').classList.add('hidden');
@@ -265,6 +269,7 @@
         if (!record) return;
         editingId = record.id;
         document.getElementById('modal-heading').textContent = 'Edit Term Scores';
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
         document.getElementById('rec-term').value = record.academicTerm;
         renderSubjectRows(record.scores);
         document.getElementById('modal-error').classList.add('hidden');
@@ -274,7 +279,9 @@
     function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
     document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 
+    let submittingRecord = false;
     async function submitRecord() {
+        if (submittingRecord) return;
         const term = document.getElementById('rec-term').value.trim();
         const errEl = document.getElementById('modal-error');
         const subjects = Array.from(document.querySelectorAll('.subject-row'))
@@ -291,6 +298,9 @@
         const url = isEdit ? `/api/academic/records/${editingId}` : `/api/academic/students/${selectedStudentId}/records`;
         const method = isEdit ? 'PUT' : 'POST';
 
+        submittingRecord = true;
+        const btn = document.getElementById('modal-submit-btn');
+        if (btn) btn.disabled = true;
         try {
             const res = await fetch(url, {
                 method,
@@ -308,7 +318,7 @@
         } catch (e) {
             errEl.textContent = 'Network error. Please try again.';
             errEl.classList.remove('hidden');
-        }
+        } finally { submittingRecord = false; if (btn) btn.disabled = false; }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {

@@ -15,6 +15,8 @@ public class MemoryService {
 
     private final MemoryPostRepository memoryPostRepository;
     private final MemoryImageRepository memoryImageRepository;
+    private final MemoryReactionRepository memoryReactionRepository;
+    private final MemoryCommentRepository memoryCommentRepository;
     private final ClassroomRepository classroomRepository;
     private final ClassMemberRepository memberRepository;
     private final AccountRepository accountRepository;
@@ -24,12 +26,15 @@ public class MemoryService {
     private final NotificationService notificationService;
 
     public MemoryService(MemoryPostRepository memoryPostRepository, MemoryImageRepository memoryImageRepository,
+                          MemoryReactionRepository memoryReactionRepository, MemoryCommentRepository memoryCommentRepository,
                           ClassroomRepository classroomRepository, ClassMemberRepository memberRepository,
                           AccountRepository accountRepository, StudentRepository studentRepository,
                           StudentClassroomRepository studentClassroomRepository,
                           SupabaseStorageService storageService, NotificationService notificationService) {
         this.memoryPostRepository = memoryPostRepository;
         this.memoryImageRepository = memoryImageRepository;
+        this.memoryReactionRepository = memoryReactionRepository;
+        this.memoryCommentRepository = memoryCommentRepository;
         this.classroomRepository = classroomRepository;
         this.memberRepository = memberRepository;
         this.accountRepository = accountRepository;
@@ -54,21 +59,50 @@ public class MemoryService {
 
         for (MultipartFile file : files) {
             if (file.isEmpty()) continue;
-            String original = file.getOriginalFilename();
-            String ext = (original != null && original.contains(".")) ? original.substring(original.lastIndexOf('.')) : ".jpg";
-            String filename = "memory_" + UUID.randomUUID() + ext;
-            String url = storageService.uploadImage(file.getBytes(), filename, file.getContentType());
-            memoryImageRepository.save(MemoryImage.builder().memoryPostId(post.getId()).imageUrl(url).build());
+            memoryImageRepository.save(MemoryImage.builder().memoryPostId(post.getId()).imageUrl(uploadOne(file)).build());
         }
 
         try {
-            notifyParentsInClassroom(classroomId, classroom.getName());
+            notifyParentsInClassroom(classroomId, classroom.getName(), post.getId());
         } catch (Exception ignored) { }
 
-        return toPostMap(post, classroom.getName());
+        return toPostMap(post, classroom.getName(), authorAccountId);
     }
 
-    private void notifyParentsInClassroom(Long classroomId, String classroomName) {
+    private String uploadOne(MultipartFile file) throws IOException {
+        String original = file.getOriginalFilename();
+        String ext = (original != null && original.contains(".")) ? original.substring(original.lastIndexOf('.')) : ".jpg";
+        String filename = "memory_" + UUID.randomUUID() + ext;
+        return storageService.uploadImage(file.getBytes(), filename, file.getContentType());
+    }
+
+    // Updates the caption, removes any images whose id is in removeImageIds, and appends any newFiles.
+    @Transactional
+    public Map<String, Object> editPost(Long postId, String caption, List<Long> removeImageIds,
+                                         List<MultipartFile> newFiles) throws IOException {
+        MemoryPost post = memoryPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Memory post not found."));
+        post.setCaption(caption != null && !caption.isBlank() ? caption.trim() : null);
+        memoryPostRepository.save(post);
+
+        if (removeImageIds != null && !removeImageIds.isEmpty()) {
+            memoryImageRepository.deleteAllById(removeImageIds);
+        }
+        if (newFiles != null) {
+            for (MultipartFile file : newFiles) {
+                if (file.isEmpty()) continue;
+                memoryImageRepository.save(MemoryImage.builder().memoryPostId(post.getId()).imageUrl(uploadOne(file)).build());
+            }
+        }
+        if (memoryImageRepository.findByMemoryPostIdOrderByIdAsc(postId).isEmpty()) {
+            throw new IllegalArgumentException("A memory post must have at least one photo.");
+        }
+
+        String classroomName = classroomRepository.findById(post.getClassroomId()).map(Classroom::getName).orElse("classroom");
+        return toPostMap(post, classroomName, post.getAuthorAccountId());
+    }
+
+    private void notifyParentsInClassroom(Long classroomId, String classroomName, Long postId) {
         Map<String, List<Student>> byParent = new LinkedHashMap<>();
         studentClassroomRepository.findByClassroomId(classroomId).forEach(sc ->
                 studentRepository.findById(sc.getStudentId()).ifPresent(s -> {
@@ -80,15 +114,15 @@ public class MemoryService {
             notificationService.create(parentId,
                     "New photos in " + classroomName + " — " + childNames,
                     "Tap to see the latest memories from class.",
-                    "/parent/parentmemory.html");
+                    "/parent/parentmemory.html?postId=" + postId);
         });
     }
 
-    public List<Map<String, Object>> getForClassroom(Long classroomId) {
+    public List<Map<String, Object>> getForClassroom(Long classroomId, String viewerAccountId) {
         Classroom classroom = classroomRepository.findById(classroomId).orElse(null);
         String name = classroom != null ? classroom.getName() : "classroom";
         return buildFeed(memoryPostRepository.findByClassroomIdOrderByCreatedAtDesc(classroomId),
-                Collections.singletonMap(classroomId, name));
+                Collections.singletonMap(classroomId, name), viewerAccountId);
     }
 
     // All memory posts from every classroom the teacher teaches (owner or co-teacher).
@@ -96,7 +130,7 @@ public class MemoryService {
         Set<Long> classroomIds = new LinkedHashSet<>();
         classroomRepository.findByTeacherAccountId(teacherAccountId).forEach(c -> classroomIds.add(c.getId()));
         memberRepository.findByAccountId(teacherAccountId).forEach(m -> classroomIds.add(m.getClassroomId()));
-        return getForClassroomIds(new ArrayList<>(classroomIds));
+        return getForClassroomIds(new ArrayList<>(classroomIds), teacherAccountId);
     }
 
     // All memory posts from every classroom any of this parent's children belong to.
@@ -105,28 +139,50 @@ public class MemoryService {
         List<Long> studentIds = kids.stream().map(Student::getId).collect(Collectors.toList());
         Set<Long> classroomIds = studentClassroomRepository.findByStudentIdIn(studentIds).stream()
                 .map(StudentClassroom::getClassroomId).collect(Collectors.toCollection(LinkedHashSet::new));
-        return getForClassroomIds(new ArrayList<>(classroomIds));
+        return getForClassroomIds(new ArrayList<>(classroomIds), parentAccountId);
     }
 
-    private List<Map<String, Object>> getForClassroomIds(List<Long> classroomIds) {
+    // School-wide feed for admin oversight/moderation — every memory post from every classroom.
+    public List<Map<String, Object>> getAllForAdmin() {
+        Map<Long, String> namesById = classroomRepository.findAll().stream()
+                .collect(Collectors.toMap(Classroom::getId, Classroom::getName));
+        List<MemoryPost> posts = memoryPostRepository.findAllByOrderByCreatedAtDesc();
+        return buildFeed(posts, namesById, null);
+    }
+
+    private List<Map<String, Object>> getForClassroomIds(List<Long> classroomIds, String viewerAccountId) {
         if (classroomIds.isEmpty()) return Collections.emptyList();
         Map<Long, String> namesById = classroomRepository.findAllById(classroomIds).stream()
                 .collect(Collectors.toMap(Classroom::getId, Classroom::getName));
         List<MemoryPost> posts = memoryPostRepository.findByClassroomIdInOrderByCreatedAtDesc(classroomIds);
-        return buildFeed(posts, namesById);
+        return buildFeed(posts, namesById, viewerAccountId);
     }
 
-    private List<Map<String, Object>> buildFeed(List<MemoryPost> posts, Map<Long, String> classroomNamesById) {
+    private List<Map<String, Object>> buildFeed(List<MemoryPost> posts, Map<Long, String> classroomNamesById, String viewerAccountId) {
         if (posts.isEmpty()) return Collections.emptyList();
 
         List<Long> postIds = posts.stream().map(MemoryPost::getId).collect(Collectors.toList());
-        Map<Long, List<String>> imagesByPost = new HashMap<>();
-        memoryImageRepository.findByMemoryPostIdInOrderByIdAsc(postIds).forEach(img ->
-                imagesByPost.computeIfAbsent(img.getMemoryPostId(), k -> new ArrayList<>()).add(img.getImageUrl()));
+        Map<Long, List<Map<String, Object>>> imagesByPost = new HashMap<>();
+        memoryImageRepository.findByMemoryPostIdInOrderByIdAsc(postIds).forEach(img -> {
+            Map<String, Object> imgMap = new LinkedHashMap<>();
+            imgMap.put("id", img.getId());
+            imgMap.put("url", img.getImageUrl());
+            imagesByPost.computeIfAbsent(img.getMemoryPostId(), k -> new ArrayList<>()).add(imgMap);
+        });
 
         List<String> authorIds = posts.stream().map(MemoryPost::getAuthorAccountId).distinct().collect(Collectors.toList());
         Map<String, Account> authorsById = accountRepository.findAllById(authorIds).stream()
                 .collect(Collectors.toMap(Account::getAccountId, a -> a));
+
+        Map<Long, Long> reactionCounts = new HashMap<>();
+        Set<Long> reactedByViewer = new HashSet<>();
+        memoryReactionRepository.findByMemoryPostIdIn(postIds).forEach(r -> {
+            reactionCounts.merge(r.getMemoryPostId(), 1L, Long::sum);
+            if (viewerAccountId != null && viewerAccountId.equals(r.getAccountId())) reactedByViewer.add(r.getMemoryPostId());
+        });
+
+        Map<Long, Long> commentCounts = new HashMap<>();
+        for (Long pid : postIds) commentCounts.put(pid, memoryCommentRepository.countByMemoryPostId(pid));
 
         List<Map<String, Object>> result = new ArrayList<>();
         for (MemoryPost post : posts) {
@@ -136,22 +192,125 @@ public class MemoryService {
             map.put("classroomName", classroomNamesById.getOrDefault(post.getClassroomId(), "Classroom"));
             map.put("caption", post.getCaption());
             map.put("createdAt", post.getCreatedAt() != null ? post.getCreatedAt().toString() : null);
-            map.put("images", imagesByPost.getOrDefault(post.getId(), Collections.emptyList()));
+            List<Map<String, Object>> images = imagesByPost.getOrDefault(post.getId(), Collections.emptyList());
+            map.put("images", images.stream().map(i -> i.get("url")).collect(Collectors.toList()));
+            map.put("imageIds", images.stream().map(i -> i.get("id")).collect(Collectors.toList()));
             Account author = authorsById.get(post.getAuthorAccountId());
+            map.put("authorAccountId", post.getAuthorAccountId());
             map.put("authorName", author != null ? author.getFullName() : "Teacher");
             map.put("authorImage", author != null ? author.getProfileImageUrl() : null);
+            map.put("reactionCount", reactionCounts.getOrDefault(post.getId(), 0L));
+            map.put("reactedByMe", reactedByViewer.contains(post.getId()));
+            map.put("commentCount", commentCounts.getOrDefault(post.getId(), 0L));
             result.add(map);
         }
         return result;
     }
 
-    private Map<String, Object> toPostMap(MemoryPost post, String classroomName) {
-        return buildFeed(Collections.singletonList(post), Collections.singletonMap(post.getClassroomId(), classroomName)).get(0);
+    private Map<String, Object> toPostMap(MemoryPost post, String classroomName, String viewerAccountId) {
+        return buildFeed(Collections.singletonList(post), Collections.singletonMap(post.getClassroomId(), classroomName), viewerAccountId).get(0);
     }
 
     @Transactional
     public void deletePost(Long id) {
         memoryImageRepository.deleteByMemoryPostId(id);
+        memoryReactionRepository.deleteByMemoryPostId(id);
+        memoryCommentRepository.deleteByMemoryPostId(id);
         memoryPostRepository.deleteById(id);
+    }
+
+    // ── Reactions ────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public Map<String, Object> toggleReaction(Long postId, String accountId) {
+        Optional<MemoryReaction> existing = memoryReactionRepository.findByMemoryPostIdAndAccountId(postId, accountId);
+        boolean reacted;
+        if (existing.isPresent()) {
+            memoryReactionRepository.delete(existing.get());
+            reacted = false;
+        } else {
+            memoryReactionRepository.save(MemoryReaction.builder().memoryPostId(postId).accountId(accountId).build());
+            reacted = true;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("reactedByMe", reacted);
+        result.put("reactionCount", memoryReactionRepository.countByMemoryPostId(postId));
+        return result;
+    }
+
+    // ── Comments ─────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public Map<String, Object> addComment(Long postId, String accountId, String content) {
+        if (content == null || content.isBlank()) throw new IllegalArgumentException("Comment cannot be empty.");
+        MemoryPost post = memoryPostRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("Memory post not found."));
+        MemoryComment saved = memoryCommentRepository.save(MemoryComment.builder()
+                .memoryPostId(postId).authorAccountId(accountId).content(content.trim()).build());
+        try {
+            notifyOnComment(post, accountId);
+        } catch (Exception ignored) { }
+        return toCommentMap(saved);
+    }
+
+    // Notifies the post's author plus anyone else who has commented on this post — i.e. everyone
+    // already part of the conversation, excluding whoever just wrote this comment.
+    private void notifyOnComment(MemoryPost post, String commenterAccountId) {
+        Set<String> recipients = new LinkedHashSet<>();
+        recipients.add(post.getAuthorAccountId());
+        memoryCommentRepository.findByMemoryPostIdOrderByCreatedAtAsc(post.getId())
+                .forEach(c -> recipients.add(c.getAuthorAccountId()));
+        recipients.remove(commenterAccountId);
+        if (recipients.isEmpty()) return;
+
+        String commenterName = accountRepository.findById(commenterAccountId).map(Account::getFullName).orElse("Someone");
+        Map<String, Account> accountsById = accountRepository.findAllById(new ArrayList<>(recipients)).stream()
+                .collect(Collectors.toMap(Account::getAccountId, a -> a));
+
+        for (String recipientId : recipients) {
+            Account recipient = accountsById.get(recipientId);
+            if (recipient == null) continue;
+            String link = switch (recipient.getRoleType()) {
+                case TEACHER -> "/teacher/teachermemory.html?postId=" + post.getId();
+                case ADMIN -> "/admin/admingallery.html?postId=" + post.getId();
+                default -> "/parent/parentmemory.html?postId=" + post.getId();
+            };
+            notificationService.create(recipientId,
+                    commenterName + " commented on a memory post",
+                    "Tap to view the conversation.",
+                    link);
+        }
+    }
+
+    public List<Map<String, Object>> getComments(Long postId) {
+        List<MemoryComment> comments = memoryCommentRepository.findByMemoryPostIdOrderByCreatedAtAsc(postId);
+        if (comments.isEmpty()) return Collections.emptyList();
+        List<String> authorIds = comments.stream().map(MemoryComment::getAuthorAccountId).distinct().collect(Collectors.toList());
+        Map<String, Account> authorsById = accountRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(Account::getAccountId, a -> a));
+        return comments.stream().map(c -> toCommentMapWithAuthor(c, authorsById)).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> toCommentMap(MemoryComment c) {
+        Map<String, Account> authorsById = accountRepository.findById(c.getAuthorAccountId())
+                .map(a -> Collections.singletonMap(a.getAccountId(), a)).orElse(Collections.emptyMap());
+        return toCommentMapWithAuthor(c, authorsById);
+    }
+
+    private Map<String, Object> toCommentMapWithAuthor(MemoryComment c, Map<String, Account> authorsById) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", c.getId());
+        map.put("memoryPostId", c.getMemoryPostId());
+        map.put("authorAccountId", c.getAuthorAccountId());
+        Account author = authorsById.get(c.getAuthorAccountId());
+        map.put("authorName", author != null ? author.getFullName() : "Someone");
+        map.put("authorImage", author != null ? author.getProfileImageUrl() : null);
+        map.put("content", c.getContent());
+        map.put("createdAt", c.getCreatedAt() != null ? c.getCreatedAt().toString() : null);
+        return map;
+    }
+
+    public void deleteComment(Long commentId) {
+        memoryCommentRepository.deleteById(commentId);
     }
 }

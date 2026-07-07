@@ -157,14 +157,15 @@
             <h1 id="detail-name" class="text-3xl font-black leading-tight"
                 style="font-family:'Plus Jakarta Sans',sans-serif"></h1>
             <p id="detail-section" class="text-white/80 text-sm mt-1"></p>
-            <div class="flex items-center gap-2 mt-3">
+            <button onclick="openTeacherInfoModal()" id="detail-teacher-btn" class="hidden flex items-center gap-2 mt-3 hover:opacity-80 transition-opacity text-left">
                 <div id="detail-teacher-avatar"
                     class="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center overflow-hidden flex-shrink-0">
                     <span class="material-symbols-outlined text-sm"
                         style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>
                 </div>
                 <span id="detail-teacher-name" class="text-white/90 text-sm font-medium"></span>
-            </div>
+                <span class="material-symbols-outlined text-white/70 text-base">info</span>
+            </button>
         </div>
 
         <!-- Tabs -->
@@ -194,9 +195,30 @@
             <div class="flex gap-3 mt-4">
                 <button onclick="closeJoinModal()"
                     class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">Cancel</button>
-                <button onclick="submitJoin()"
-                    class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors">Join</button>
+                <button id="join-submit-btn" onclick="submitJoin()"
+                    class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Join</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ── TEACHER INFO MODAL ────────────────────────────────────────────────── -->
+    <div id="teacher-info-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Teacher Details</h2>
+                <button onclick="closeTeacherInfoModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-4 mb-5">
+                <div id="ti-avatar" class="w-16 h-16 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-xl font-black text-[#6c5a00] overflow-hidden flex-shrink-0"></div>
+                <div class="min-w-0">
+                    <h3 id="ti-name" class="text-lg font-black text-[#312f23] truncate"></h3>
+                    <p id="ti-focus" class="text-xs text-stone-400"></p>
+                </div>
+            </div>
+            <div id="ti-rows" class="space-y-2"></div>
+            <p id="ti-description" class="text-sm text-stone-500 leading-relaxed mt-4"></p>
         </div>
     </div>
 
@@ -219,6 +241,9 @@
         };
         function hexOf(c) { return COLOR_MAP[c] || COLOR_MAP.indigo; }
         function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        // For values embedded as single-quoted JS string args inside a double-quoted onclick="" attribute:
+        // escape backslashes/single-quotes for the JS layer, then double-quotes for the HTML layer.
+        function jsAttr(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
         function initials(n) { return (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
         function formatDueDate(iso) {
             const d = new Date(iso + 'T00:00:00');
@@ -338,9 +363,12 @@
     </div>`;
         }
 
+        let currentClassroomData = null;
+
         function showDetail(childId, classroom, initialTab = 'stream') {
             currentChildId = childId;
             currentClassroomId = classroom.id;
+            currentClassroomData = classroom;
 
             const hex = hexOf(classroom.color);
             document.getElementById('detail-header').style.background = hex;
@@ -354,12 +382,75 @@
                 teacherAvatar.innerHTML = `<span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>`;
             }
             document.getElementById('detail-teacher-name').textContent = classroom.teacherName ? `Teacher: ${classroom.teacherName}` : '';
+            document.getElementById('detail-teacher-btn').classList.toggle('hidden', !classroom.teacherName);
 
             document.getElementById('view-list').classList.add('hidden');
             document.getElementById('view-child-classrooms').classList.add('hidden');
             document.getElementById('view-detail').classList.remove('hidden');
             switchTab(initialTab);
         }
+
+        // ── Teacher info modal ───────────────────────────────────────────────────
+        function openTeacherInfoModal() {
+            const c = currentClassroomData;
+            if (!c || !c.teacherName) return;
+            showTeacherInfoModal({
+                name: c.teacherName, image: c.teacherImage, email: c.teacherEmail,
+                phone: c.teacherPhone, qualification: c.teacherQualification,
+                experience: c.teacherExperience, focusArea: c.teacherFocusArea,
+                description: c.teacherDescription
+            });
+        }
+
+        // Full teacher directory (email/phone/qualification/etc for every teacher, not just
+        // this classroom's owner) — used so co-teachers in the People tab are clickable too.
+        let teacherDirectory = {};
+        async function loadTeacherDirectory() {
+            try {
+                const res = await fetch('/api/chat/teachers');
+                const list = res.ok ? await res.json() : [];
+                teacherDirectory = {};
+                list.forEach(t => { teacherDirectory[t.accountId] = t; });
+            } catch (e) { teacherDirectory = {}; }
+        }
+
+        function openTeacherInfoModalByAccountId(accountId, fallbackName, fallbackImage) {
+            const t = teacherDirectory[accountId];
+            showTeacherInfoModal({
+                name: (t && t.fullName) || fallbackName,
+                image: (t && t.profileImageUrl) || fallbackImage,
+                email: t && t.email, phone: t && t.phoneNumber,
+                qualification: t && t.qualification, experience: t && t.experience,
+                focusArea: t && t.focusArea, description: t && t.description
+            });
+        }
+
+        function showTeacherInfoModal(t) {
+            if (!t || !t.name) return;
+            document.getElementById('ti-avatar').innerHTML = t.image
+                ? `<img src="${esc(t.image)}" class="w-full h-full object-cover" alt="">`
+                : esc(initials(t.name));
+            document.getElementById('ti-name').textContent = t.name;
+            document.getElementById('ti-focus').textContent = t.focusArea || 'Teacher';
+
+            const infoRow = (icon, label, value) => `
+                <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+                    <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                        <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+                    </div>
+                </div>`;
+            const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+            if (t.phone) rows.push(infoRow('call', 'Phone', t.phone));
+            if (t.qualification) rows.push(infoRow('school', 'Qualification', t.qualification));
+            if (t.experience) rows.push(infoRow('history_edu', 'Experience', t.experience));
+            document.getElementById('ti-rows').innerHTML = rows.join('');
+            document.getElementById('ti-description').textContent = t.description || '';
+
+            document.getElementById('teacher-info-modal').classList.remove('hidden');
+        }
+        function closeTeacherInfoModal() { document.getElementById('teacher-info-modal').classList.add('hidden'); }
 
         function showDetailToClasswork(childId, classroom) {
             showDetail(childId, classroom, 'classwork');
@@ -376,10 +467,13 @@
         // ── Classroom card for a child ─────────────────────────────────────────────
         function renderClassroomCard(childId, classroom) {
             const hex = hexOf(classroom.color);
-            const classroomJson = esc(JSON.stringify(classroom));
+            // Free-text fields (teacher bio, etc.) can contain apostrophes, which would otherwise
+            // break out of this single-quoted onclick attribute — escape them as HTML entities so
+            // the browser restores the literal ' before the onclick JS ever runs.
+            const classroomJson = JSON.stringify(classroom).replace(/&/g, '&amp;').replace(/'/g, '&#39;');
             return `
     <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden card-hover cursor-pointer"
-         onclick='showDetail(${childId}, ${JSON.stringify(classroom)})'>
+         onclick='showDetail(${childId}, ${classroomJson})'>
         <div class="h-3" style="background:${hex}"></div>
         <div class="p-5">
             <div class="flex items-start gap-4">
@@ -397,11 +491,11 @@
                 <span class="material-symbols-outlined text-stone-300 flex-shrink-0">chevron_right</span>
             </div>
             ${renderUpcomingWork(classroom.upcomingWork, classroom.totalUpcoming, hex,
-                `showDetailToClasswork(${childId}, ${JSON.stringify(classroom)})`,
+                `showDetailToClasswork(${childId}, ${classroomJson})`,
                 id => `openClassworkItem(${childId}, ${classroom.id}, ${id})`
             )}
             <div class="px-5 pb-5">
-                <button onclick='event.stopPropagation(); showDetail(${childId}, ${JSON.stringify(classroom)})'
+                <button onclick='event.stopPropagation(); showDetail(${childId}, ${classroomJson})'
                     class="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
                     style="background:${hex}">
                     Open Classroom
@@ -747,6 +841,20 @@
             </div>
         </div>`;
             }
+            function teacherRow(p) {
+                const av = p.image
+                    ? `<img src="${esc(p.image)}" class="w-full h-full object-cover" alt="">`
+                    : `<span class="text-sm font-bold text-white">${esc(initials(p.name || '?'))}</span>`;
+                return `<button onclick="openTeacherInfoModalByAccountId('${jsAttr(p.accountId)}', '${jsAttr(p.name)}', '${jsAttr(p.image || '')}')"
+            class="w-full flex items-center gap-3 py-3 border-b border-stone-50 last:border-0 hover:bg-stone-50 transition-colors text-left rounded-lg -mx-2 px-2">
+            <div class="w-10 h-10 rounded-full bg-[#6c5a00] flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-stone-700 text-sm">${esc(p.name || '—')}</p>
+                <p class="text-xs text-stone-400">Tap to view details</p>
+            </div>
+            <span class="material-symbols-outlined text-stone-300 flex-shrink-0">chevron_right</span>
+        </button>`;
+            }
             return `
     <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden mb-6">
         <div class="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
@@ -754,7 +862,7 @@
             <h3 class="font-bold text-stone-700">Teacher</h3>
         </div>
         <div class="px-6">
-            ${teachers.length ? teachers.map(row).join('') : '<p class="text-stone-400 text-sm py-4">No teacher info.</p>'}
+            ${teachers.length ? teachers.map(teacherRow).join('') : '<p class="text-stone-400 text-sm py-4">No teacher info.</p>'}
         </div>
     </div>
     <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
@@ -824,10 +932,15 @@
             document.getElementById('join-modal').classList.add('hidden');
             joiningChildId = null;
         }
+        let submittingJoin = false;
         async function submitJoin() {
+            if (submittingJoin) return;
             const classCode = document.getElementById('join-code-input').value.trim().toUpperCase();
             if (!classCode) { showErr('join-error', 'Please enter the class code.'); return; }
             hideErr('join-error');
+            submittingJoin = true;
+            const joinBtn = document.getElementById('join-submit-btn');
+            joinBtn.disabled = true;
             try {
                 const res = await fetch(`/api/student/${joiningChildId}/join`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -852,6 +965,7 @@
                     showErr('join-error', msg);
                 }
             } catch (e) { showErr('join-error', 'Network error.'); }
+            finally { submittingJoin = false; joinBtn.disabled = false; }
         }
 
         // ── Deep link from a notification (?childId=&classroomId=&tab=&postId=) ────
@@ -877,6 +991,7 @@
 
         // ── Init ──────────────────────────────────────────────────────────────────
         loadChildren().then(openFromDeepLink);
+        loadTeacherDirectory();
     </script>
 
     <script>loadSidebar('parent', 'classroom'); loadTopbar('parent');</script>

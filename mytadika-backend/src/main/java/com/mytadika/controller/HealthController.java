@@ -251,6 +251,16 @@ public class HealthController {
         }
 
         /**
+         * Fetches the active allergy list for a child.
+         */
+        @GetMapping("/allergies/{studentId}")
+        public ResponseEntity<List<String>> getAllergies(@PathVariable Long studentId) {
+                return ResponseEntity.ok(allergyProfileRepository.findById(studentId)
+                                .map(AllergyProfile::getAllergiesList)
+                                .orElse(Collections.emptyList()));
+        }
+
+        /**
          * Updates allergy profile for a child.
          */
         @PutMapping("/allergies/{studentId}")

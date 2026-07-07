@@ -246,6 +246,16 @@ let editingClassroomId = null; // null = create, number = edit
 let pendingOpenAssignmentId = null;
 
 // ── Load classrooms ──────────────────────────────────────────────────────
+async function loadTeacherEmailSuggestions() {
+    try {
+        const res = await fetch('/api/chat/teachers');
+        const teachers = res.ok ? await res.json() : [];
+        document.getElementById('teacher-email-suggestions').innerHTML =
+            teachers.map(t => `<option value="${esc(t.email)}">`).join('');
+    } catch (e) { /* suggestions are a nice-to-have, ignore failures */ }
+}
+loadTeacherEmailSuggestions();
+
 async function loadClassrooms() {
     myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
     if (!myAccountId) return;
@@ -772,11 +782,12 @@ function renderPeople(data) {
         </div>
         <!-- Add teacher by email -->
         <div class="px-6 py-4 border-t border-stone-100 flex gap-2">
-            <input id="teacher-input" type="email" placeholder="Add teacher by email…"
+            <input id="teacher-input" type="email" placeholder="Add teacher by email…" list="teacher-email-suggestions" autocomplete="off"
                 class="flex-1 border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
                 onkeydown="if(event.key==='Enter') addTeacher()">
-            <button onclick="addTeacher()"
-                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap">
+            <datalist id="teacher-email-suggestions"></datalist>
+            <button id="add-teacher-btn" onclick="addTeacher()"
+                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 Add Teacher
             </button>
         </div>
@@ -795,8 +806,8 @@ function renderPeople(data) {
             <input id="enroll-input" type="text" placeholder="Enter Student Code (e.g. STU20001)…"
                 class="flex-1 border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
                 onkeydown="if(event.key==='Enter') enrollStudent()">
-            <button onclick="enrollStudent()"
-                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap">
+            <button id="enroll-student-btn" onclick="enrollStudent()"
+                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
                 Add Student
             </button>
         </div>
@@ -807,9 +818,14 @@ function renderPeople(data) {
     </div>`;
 }
 
+let enrollingStudent = false;
 async function enrollStudent() {
+    if (enrollingStudent) return;
     const studentCode = document.getElementById('enroll-input').value.trim().toUpperCase();
     if (!studentCode) { showInlineErr('enroll-error', 'Please enter a Student Code.'); return; }
+    enrollingStudent = true;
+    const btn = document.getElementById('enroll-student-btn');
+    btn.disabled = true;
     try {
         const res = await fetch(`/api/classroom/${currentClassroomId}/enroll-by-code`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -826,6 +842,7 @@ async function enrollStudent() {
             showInlineErr('enroll-error', msg);
         }
     } catch(e) { showInlineErr('enroll-error', 'Network error.'); }
+    finally { enrollingStudent = false; btn.disabled = false; }
 }
 
 async function removeStudent(studentId) {
@@ -838,9 +855,14 @@ async function removeStudent(studentId) {
     } else showToast('Failed to remove.');
 }
 
+let addingTeacher = false;
 async function addTeacher() {
+    if (addingTeacher) return;
     const email = document.getElementById('teacher-input').value.trim().toLowerCase();
     if (!email) { showInlineErr('teacher-error', 'Please enter an email address.'); return; }
+    addingTeacher = true;
+    const btn = document.getElementById('add-teacher-btn');
+    btn.disabled = true;
     try {
         const res = await fetch(`/api/classroom/${currentClassroomId}/teachers`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -856,6 +878,7 @@ async function addTeacher() {
             showInlineErr('teacher-error', msg);
         }
     } catch(e) { showInlineErr('teacher-error', 'Network error.'); }
+    finally { addingTeacher = false; btn.disabled = false; }
 }
 
 async function removeTeacher(accountId) {

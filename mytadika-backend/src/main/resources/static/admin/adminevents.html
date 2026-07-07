@@ -92,7 +92,7 @@
             <button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-100 transition-colors">
                 Cancel
             </button>
-            <button onclick="submitEvent()" id="modal-submit-btn" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors">
+            <button onclick="submitEvent()" id="modal-submit-btn" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Add Event
             </button>
         </div>
@@ -538,7 +538,9 @@ function closeModal() { document.getElementById('modal-overlay').classList.add('
 document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+let submittingEvent = false;
 async function submitEvent() {
+    if (submittingEvent) return;
     const title = document.getElementById('ev-title').value.trim();
     const date  = document.getElementById('ev-date').value;
     const type  = document.getElementById('ev-type').value;
@@ -549,6 +551,11 @@ async function submitEvent() {
 
     if (!title) { errEl.textContent = modalKind === 'holiday' ? 'Please enter a holiday name.' : 'Please enter an event title.'; errEl.classList.remove('hidden'); return; }
     if (!date)  { errEl.textContent = 'Please select a date.'; errEl.classList.remove('hidden'); return; }
+
+    submittingEvent = true;
+    const submitBtn = document.getElementById('modal-submit-btn');
+    submitBtn.disabled = true;
+    try {
 
     if (modalKind === 'holiday') {
         const endDate = isEdit ? '' : document.getElementById('ev-enddate').value;
@@ -622,6 +629,7 @@ async function submitEvent() {
         errEl.textContent = 'Network error. Please try again.';
         errEl.classList.remove('hidden');
     }
+    } finally { submittingEvent = false; submitBtn.disabled = false; }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

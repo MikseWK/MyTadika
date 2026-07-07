@@ -244,7 +244,7 @@
             <p id="pw-error" class="hidden text-xs text-error mt-3"></p>
             <div class="flex gap-3 mt-6">
                 <button onclick="closePasswordModal()" class="flex-1 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:bg-surface">Cancel</button>
-                <button onclick="submitPasswordChange()" class="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:bg-primary-fixed-dim">Save</button>
+                <button id="pw-submit-btn" onclick="submitPasswordChange()" class="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:bg-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
             </div>
         </div>
     </div>
@@ -364,7 +364,9 @@
             document.getElementById('password-modal').classList.add('hidden');
         }
 
+        let submittingPassword = false;
         async function submitPasswordChange() {
+            if (submittingPassword) return;
             const currentPassword = document.getElementById('pw-current').value;
             const newPassword = document.getElementById('pw-new').value;
             const confirmPassword = document.getElementById('pw-confirm').value;
@@ -386,6 +388,9 @@
                 return;
             }
 
+            submittingPassword = true;
+            const btn = document.getElementById('pw-submit-btn');
+            btn.disabled = true;
             try {
                 const res = await fetch('/api/auth/change-password', {
                     method: 'PUT',
@@ -403,7 +408,7 @@
             } catch (_) {
                 errEl.textContent = 'Network error. Please try again.';
                 errEl.classList.remove('hidden');
-            }
+            } finally { submittingPassword = false; btn.disabled = false; }
         }
 
         // Logout
