@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTadika – Admin Messages</title>
@@ -70,6 +71,15 @@
                     <div id="messages-container" class="flex-1 overflow-y-auto px-5 py-4 space-y-3"
                         style="background-color:#fcf6e3;background-image:radial-gradient(circle at 2px 2px,rgba(178,173,156,0.18) 1px,transparent 0);background-size:24px 24px;"></div>
                     <div class="px-5 py-3 border-t border-[#e3ddc5] bg-[#f5edd8] flex-shrink-0">
+                        <div id="reply-preview-bar" class="hidden mb-2 flex items-center gap-2 px-3 py-2 bg-[#eee8d3] rounded-xl border-l-4 border-[#ffd709]">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-[#6c5a00]" id="reply-preview-label"></p>
+                                <p class="text-xs text-stone-500 truncate" id="reply-preview-text"></p>
+                            </div>
+                            <button onclick="cancelReply()" class="w-6 h-6 flex-shrink-0 bg-white/60 rounded-full flex items-center justify-center text-stone-500 hover:bg-red-100 hover:text-red-500 transition-all">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
                         <div id="image-preview-wrap" class="hidden mb-2 flex items-center gap-2">
                             <img id="image-preview" class="h-16 rounded-xl object-cover border border-[#e3ddc5]" alt="preview">
                             <button onclick="cancelImage()"
@@ -169,6 +179,20 @@
     </div>
 </div>
 
+<!-- Edit Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-[#f5edd8] rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
+        <h3 class="font-bold text-lg mb-4">Edit Message</h3>
+        <textarea id="edit-input"
+            class="w-full border border-[#e3ddc5] bg-[#eee8d3] rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-[#ffd709]/30 focus:outline-none text-[#312f23]"
+            rows="4"></textarea>
+        <div class="flex gap-3 mt-4 justify-end">
+            <button id="edit-cancel" class="px-6 py-2 rounded-full font-bold text-stone-500 hover:bg-stone-100 transition-colors">Cancel</button>
+            <button id="edit-save" class="px-6 py-2 rounded-full font-bold bg-[#ffd709] text-[#6c5a00] hover:bg-[#f5cc00] transition-colors">Save</button>
+        </div>
+    </div>
+</div>
+
 <script>
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escAttr(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
@@ -184,6 +208,9 @@ let selectedContactId = null;
 let selectedContactName = '';
 let pollInterval = null;
 let pendingImageUrl = null;
+let currentMessages = [];
+let replyingTo = null;
+let editingMessageId = null;
 
 async function init() {
     try {
@@ -274,6 +301,7 @@ function isOnline(lastActiveAt) {
 function selectContact(accountId, fullName) {
     selectedContactId = accountId;
     selectedContactName = fullName;
+    cancelReply();
     const info = getContactInfo(accountId);
     document.getElementById('chat-name').textContent = fullName;
     const chatRoleBadge = document.getElementById('chat-role-badge');
@@ -582,6 +610,7 @@ function renderBubbleContent(m, mine) {
 }
 
 function renderMessages(msgs) {
+    currentMessages = msgs;
     const el = document.getElementById('messages-container');
     if (!msgs.length) {
         el.innerHTML = `<div class="flex items-center justify-center h-full">
@@ -609,14 +638,47 @@ function renderMessages(msgs) {
                 ? `<span class="material-symbols-outlined text-sm text-[#6c5a00]">done_all</span>`
                 : `<span class="material-symbols-outlined text-sm text-stone-400">done</span>`)
             : '';
+        const editedTag = m.edited ? ' <span class="text-[10px] opacity-50 font-normal">(edited)</span>' : '';
 
         const isMedia = m.messageType === 'image' || m.messageType === 'file';
-        const bubbleContent = renderBubbleContent(m, mine);
+        const bubbleContent = renderBubbleContent(m, mine) + (isMedia ? '' : editedTag);
+
+        let replyQuoteHtml = '';
+        if (m.replyToId) {
+            const quoted = currentMessages.find(x => x.id === m.replyToId);
+            if (quoted) {
+                const quotedLabel = quoted.senderId === adminInboxId ? 'You' : selectedContactName;
+                const quotedRaw = quoted.messageType === 'image' ? '📷 Photo' : quoted.messageType === 'file' ? '📎 File' : quoted.content;
+                const quotedText = quotedRaw.length > 60 ? quotedRaw.slice(0, 60) + '…' : quotedRaw;
+                replyQuoteHtml = `<div onclick="scrollToMessage(${quoted.id})" class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 ${mine ? 'border-white/60 bg-black/10' : 'border-[#ffd709] bg-black/5'} text-xs cursor-pointer">
+                    <p class="font-bold opacity-80">${esc(quotedLabel)}</p>
+                    <p class="opacity-70 truncate max-w-[200px]">${esc(quotedText)}</p>
+                </div>`;
+            } else {
+                replyQuoteHtml = `<div class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 border-stone-400 bg-black/5 text-xs italic opacity-60">Original message unavailable</div>`;
+            }
+        }
+
+        const replyBtn = `<button onclick="startReply(${m.id})" class="w-8 h-8 bg-white shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100" title="Reply">
+                <span class="material-symbols-outlined text-xs">reply</span>
+            </button>`;
 
         if (mine) {
+            const actionBtns = `
+                <div class="absolute -left-20 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                    ${replyBtn}
+                    ${!isMedia ? `<button onclick="openEditModal(${m.id}, '${escAttr(m.content)}')" class="w-8 h-8 bg-white shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100">
+                        <span class="material-symbols-outlined text-xs">edit</span>
+                    </button>` : ''}
+                    <button onclick="deleteMessage(${m.id})" class="w-8 h-8 bg-white shadow-lg rounded-full text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all scale-90 hover:scale-100">
+                        <span class="material-symbols-outlined text-xs">delete</span>
+                    </button>
+                </div>`;
             parts.push(`
-            <div class="flex flex-col items-end">
-                <div class="max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#ffd709] text-[#6c5a00]'} text-sm">${bubbleContent}</div>
+            <div class="flex flex-col items-end" data-msg-id="${m.id}">
+                <div class="relative group/msg max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#ffd709] text-[#6c5a00]'} text-sm">
+                    ${replyQuoteHtml}${bubbleContent}${actionBtns}
+                </div>
                 <div class="flex items-center gap-1 mt-1 mr-1">
                     <p class="text-[10px] font-bold text-stone-400">${time}</p>
                     ${readIcon}
@@ -624,8 +686,13 @@ function renderMessages(msgs) {
             </div>`);
         } else {
             parts.push(`
-            <div class="flex flex-col items-start">
-                <div class="max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#eee8d3] text-[#312f23]'} text-sm">${bubbleContent}</div>
+            <div class="flex flex-col items-start" data-msg-id="${m.id}">
+                <div class="relative group/msg max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#eee8d3] text-[#312f23]'} text-sm">
+                    ${replyQuoteHtml}${bubbleContent}
+                    <div class="absolute -right-10 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        ${replyBtn}
+                    </div>
+                </div>
                 <p class="text-[10px] font-bold text-stone-400 mt-1 ml-1">${time}</p>
             </div>`);
         }
@@ -699,8 +766,9 @@ async function handleFileSelected(e) {
             const content = JSON.stringify({ url: data.url, name: file.name, size: file.size });
             await fetch('/api/chat/send', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'file' })
+                body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'file', replyToId: replyingTo ? replyingTo.id : null })
             });
+            cancelReply();
             await loadMessages();
             loadContacts();
         } else {
@@ -717,6 +785,71 @@ async function handleFileSelected(e) {
 document.getElementById('image-file-input').addEventListener('change', handleImageSelected);
 document.getElementById('file-file-input').addEventListener('change', handleFileSelected);
 
+function startReply(id) {
+    const msg = currentMessages.find(x => x.id === id);
+    if (!msg) return;
+    replyingTo = msg;
+    const label = msg.senderId === adminInboxId ? 'You' : selectedContactName;
+    const raw = msg.messageType === 'image' ? '📷 Photo' : msg.messageType === 'file' ? '📎 File' : msg.content;
+    document.getElementById('reply-preview-label').textContent = label;
+    document.getElementById('reply-preview-text').textContent = raw.length > 80 ? raw.slice(0, 80) + '…' : raw;
+    document.getElementById('reply-preview-bar').classList.remove('hidden');
+    document.getElementById('message-input').focus();
+}
+
+function cancelReply() {
+    replyingTo = null;
+    document.getElementById('reply-preview-bar').classList.add('hidden');
+}
+
+function scrollToMessage(id) {
+    const target = document.querySelector(`[data-msg-id="${id}"]`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('ring-4', 'ring-[#ffd709]', 'rounded-2xl');
+    setTimeout(() => target.classList.remove('ring-4', 'ring-[#ffd709]', 'rounded-2xl'), 1200);
+}
+
+function openEditModal(messageId, currentContent) {
+    editingMessageId = messageId;
+    document.getElementById('edit-input').value = currentContent;
+    document.getElementById('edit-modal').classList.remove('hidden');
+    document.getElementById('edit-input').focus();
+}
+
+function closeEditModal() {
+    editingMessageId = null;
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+async function saveEdit() {
+    const newContent = document.getElementById('edit-input').value.trim();
+    if (!newContent || !editingMessageId) return;
+    try {
+        await fetch(`/api/chat/messages/${editingMessageId}/edit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderId: adminInboxId, content: newContent })
+        });
+        closeEditModal();
+        await loadMessages();
+    } catch (e) { console.error('Failed to edit message', e); }
+}
+
+async function deleteMessage(messageId) {
+    if (!confirm('Delete this message?')) return;
+    try {
+        await fetch(`/api/chat/messages/${messageId}?senderId=${adminInboxId}`, { method: 'DELETE' });
+        await loadMessages();
+    } catch (e) { console.error('Failed to delete message', e); }
+}
+
+document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
+document.getElementById('edit-save').addEventListener('click', saveEdit);
+document.getElementById('edit-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeEditModal();
+});
+
 let sendingMessage = false;
 async function sendMessage() {
     if (!selectedContactId || sendingMessage) return;
@@ -728,7 +861,7 @@ async function sendMessage() {
             try {
                 const r = await fetch('/api/chat/send', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content: pendingImageUrl, messageType: 'image' })
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content: pendingImageUrl, messageType: 'image', replyToId: replyingTo ? replyingTo.id : null })
                 });
                 if (!r.ok) {
                     const err = await r.json().catch(() => ({}));
@@ -749,11 +882,12 @@ async function sendMessage() {
             try {
                 await fetch('/api/chat/send', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'text' })
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'text', replyToId: replyingTo ? replyingTo.id : null })
                 });
             } catch (e) {}
         }
 
+        cancelReply();
         loadMessages();
         loadContacts();
     } finally { sendingMessage = false; sendBtn.disabled = false; }

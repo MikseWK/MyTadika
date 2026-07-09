@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTadika – Manage Students</title>
@@ -123,7 +124,7 @@
                         class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 mb-1">Date of Birth</label>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Date of Birth * <span class="font-normal text-stone-400">(age 4–6)</span></label>
                     <input id="sm-dob" type="date"
                         class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
                 </div>
@@ -388,6 +389,16 @@ async function submitStudent() {
         medicalInfo:      document.getElementById('sm-medical').value.trim() || null,
     };
     if (!body.fullName) { showErr('sm-error', 'Full name is required.'); return; }
+    if (!body.dateOfBirth) { showErr('sm-error', 'Date of birth is required.'); return; }
+    const dob = new Date(body.dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    if (age < 4 || age > 6) {
+        showErr('sm-error', `Student must be between 4 and 6 years old (calculated age: ${age}).`);
+        return;
+    }
     submittingStudent = true;
     const btn = document.getElementById('student-submit-btn');
     btn.disabled = true;

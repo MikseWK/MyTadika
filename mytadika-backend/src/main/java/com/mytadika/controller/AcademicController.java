@@ -41,7 +41,7 @@ public class AcademicController {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> subjects = (List<Map<String, Object>>) body.get("subjects");
             return ResponseEntity.ok(academicService.createRecord(studentId, term, subjects));
-        } catch (IllegalArgumentException e) {
+        } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
@@ -62,6 +62,16 @@ public class AcademicController {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> subjects = (List<Map<String, Object>>) body.get("subjects");
             return ResponseEntity.ok(academicService.updateRecord(id, term, subjects));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/records/{id}")
+    public ResponseEntity<?> deleteRecord(@PathVariable Long id) {
+        try {
+            academicService.deleteRecord(id);
+            return ResponseEntity.ok(Map.of("status", "deleted"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

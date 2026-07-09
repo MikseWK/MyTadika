@@ -154,6 +154,23 @@ public class DbMigrationRunner implements ApplicationRunner {
             System.err.println("[DbMigrationRunner] Could not create classwork_completions table: " + e.getMessage());
         }
 
+        // Drop legacy 'classroom' (singular) table — a dead leftover from before the entity
+        // was renamed to 'classrooms' (plural). Nothing reads/writes it anymore, but its
+        // lingering FK constraint (fk_classroom_teacher) was falsely blocking deletion of
+        // teacher accounts that have zero real classrooms, since Postgres doesn't know the
+        // table is abandoned. Dropping it removes the constraint too (CASCADE).
+        try {
+            Integer legacyExists = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='classroom'",
+                Integer.class);
+            if (legacyExists != null && legacyExists > 0) {
+                jdbc.execute("DROP TABLE classroom CASCADE");
+                System.out.println("[DbMigrationRunner] Dropped legacy 'classroom' (singular) table.");
+            }
+        } catch (Exception e) {
+            System.err.println("[DbMigrationRunner] Could not drop legacy classroom table: " + e.getMessage());
+        }
+
         // Create notifications table
         try {
             Integer exists = jdbc.queryForObject(

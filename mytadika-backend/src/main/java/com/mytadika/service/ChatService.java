@@ -164,7 +164,6 @@ public class ChatService {
                     map.put("experience", teacher.getExperience());
                     map.put("focusArea", teacher.getFocusArea());
                     map.put("phoneNumber", teacher.getPhoneNumber());
-                    map.put("meetLink", teacher.getMeetLink());
                     map.put("lastActiveAt", teacher.getLastActiveAt() != null ? teacher.getLastActiveAt().toString() : null);
                     map.put("lastMessage", last != null ? messagePreview(last) : null);
                     map.put("lastMessageAt", last != null ? last.getSentAt().toString() : null);
@@ -258,7 +257,6 @@ public class ChatService {
                     map.put("experience", other.getExperience());
                     map.put("focusArea", other.getFocusArea());
                     map.put("phoneNumber", other.getPhoneNumber());
-                    map.put("meetLink", other.getMeetLink());
                     map.put("roleType", "TEACHER");
                     map.put("lastActiveAt", other.getLastActiveAt() != null ? other.getLastActiveAt().toString() : null);
                     map.put("lastMessage", last != null ? messagePreview(last) : null);
@@ -430,7 +428,6 @@ public class ChatService {
                     map.put("experience", t.getExperience());
                     map.put("focusArea", t.getFocusArea());
                     map.put("phoneNumber", t.getPhoneNumber());
-                    map.put("meetLink", t.getMeetLink());
                     map.put("lastActiveAt", t.getLastActiveAt() != null ? t.getLastActiveAt().toString() : null);
                     map.put("classroomNames", classroomNamesByTeacher.getOrDefault(t.getAccountId(), Collections.emptyList()));
                     return map;
@@ -453,6 +450,7 @@ public class ChatService {
                     map.put("read", m.isRead());
                     map.put("edited", m.isEdited());
                     map.put("messageType", m.getMessageType());
+                    map.put("replyToId", m.getReplyToId());
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -483,6 +481,7 @@ public class ChatService {
                 .edited(false)
                 .deleted(false)
                 .messageType(type)
+                .replyToId(request.getReplyToId())
                 .build();
         ChatMessage saved = chatMessageRepository.save(msg);
 

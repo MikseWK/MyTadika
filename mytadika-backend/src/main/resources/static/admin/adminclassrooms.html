@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTadika – Classrooms</title>
@@ -172,6 +173,29 @@
                 <button id="manage-student-add-btn" onclick="addManageStudent()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-w-[68px] flex items-center justify-center">Add</button>
             </div>
             <p id="manage-student-error" class="hidden text-xs text-red-500 mt-2"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Profile Modal -->
+<div id="teacher-profile-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4" onclick="if(event.target===this) closeTeacherProfileModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div class="relative h-24 flex-shrink-0" style="background-color:#ffd709;">
+            <button onclick="closeTeacherProfileModal()" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+                <div id="tp-avatar-wrap" style="width:88px;height:88px;border-radius:50%;border:4px solid white;box-shadow:0 8px 24px rgba(0,0,0,0.18);overflow:hidden;background:#ffd709;display:flex;align-items:center;justify-content:center;"></div>
+            </div>
+        </div>
+        <div class="pt-14 pb-6 px-6 text-center flex flex-col gap-4">
+            <div>
+                <h2 id="tp-name" class="text-lg font-extrabold text-[#312f23]"></h2>
+                <span id="tp-owner-badge" class="hidden text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full mt-1 inline-block">Owner</span>
+            </div>
+            <p id="tp-description" class="text-sm text-stone-500 leading-relaxed"></p>
+            <div id="tp-stats" class="grid grid-cols-3 gap-3"></div>
+            <div id="tp-info-rows" class="w-full space-y-2 text-left"></div>
         </div>
     </div>
 </div>
@@ -393,11 +417,64 @@ async function loadManagePeople() {
     }
 }
 
+let manageTeachersCache = [];
+
+function openTeacherProfileModal(accountId) {
+    const t = manageTeachersCache.find(x => x.accountId === accountId);
+    if (!t) return;
+
+    document.getElementById('tp-name').textContent = t.name || '—';
+    document.getElementById('tp-owner-badge').classList.toggle('hidden', !t.isOwner);
+
+    const avatarWrap = document.getElementById('tp-avatar-wrap');
+    avatarWrap.innerHTML = t.image
+        ? `<img src="${esc(t.image)}" style="width:100%;height:100%;object-fit:cover;" alt="">`
+        : `<span style="font-size:1.75rem;font-weight:900;color:#6c5a00;">${esc((t.name||'?').charAt(0).toUpperCase())}</span>`;
+
+    document.getElementById('tp-description').textContent = t.description || 'No description yet.';
+
+    document.getElementById('tp-stats').innerHTML = `
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#ffd709] text-xl mb-1" style="font-variation-settings:'FILL' 1;">school</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.qualification || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Qualification</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF8A3D] text-xl mb-1" style="font-variation-settings:'FILL' 1;">history_edu</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.experience || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Experience</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF6B6B] text-xl mb-1" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.focusArea || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Focus Area</p>
+        </div>`;
+
+    const infoRow = (icon, label, value) => `
+        <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+            <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+            </div>
+        </div>`;
+    const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+    if (t.phoneNumber) rows.push(infoRow('call', 'Phone', t.phoneNumber));
+    document.getElementById('tp-info-rows').innerHTML = rows.join('');
+
+    document.getElementById('teacher-profile-modal').classList.remove('hidden');
+}
+
+function closeTeacherProfileModal() {
+    document.getElementById('teacher-profile-modal').classList.add('hidden');
+}
+
 function renderManageTeachers(teachers) {
+    manageTeachersCache = teachers;
     const el = document.getElementById('manage-teachers-list');
     el.innerHTML = teachers.length ? teachers.map(t => `
         <div class="flex items-center justify-between gap-2 px-3 py-2 bg-stone-50 rounded-xl">
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex items-center gap-2 min-w-0" onclick="openTeacherProfileModal('${esc(t.accountId)}')" style="cursor:pointer;">
                 <div class="w-7 h-7 rounded-full bg-[#ffd709] flex items-center justify-center flex-shrink-0 overflow-hidden">
                     ${t.image ? `<img src="${esc(t.image)}" class="w-full h-full object-cover" alt="">` : `<span class="text-[10px] font-bold text-[#6c5a00]">${esc(initials(t.name))}</span>`}
                 </div>

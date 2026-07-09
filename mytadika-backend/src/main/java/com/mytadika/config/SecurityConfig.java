@@ -38,6 +38,7 @@ public class SecurityConfig {
                     "/images/**",
                     "/components/**",
                     "/uploads/**",
+                    "/favicon.svg",
                     "/test.html")
                 .permitAll()
                 .anyRequest().authenticated())

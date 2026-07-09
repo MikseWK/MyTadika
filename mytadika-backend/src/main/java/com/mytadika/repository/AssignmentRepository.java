@@ -9,6 +9,8 @@ import java.util.List;
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByClassroomIdOrderByCreatedAtAsc(Long classroomId);
 
+    List<Assignment> findByClassroomIdIn(List<Long> classroomIds);
+
     List<Assignment> findByClassroomIdAndDueDateGreaterThanEqualOrderByDueDateAsc(Long classroomId, String today);
 
     List<Assignment> findByClassroomIdInAndDueDateGreaterThanEqualOrderByDueDateAsc(List<Long> classroomIds, String today);

@@ -36,7 +36,6 @@ public class ProfileService {
         profile.put("qualification", account.getQualification());
         profile.put("experience", account.getExperience());
         profile.put("focusArea", account.getFocusArea());
-        profile.put("meetLink", account.getMeetLink());
         return profile;
     }
 
@@ -53,7 +52,6 @@ public class ProfileService {
         if (request.getQualification() != null) account.setQualification(request.getQualification());
         if (request.getExperience() != null) account.setExperience(request.getExperience());
         if (request.getFocusArea() != null) account.setFocusArea(request.getFocusArea());
-        if (request.getMeetLink() != null) account.setMeetLink(request.getMeetLink());
         accountRepository.save(account);
     }
 

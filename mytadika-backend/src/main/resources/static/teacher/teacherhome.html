@@ -1,308 +1,241 @@
-﻿<!DOCTYPE html>
-<html class="light" lang="en">
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Nurturing Canvas - Teacher Classroom Hub</title>
-    <!-- Material Symbols -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet">
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=Be+Vietnam+Pro:ital,wght@0,100..900;1,100..900&amp;display=swap"
-        rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "on-tertiary": "#d1ffc8",
-                        "secondary-fixed": "#ffc69a",
-                        "secondary": "#8c4a00",
-                        "on-secondary-container": "#6f3a00",
-                        "inverse-on-surface": "#a19d8c",
-                        "error": "#b02500",
-                        "on-primary": "#fff2cd",
-                        "tertiary-dim": "#005d16",
-                        "surface-container-low": "#f7f1dc",
-                        "primary-dim": "#5e4e00",
-                        "outline": "#7a7768",
-                        "on-surface-variant": "#5f5c4d",
-                        "error-dim": "#b92902",
-                        "on-secondary-fixed-variant": "#7c4100",
-                        "surface-container-high": "#e9e3cc",
-                        "tertiary-container": "#91f78e",
-                        "on-primary-container": "#5b4b00",
-                        "primary-fixed": "#ffd709",
-                        "primary": "#6c5a00",
-                        "on-tertiary-container": "#005e17",
-                        "surface-container-lowest": "#ffffff",
-                        "secondary-container": "#ffc69a",
-                        "on-error": "#ffefec",
-                        "on-tertiary-fixed": "#00480f",
-                        "outline-variant": "#b2ad9c",
-                        "on-error-container": "#520c00",
-                        "tertiary-fixed-dim": "#83e881",
-                        "error-container": "#f95630",
-                        "inverse-primary": "#ffd709",
-                        "on-surface": "#312f23",
-                        "secondary-dim": "#7b4000",
-                        "primary-fixed-dim": "#efc900",
-                        "on-secondary-fixed": "#532a00",
-                        "primary-container": "#ffd709",
-                        "on-tertiary-fixed-variant": "#00691a",
-                        "surface-container-highest": "#e3ddc5",
-                        "surface": "#fcf6e3",
-                        "on-primary-fixed-variant": "#665500",
-                        "surface-variant": "#e3ddc5",
-                        "surface-container": "#eee8d3",
-                        "surface-bright": "#fcf6e3",
-                        "background": "#fcf6e3",
-                        "surface-tint": "#6c5a00",
-                        "on-background": "#312f23",
-                        "tertiary": "#006b1b",
-                        "on-primary-fixed": "#453900",
-                        "inverse-surface": "#100e05",
-                        "surface-dim": "#dbd5bc",
-                        "tertiary-fixed": "#91f78e",
-                        "secondary-fixed-dim": "#ffb375",
-                        "on-secondary": "#fff0e7"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "1rem",
-                        "lg": "2rem",
-                        "xl": "3rem",
-                        "full": "9999px"
-                    },
-                    "fontFamily": {
-                        "headline": ["Plus Jakarta Sans"],
-                        "body": ["Be Vietnam Pro"],
-                        "label": ["Be Vietnam Pro"]
-                    }
-                },
-            },
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Home</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
         }
     </script>
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        .organic-blob {
-            clip-path: circle(50% at 50% 50%);
-            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #fcf6e3;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #e3ddc5;
-            border-radius: 10px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
 </head>
+<body class="text-stone-800 min-h-screen">
 
-<body class="bg-surface font-body text-on-surface flex min-h-screen overflow-x-hidden">
-    <main class="flex-grow flex flex-col h-screen overflow-y-auto ml-64">
-        <!-- Content Canvas -->
-        <div class="px-6 pb-6 pt-20 md:px-10 md:pb-10 md:pt-20 flex flex-col gap-10">
-            <!-- Welcome Section -->
-            <section
-                class="relative overflow-hidden bg-primary-container/20 rounded-xl p-8 md:p-12 border border-primary-container/10">
-                <div class="relative z-10 max-w-2xl flex flex-col md:flex-row md:items-center justify-between w-full">
-                    <div>
-                        <h1 class="text-4xl md:text-5xl font-black text-primary font-headline mb-4 leading-tight">
-                            Teacher's Classroom Hub</h1>
-                        <p class="text-on-surface text-lg leading-relaxed opacity-80 mb-6 md:mb-0">Manage your students,
-                            share memories, and track growth across all your classes.</p>
-                    </div>
-                </div>
-                <!-- Abstract Blobs -->
-                <div class="absolute -right-20 -top-20 w-64 h-64 bg-secondary-container/30 rounded-full blur-3xl"></div>
-                <div class="absolute right-10 -bottom-10 w-48 h-48 bg-tertiary-container/20 rounded-full blur-3xl">
-                </div>
-            </section>
-            <!-- Main Layout: Grid of Classroom Cards -->
-            <div class="flex flex-col gap-8">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-2xl font-bold text-primary font-headline flex items-center gap-3">
-                        <span class="material-symbols-outlined text-secondary" data-icon="school">school</span>
-                        My Managed Classrooms
-                    </h3>
-                    <div class="flex gap-2">
-                        <button
-                            class="p-2 bg-surface-container-low rounded-full hover:bg-primary-container/20 transition-colors">
-                            <span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
-                        </button>
-                        <button class="p-2 text-outline rounded-full hover:bg-primary-container/20 transition-colors">
-                            <span class="material-symbols-outlined" data-icon="view_list">view_list</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                    <!-- Classroom Card 1 -->
-                    <div
-                        class="bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-hidden group hover:-translate-y-2 transition-all duration-300">
-                        <div class="h-40 bg-primary-container relative">
-                            <img alt="Classroom" class="w-full h-full object-cover mix-blend-overlay opacity-60"
-                                data-alt="sunny preschool classroom corner with vibrant art supplies, colorful paper, and child-sized wooden easels in warm morning light"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_1yJgYJa6tQCGLB5j9aWTn4-zmM1q7R1EaCupjl8kNjVl-twMn96zaEfuIsprKpkl69Dqc_wdaTjoGzWgXCqAp33OK2cXzelzv0M3KA00PnepSOOleweVZDyeZ0dL-Qbb6nDzeZA3eACYBJE6ZOZ4hrbDPjHf0K0WncKyknTFvaapgCcPc2FtcGZJtKENXZqEWm2oZdMKDksLx1inYP-6emXXMEbGUiNO-CwB1exGjg3pfOvCqaJNwRMODn0VQ1fUsM3zJ8VWFgg">
-                            <div
-                                class="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-primary">
-                                Active</div>
-                        </div>
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 class="text-xl font-bold font-headline text-on-surface">Pre-K Class A</h4>
-                                    <p class="text-sm text-secondary">Early Childhood Foundation</p>
-                                </div>
-                                <div class="bg-primary/10 p-2 rounded-lg">
-                                    <span class="material-symbols-outlined text-primary"
-                                        data-icon="groups">groups</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-6 mb-6">
-                                <div class="flex flex-col gap-1">
-                                    <span
-                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Students</span>
-                                    <span class="text-sm font-medium">15 Enrolled</span>
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <span
-                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Status</span>
-                                    <span class="text-sm font-medium flex items-center gap-1">
-                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span> Live
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button
-                                    class="flex-grow bg-primary text-on-primary py-3 rounded-full font-bold text-sm hover:brightness-95 transition-all">Manage
-                                    Class</button>
-                                <button
-                                    class="p-3 border border-outline-variant/20 rounded-full hover:bg-surface-container-high transition-colors">
-                                    <span class="material-symbols-outlined text-on-surface"
-                                        data-icon="settings">settings</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Classroom Card 2 -->
-                    <div
-                        class="bg-surface-container-lowest rounded-xl shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-hidden group hover:-translate-y-2 transition-all duration-300">
-                        <div class="h-40 bg-secondary-container relative">
-                            <img alt="Classroom" class="w-full h-full object-cover mix-blend-overlay opacity-60"
-                                data-alt="cozy toddler library area with oversized plush floor cushions, low bookshelves, and a soft braided rug in warm pastel tones"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4oL5T61sdvMog7bd3_apm_KqkWQCAwFz4is6TsXAH4tNzmU8zeKKWM9YeWFqOMVb5D_ShnGUdKOwXMggQkuvJB2Qqy4z6AFxbTuQi-AqSP30yV-IRPlfWl3UUdxq9aodFSqzUH4GFsceZYHeoAoRstsJq3-RyVEAlXBphbJp4fOvAaSAC-3Uhy4mwU0iv0gb5w-5qGKI7--QWPcTyF0ToYRLavyXSXOMYX5BNebBqZ0CRvdjKjl-vSpbmwnCgMEObagwtD7QnUp8">
-                            <div
-                                class="absolute top-4 right-4 bg-surface-container-lowest/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-secondary">
-                                Morning Session</div>
-                        </div>
-                        <div class="p-6">
-                            <div class="flex justify-between items-start mb-4">
-                                <div>
-                                    <h4 class="text-xl font-bold font-headline text-on-surface">Toddler Room 1</h4>
-                                    <p class="text-sm text-secondary">Sensory &amp; Play Exploration</p>
-                                </div>
-                                <div class="bg-secondary/10 p-2 rounded-lg">
-                                    <span class="material-symbols-outlined text-secondary"
-                                        data-icon="palette">palette</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-6 mb-6">
-                                <div class="flex flex-col gap-1">
-                                    <span
-                                        class="text-[10px] uppercase font-bold text-outline tracking-wider">Students</span>
-                                    <span class="text-sm font-medium">12 Enrolled</span>
-                                </div>
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-[10px] uppercase font-bold text-outline tracking-wider">Next
-                                        Event</span>
-                                    <span class="text-sm font-medium">Finger Painting (2pm)</span>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button
-                                    class="flex-grow bg-secondary-container text-on-secondary-container py-3 rounded-full font-bold text-sm hover:brightness-95 transition-all">Manage
-                                    Class</button>
-                                <button
-                                    class="p-3 border border-outline-variant/20 rounded-full hover:bg-surface-container-high transition-colors">
-                                    <span class="material-symbols-outlined text-on-surface"
-                                        data-icon="settings">settings</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Classroom Card 3 (Planning) -->
-                    <div
-                        class="bg-surface-container-low border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center p-8 gap-4 group cursor-pointer hover:bg-primary-container/10 transition-all min-h-[380px]">
-                        <div
-                            class="w-20 h-20 bg-surface-container-lowest rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined text-primary text-5xl" data-icon="add">add</span>
-                        </div>
-                        <div class="text-center">
-                            <h4 class="font-bold text-xl text-primary font-headline">Add Classroom</h4>
-                            <p class="text-sm text-outline mt-2">Expand your teaching reach</p>
-                        </div>
-                    </div>
-                    <!-- Add New Room Card -->
-                    <div
-                        class="bg-surface-container-low border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center p-8 gap-6 group cursor-pointer hover:bg-primary-container/10 transition-all min-h-[380px]">
-                        <div
-                            class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                            <span class="material-symbols-outlined text-primary text-4xl"
-                                data-icon="add_circle">add_circle</span>
-                        </div>
-                        <div class="text-center">
-                            <h4 class="font-bold text-xl text-primary font-headline">Create New Classroom</h4>
-                            <p class="text-sm text-outline max-w-[200px] mx-auto mt-2">Set up a new space for your
-                                students to learn and thrive.</p>
-                        </div>
-                        <button class="px-6 py-2 bg-primary text-on-primary rounded-full font-bold text-sm">Get
-                            Started</button>
-                    </div>
-                </div>
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <!-- Welcome -->
+        <div class="relative overflow-hidden bg-[#ffd709]/15 rounded-2xl p-8 border border-[#ffd709]/20">
+            <div class="absolute -right-16 -top-16 w-56 h-56 bg-[#ffc69a]/30 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h1 id="greeting" class="text-3xl md:text-4xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Welcome!</h1>
+                <p class="text-stone-600 mt-2">Manage your classes, share memories, and track your students' progress.</p>
             </div>
         </div>
-    </main>
-    <!-- Mobile Navigation (Visible only on mobile) -->
-    <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-lowest backdrop-blur-lg border-t-0 flex items-center justify-around px-4 shadow-[0_-8px_32px_-4px_rgba(49,47,35,0.1)] z-50">
-        <button class="flex flex-col items-center gap-1 text-outline">
-            <span class="material-symbols-outlined" data-icon="home">home</span>
-            <span class="text-[10px]">Home</span>
-        </button>
-        <button class="flex flex-col items-center gap-1 text-primary">
-            <span class="material-symbols-outlined" data-icon="school"
-                style="font-variation-settings: &quot;FILL&quot; 1;">school</span>
-            <span class="text-[10px] font-bold">Class</span>
-        </button>
-        <button class="flex flex-col items-center gap-1 text-outline">
-            <span class="material-symbols-outlined" data-icon="chat">chat</span>
-            <span class="text-[10px]">Chat</span>
-        </button>
-        <a href="teacherprofile.html" class="flex flex-col items-center gap-1 text-outline">
-            <span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
-            <span class="text-[10px]">Profile</span>
-        </a>
-    </nav>
-    <script>loadSidebar('teacher', 'home'); loadTopbar('teacher');</script>
+
+        <div id="page-loading" class="py-16 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+
+        <div id="content-wrap" class="hidden space-y-8">
+
+            <!-- My Classrooms -->
+            <section class="space-y-4">
+                <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">My Classrooms</h3>
+                <div id="classroom-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- Upcoming Classwork -->
+            <section class="space-y-4">
+                <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Upcoming Classwork</h3>
+                <div id="classwork-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="classwork-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">Nothing due right now across your classes.</div>
+            </section>
+
+            <!-- Memory Box & Quick Actions -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Recent Memory Box</h3>
+                        <a href="teachermemory.html" class="text-sm font-bold text-stone-500 hover:underline">View All</a>
+                    </div>
+                    <div id="memory-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                    <div id="memory-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">No memories shared yet — head to Memory Box to post your first update.</div>
+                </div>
+                <div class="lg:col-span-4 space-y-4">
+                    <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <a href="teachermemory.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-[#ffd709]/20 flex items-center justify-center text-[#6c5a00]">
+                                    <span class="material-symbols-outlined">add_a_photo</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Add Memory</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="teacherchatwithparent.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-[#ffc69a]/30 flex items-center justify-center text-[#8c4a00]">
+                                    <span class="material-symbols-outlined">chat</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Message Parents</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="teacherhealthlist.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <span class="material-symbols-outlined">medical_services</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Health Records</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+const COLOR_MAP = {
+    emerald: 'bg-emerald-100 text-emerald-700', indigo: 'bg-indigo-100 text-indigo-700',
+    rose: 'bg-rose-100 text-rose-700', amber: 'bg-amber-100 text-amber-700',
+    sky: 'bg-sky-100 text-sky-700', violet: 'bg-violet-100 text-violet-700'
+};
+
+function setGreeting() {
+    const name = localStorage.getItem('fullName') || sessionStorage.getItem('fullName') || '';
+    const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = name ? `${part}, ${name}!` : `${part}!`;
+}
+
+function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+
+let myClassrooms = [];
+async function loadClassrooms() {
+    let classrooms = [];
+    try {
+        const res = await fetch(`/api/classroom/my/${myAccountId}`);
+        classrooms = res.ok ? await res.json() : [];
+    } catch (e) { classrooms = []; }
+    myClassrooms = classrooms;
+
+    const grid = document.getElementById('classroom-grid');
+    grid.innerHTML = classrooms.map(c => `
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="min-w-0">
+                        <h4 class="text-lg font-bold text-stone-800 truncate">${esc(c.name)}</h4>
+                        <p class="text-xs text-stone-400 mt-0.5">${esc(c.section || 'No section set')}</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${COLOR_MAP[c.color] || 'bg-stone-100 text-stone-500'}">
+                        <span class="material-symbols-outlined">groups</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 mb-5">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Students</span>
+                        <span class="text-sm font-bold text-stone-700">${c.studentCount || 0} enrolled</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Classwork due</span>
+                        <span class="text-sm font-bold text-stone-700">${c.totalUpcoming || 0} upcoming</span>
+                    </div>
+                </div>
+                <a href="teacherclassroom.html?classroomId=${c.id}" class="block w-full text-center bg-[#ffd709] text-[#6c5a00] py-2.5 rounded-full font-bold text-sm hover:bg-[#f5cc00] transition-colors">Manage Class</a>
+            </div>
+        </div>`).join('') + `
+        <a href="teacherclassroom.html?create=1" class="bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl flex flex-col items-center justify-center p-8 gap-3 hover:bg-[#ffd709]/5 hover:border-[#ffd709]/40 transition-all min-h-[220px]">
+            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-[#6c5a00] text-3xl">add</span>
+            </div>
+            <div class="text-center">
+                <h4 class="font-bold text-stone-700">Add Classroom</h4>
+                <p class="text-xs text-stone-400 mt-1">Set up a new class</p>
+            </div>
+        </a>`;
+}
+
+// One card per classroom + assignment, across every class the teacher teaches or co-teaches.
+function renderClasswork() {
+    const list = document.getElementById('classwork-list');
+    const empty = document.getElementById('classwork-empty');
+
+    const items = [];
+    myClassrooms.forEach(c => {
+        (c.upcomingWork || []).forEach(w => {
+            items.push({ id: w.id, title: w.title, dueDate: w.dueDate, classroomId: c.id, className: c.name });
+        });
+    });
+    items.sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
+    if (!items.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = items.slice(0, 6).map(w => `
+        <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex items-center gap-4">
+            <div class="bg-stone-50 rounded-lg p-2.5 text-center min-w-[56px]">
+                <span class="block text-[10px] font-bold text-stone-400 uppercase">Due</span>
+                <span class="block text-sm font-black text-[#6c5a00]">${fmtDate(w.dueDate)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-sm text-stone-800 truncate">${esc(w.title)}</h4>
+                <p class="text-xs text-stone-400">${esc(w.className)}</p>
+            </div>
+            <a href="teacherclassroom.html?classroomId=${w.classroomId}&tab=classwork&assignmentId=${w.id}"
+                class="flex-shrink-0 px-4 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] font-bold text-xs hover:bg-[#ffd709]/30 transition-colors">View</a>
+        </div>`).join('');
+}
+
+async function loadMemoryHighlights() {
+    const grid = document.getElementById('memory-grid');
+    const empty = document.getElementById('memory-empty');
+    try {
+        const res = await fetch(`/api/memory/teacher/${myAccountId}`);
+        const posts = res.ok ? await res.json() : [];
+        if (!posts.length) { empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        grid.innerHTML = posts.slice(0, 4).map(p => {
+            const first = p.media && p.media[0];
+            if (!first) return '';
+            const isVideo = first.type === 'VIDEO';
+            return `
+            <a href="teachermemory.html" title="${esc(p.caption || p.classroomName)}" class="relative group aspect-square rounded-lg overflow-hidden bg-stone-100 shadow-sm block">
+                ${isVideo
+                    ? `<video src="${esc(first.url)}" class="w-full h-full object-cover" preload="metadata" muted></video>
+                       <span class="absolute inset-0 flex items-center justify-center"><span class="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"><span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">play_arrow</span></span></span>`
+                    : `<img src="${esc(first.url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="">`}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                    <p class="text-white text-[10px] font-bold truncate">${esc(p.classroomName)}</p>
+                    <p class="text-white/90 text-[10px] truncate">${esc(p.caption || 'No caption')}</p>
+                </div>
+            </a>`;
+        }).join('');
+    } catch (e) { empty.classList.remove('hidden'); }
+}
+
+(async function init() {
+    setGreeting();
+    await loadClassrooms();
+    renderClasswork();
+    document.getElementById('page-loading').classList.add('hidden');
+    document.getElementById('content-wrap').classList.remove('hidden');
+    await loadMemoryHighlights();
+})();
+</script>
+
+<script>loadSidebar('teacher', 'home'); loadTopbar('teacher', { dateOnly: true });</script>
 </body>
-
 </html>
-
-
-
-

@@ -84,6 +84,7 @@ public class StudentService {
                 cm.put("classCode", c.getClassCode());
                 Account t = teachersById.get(c.getTeacherAccountId());
                 if (t != null) {
+                    cm.put("teacherAccountId", t.getAccountId());
                     cm.put("teacherName", t.getFullName());
                     cm.put("teacherImage", t.getProfileImageUrl());
                     cm.put("teacherEmail", t.getEmail());

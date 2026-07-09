@@ -2,6 +2,7 @@
 <html class="light" lang="en">
 
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Login | MyTadika Premium Journal</title>
@@ -83,7 +84,7 @@
   </style>
 </head>
 
-<body class="bg-background text-on-surface min-h-screen flex items-start justify-center px-4 md:px-8 pb-2 -mt-3 overflow-x-hidden">
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center px-4 md:px-8 py-6 overflow-x-hidden">
   <!-- Background Decorative Elements -->
   <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 asymmetric-blob -z-10"></div>
   <div
@@ -143,7 +144,7 @@
     </section>
     <!-- Login Form Side (Right) -->
     <section
-      class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-10 pt-14 flex flex-col justify-start bg-surface-container-lowest" style="margin-top:21px">
+      class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-10 flex flex-col justify-center bg-surface-container-lowest">
       <div class="mb-4 text-center md:text-left">
         <div class="md:hidden flex justify-center mb-6">
           <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg">
@@ -257,6 +258,85 @@
     </section>
   </main>
   <!-- Support Floating Action -->
+  <div class="fixed bottom-6 left-6 z-50">
+    <button id="support-btn" onclick="toggleSupportInfo()"
+      class="flex items-center gap-2 px-5 py-3 bg-white border border-outline rounded-full shadow-lg hover:shadow-xl transition-all text-sm font-bold text-on-surface-variant hover:text-on-surface">
+      <span class="material-symbols-outlined text-lg">help</span>
+      Having trouble logging in?
+    </button>
+    <div id="support-popup"
+      class="hidden absolute bottom-16 left-0 w-72 bg-white rounded-2xl shadow-2xl border border-outline p-5">
+      <p class="text-sm font-bold text-on-surface mb-2">Need help?</p>
+      <p class="text-xs text-on-surface-variant leading-relaxed mb-3">If you're having trouble logging in, contact
+        the school admin:</p>
+      <button id="support-email-row" type="button" onclick="copySupportEmail()"
+        class="w-full flex items-center gap-2 bg-surface-container-high rounded-xl px-4 py-3 hover:bg-primary/10 transition-colors text-left">
+        <span class="material-symbols-outlined text-lg text-secondary" id="support-email-icon">mail</span>
+        <span id="support-email-text" class="text-sm font-semibold text-on-surface truncate flex-1">Loading…</span>
+      </button>
+      <p class="text-[11px] text-on-surface-variant/70 mt-2 px-1">Click to copy the email address.</p>
+    </div>
+  </div>
+
+  <script>
+    let supportInfoLoaded = false;
+    let supportEmail = null;
+    async function toggleSupportInfo() {
+      const popup = document.getElementById('support-popup');
+      const opening = popup.classList.contains('hidden');
+      popup.classList.toggle('hidden');
+      if (opening && !supportInfoLoaded) {
+        const emailEl = document.getElementById('support-email-text');
+        try {
+          const res = await fetch('/api/chat/admin-inbox/identity');
+          const data = res.ok ? await res.json() : null;
+          if (data && data.email) {
+            supportEmail = data.email;
+            emailEl.textContent = data.email;
+          } else {
+            emailEl.textContent = 'Not available — please check with your school.';
+          }
+          supportInfoLoaded = true;
+        } catch (e) {
+          emailEl.textContent = 'Unable to load contact info right now.';
+        }
+      }
+    }
+    async function copySupportEmail() {
+      if (!supportEmail) return;
+      const emailEl = document.getElementById('support-email-text');
+      const iconEl = document.getElementById('support-email-icon');
+      try {
+        await navigator.clipboard.writeText(supportEmail);
+      } catch (e) {
+        // Clipboard API unavailable (e.g. insecure context) — fall back to a manual selection trick.
+        const ta = document.createElement('textarea');
+        ta.value = supportEmail;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const original = emailEl.textContent;
+      const originalIcon = iconEl.textContent;
+      emailEl.textContent = 'Copied!';
+      iconEl.textContent = 'check';
+      setTimeout(() => {
+        emailEl.textContent = original;
+        iconEl.textContent = originalIcon;
+      }, 1500);
+    }
+    document.addEventListener('click', (e) => {
+      const popup = document.getElementById('support-popup');
+      const btn = document.getElementById('support-btn');
+      if (!popup || popup.classList.contains('hidden')) return;
+      if (!popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        popup.classList.add('hidden');
+      }
+    });
+  </script>
 
   <script>
     const roleButtons = document.querySelectorAll(".role-btn");

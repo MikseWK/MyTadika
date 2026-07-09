@@ -80,7 +80,7 @@ public class StripePaymentService {
 
         boolean paid = "paid".equals(session.getPaymentStatus());
         if (paid && !"PAID".equals(fee.getStatus())) {
-            feeService.markPaid(feeId);
+            feeService.markPaid(feeId, "STRIPE");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -111,7 +111,7 @@ public class StripePaymentService {
 
         Long feeId = Long.valueOf(feeIdStr);
         feeRepository.findById(feeId).ifPresent(fee -> {
-            if (!"PAID".equals(fee.getStatus())) feeService.markPaid(feeId);
+            if (!"PAID".equals(fee.getStatus())) feeService.markPaid(feeId, "STRIPE");
         });
     }
 }

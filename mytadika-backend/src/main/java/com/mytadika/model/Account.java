@@ -55,9 +55,6 @@ public class Account {
     @Column(length = 100)
     private String focusArea;
 
-    @Column(length = 255)
-    private String meetLink;
-
     @Column
     private LocalDateTime lastActiveAt;
 

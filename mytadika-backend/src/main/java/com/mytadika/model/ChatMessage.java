@@ -37,4 +37,7 @@ public class ChatMessage {
     @Column(columnDefinition = "varchar(10) default 'text'")
     @Builder.Default
     private String messageType = "text";
+
+    @Column(name = "reply_to_id")
+    private Long replyToId;
 }

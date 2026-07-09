@@ -172,10 +172,15 @@ public class FeeService {
     }
 
     public Map<String, Object> markPaid(Long id) {
+        return markPaid(id, "MANUAL");
+    }
+
+    public Map<String, Object> markPaid(Long id, String paymentMethod) {
         Fee fee = feeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fee record not found"));
         fee.setStatus("PAID");
         fee.setPaidAt(LocalDateTime.now());
+        fee.setPaymentMethod(paymentMethod);
         return toMap(feeRepository.save(fee));
     }
 
@@ -218,6 +223,7 @@ public class FeeService {
         map.put("dueDate", fee.getDueDate());
         map.put("status", fee.getStatus());
         map.put("paidAt", fee.getPaidAt() != null ? fee.getPaidAt().toString() : null);
+        map.put("paymentMethod", fee.getPaymentMethod());
         map.put("createdAt", fee.getCreatedAt() != null ? fee.getCreatedAt().toString() : null);
         return map;
     }

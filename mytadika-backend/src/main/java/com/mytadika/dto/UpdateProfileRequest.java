@@ -14,5 +14,4 @@ public class UpdateProfileRequest {
     private String qualification;
     private String experience;
     private String focusArea;
-    private String meetLink;
 }

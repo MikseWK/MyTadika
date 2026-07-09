@@ -38,7 +38,7 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        Account account = accountRepository.findByEmail(request.getEmail())
+        Account account = accountRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
@@ -57,7 +57,8 @@ public class AuthService {
     }
 
     public void register(RegisterRequest request) {
-        if (accountRepository.existsByEmail(request.getEmail())) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        if (accountRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("An account with this email already exists");
         }
 
@@ -66,7 +67,7 @@ public class AuthService {
         Account account = Account.builder()
                 .accountId(accountId)
                 .fullName(request.getFullName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roleType(Account.RoleType.PARENT)
                 .createdAt(LocalDateTime.now())
@@ -86,7 +87,7 @@ public class AuthService {
 
     public void forgotPassword(ForgotPasswordRequest request) {
         // Only send email if account exists — silently succeed otherwise
-        accountRepository.findByEmail(request.getEmail()).ifPresent(account -> {
+        accountRepository.findByEmail(request.getEmail().trim().toLowerCase()).ifPresent(account -> {
             String token = UUID.randomUUID().toString();
 
             PasswordResetToken resetToken = PasswordResetToken.builder()

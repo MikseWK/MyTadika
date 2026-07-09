@@ -47,7 +47,7 @@ public class AcademicService {
             throw new IllegalArgumentException("At least one subject score is required");
 
         List<Double> scores = subjects.stream()
-                .map(s -> validateScore(((Number) s.get("score")).doubleValue()))
+                .map(this::extractScore)
                 .collect(Collectors.toList());
         double average = gradeCalculationService.calculateAverage(scores);
         String grade = gradeCalculationService.calculateGrade(average);
@@ -74,7 +74,7 @@ public class AcademicService {
             throw new IllegalArgumentException("At least one subject score is required");
 
         List<Double> scores = subjects.stream()
-                .map(s -> validateScore(((Number) s.get("score")).doubleValue()))
+                .map(this::extractScore)
                 .collect(Collectors.toList());
         double average = gradeCalculationService.calculateAverage(scores);
         String grade = gradeCalculationService.calculateGrade(average);
@@ -89,10 +89,34 @@ public class AcademicService {
         return toMap(record);
     }
 
+    @Transactional
+    public void deleteRecord(Long id) {
+        if (!academicRecordRepository.existsById(id)) {
+            throw new RuntimeException("Academic record not found");
+        }
+        academicScoreItemRepository.deleteByAcademicRecordId(id);
+        academicRecordRepository.deleteById(id);
+    }
+
     private double validateScore(double score) {
         if (score < 0 || score > 100)
             throw new IllegalArgumentException("Scores must be between 0 and 100");
         return score;
+    }
+
+    // Subjects arrive as a raw Map from JSON, so a missing/blank "subject" or a
+    // non-numeric "score" (or a missing one) would otherwise throw an uncaught
+    // NullPointerException/ClassCastException instead of a clean validation error.
+    private double extractScore(Map<String, Object> subject) {
+        Object rawSubjectName = subject.get("subject");
+        if (!(rawSubjectName instanceof String) || ((String) rawSubjectName).isBlank()) {
+            throw new IllegalArgumentException("Each subject entry must include a subject name");
+        }
+        Object rawScore = subject.get("score");
+        if (!(rawScore instanceof Number)) {
+            throw new IllegalArgumentException("Each subject must have a valid numeric score");
+        }
+        return validateScore(((Number) rawScore).doubleValue());
     }
 
     private void saveScoreItems(Long recordId, List<Map<String, Object>> subjects) {
@@ -100,7 +124,7 @@ public class AcademicService {
             AcademicScoreItem item = AcademicScoreItem.builder()
                     .academicRecordId(recordId)
                     .subjectName((String) s.get("subject"))
-                    .score(((Number) s.get("score")).doubleValue())
+                    .score(extractScore(s))
                     .build();
             academicScoreItemRepository.save(item);
         }

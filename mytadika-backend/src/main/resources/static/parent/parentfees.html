@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Fees – MyTadika</title>
@@ -26,6 +27,7 @@
         .spin { animation: spin 1s linear infinite; }
     </style>
     <script src="/components/sidebar-loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
 
@@ -101,6 +103,58 @@
     function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
     function isOverdue(fee) { return fee.status === 'PENDING' && fee.dueDate && fee.dueDate < new Date().toISOString().slice(0,10); }
     function totalOf(f) { return f.totalAmount != null ? f.totalAmount : f.amount; }
+    function paymentMethodLabel(pm) {
+        return { STRIPE: 'Card (Stripe)', TOYYIBPAY: 'FPX/Card (ToyyibPay)', MANUAL: 'Manual/Cash' }[pm] || null;
+    }
+
+    function downloadReceipt(feeId) {
+        const fee = fees.find(f => f.id === feeId);
+        if (!fee) return;
+        const child = children.find(c => c.id === selectedStudentId);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(20);
+        doc.setTextColor(108, 90, 0);
+        doc.text('MyTadika', 40, 55);
+        doc.setFontSize(12);
+        doc.setTextColor(120, 113, 108);
+        doc.text('Payment Receipt', 40, 75);
+
+        doc.setDrawColor(230, 226, 210);
+        doc.line(40, 90, 555, 90);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(90, 90, 90);
+        let y = 120;
+        const row = (label, value) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, 40, y);
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(value), 200, y);
+            y += 24;
+        };
+
+        row('Receipt No.', 'MTD-' + String(fee.id).padStart(6, '0'));
+        row('Student', child ? child.fullName : '-');
+        row('Description', fee.description);
+        row('Amount', 'RM ' + fmtMoney(fee.amount));
+        if (fee.lateFeeAmount) row('Late Fee', 'RM ' + fmtMoney(fee.lateFeeAmount));
+        row('Total Paid', 'RM ' + fmtMoney(totalOf(fee)));
+        row('Payment Method', paymentMethodLabel(fee.paymentMethod) || 'Manual/Cash');
+        row('Date Paid', fee.paidAt ? fee.paidAt.slice(0,10) : '-');
+        row('Status', 'PAID');
+
+        doc.setDrawColor(230, 226, 210);
+        doc.line(40, y + 10, 555, y + 10);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 145, 130);
+        doc.text('This is a system-generated receipt from MyTadika. Thank you for your payment.', 40, y + 35);
+
+        doc.save(`MyTadika-Receipt-${fee.id}.pdf`);
+    }
 
     async function loadChildren() {
         try {
@@ -216,13 +270,14 @@
             <div class="px-6 py-4 flex items-center justify-between gap-4">
                 <div>
                     <p class="text-sm font-semibold text-stone-800">${esc(f.description)}</p>
-                    <p class="text-xs text-stone-400 mt-0.5">Due ${fmtDate(f.dueDate)}${f.paidAt ? ` · Paid ${esc(f.paidAt.slice(0,10))}` : ''}</p>
+                    <p class="text-xs text-stone-400 mt-0.5">Due ${fmtDate(f.dueDate)}${f.paidAt ? ` · Paid ${esc(f.paidAt.slice(0,10))}${paymentMethodLabel(f.paymentMethod) ? ' via ' + esc(paymentMethodLabel(f.paymentMethod)) : ''}` : ''}</p>
                     ${f.lateFeeAmount ? `<p class="text-xs text-red-500 font-semibold mt-0.5">+ RM ${fmtMoney(f.lateFeeAmount)} late fee added</p>` : ''}
                 </div>
                 <div class="flex items-center gap-4">
                     <span class="text-sm font-bold text-stone-800">RM ${fmtMoney(totalOf(f))}</span>
                     ${badge}
                     ${f.status === 'PENDING' ? `<button onclick="payNow(${f.id})" data-pay-btn class="px-4 py-1.5 rounded-full bg-[#ffd709] text-[#6c5a00] font-bold text-xs hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Pay Now</button>` : ''}
+                    ${f.status === 'PAID' ? `<button onclick="downloadReceipt(${f.id})" class="px-3 py-1.5 rounded-full border border-stone-200 text-stone-500 font-bold text-xs hover:bg-stone-50 transition-colors flex items-center gap-1"><span class="material-symbols-outlined text-sm">download</span>Receipt</button>` : ''}
                 </div>
             </div>`;
         }).join('');

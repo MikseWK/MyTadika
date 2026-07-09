@@ -2,6 +2,7 @@
 <html class="light" lang="en" style="">
 
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>MyTadika - Chat Center</title>
@@ -244,6 +245,16 @@
 
                     <!-- Chat Input -->
                     <div class="p-4 bg-[#f5edd8] border-t border-[#e3ddc5] flex-shrink-0">
+                        <!-- Reply preview bar -->
+                        <div id="reply-preview-bar" class="hidden mb-2 flex items-center gap-2 px-3 py-2 bg-[#eee8d3] rounded-xl border-l-4 border-[#ffd709]">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-[#6c5a00]" id="reply-preview-label"></p>
+                                <p class="text-xs text-stone-500 truncate" id="reply-preview-text"></p>
+                            </div>
+                            <button onclick="cancelReply()" class="w-6 h-6 flex-shrink-0 bg-white/60 rounded-full flex items-center justify-center text-stone-500 hover:bg-red-100 hover:text-red-500 transition-all">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
                         <!-- Image preview strip -->
                         <div id="image-preview-wrap" class="hidden mb-2 flex items-center gap-2 px-1">
                             <img id="image-preview" class="h-16 rounded-xl object-cover border border-[#e3ddc5]"
@@ -334,6 +345,8 @@
         let selectedTeacher = null;
         let pollInterval = null;
         let editingMessageId = null;
+        let currentMessages = [];
+        let replyingTo = null;
         let allTeachers = [];
         let isFirstMessageLoad = false;
         let userScrolledUp = false;
@@ -409,8 +422,17 @@
             await Promise.all([loadAdminInbox(), loadTeachers()]);
 
             // Deep link from e.g. the zero-children empty state: ?openAdmin=1
-            if (new URLSearchParams(location.search).get('openAdmin') === '1' && adminInboxId) {
+            const deepLinkParams = new URLSearchParams(location.search);
+            if (deepLinkParams.get('openAdmin') === '1' && adminInboxId) {
                 selectTeacher(adminInboxId, adminInboxName);
+                history.replaceState(null, '', location.pathname);
+            }
+
+            // Deep link to a specific teacher, e.g. from the parent home page's "Message Teacher" quick action: ?teacherId=
+            const deepLinkTeacherId = deepLinkParams.get('teacherId');
+            if (deepLinkTeacherId) {
+                const teacher = allTeachers.find(t => t.accountId === deepLinkTeacherId);
+                if (teacher) selectTeacher(teacher.accountId, teacher.fullName);
                 history.replaceState(null, '', location.pathname);
             }
 
@@ -668,6 +690,7 @@
         function selectTeacher(teacherId, teacherName) {
             selectedTeacherId = teacherId;
             selectedTeacherName = teacherName;
+            cancelReply();
             selectedTeacher = allTeachers.find(t => t.accountId === teacherId) ||
                 (teacherId === adminInboxId
                     ? { accountId: teacherId, fullName: teacherName, ...adminInboxInfo }
@@ -706,13 +729,6 @@
             window.location.href = 'tel:' + selectedTeacher.phoneNumber;
         }
 
-        function videoCallTeacher() {
-            if (!selectedTeacher || !selectedTeacher.meetLink) {
-                alert('No video call link available for this teacher.');
-                return;
-            }
-            window.open(selectedTeacher.meetLink, '_blank');
-        }
 
         function isOnline(lastActiveAt) {
             if (!lastActiveAt) return false;
@@ -742,6 +758,7 @@
         }
 
         function renderMessages(messages) {
+            currentMessages = messages;
             const container = document.getElementById('messages-container');
             const shouldScroll = isFirstMessageLoad || !userScrolledUp;
             isFirstMessageLoad = false;
@@ -787,8 +804,27 @@
                             <span class="material-symbols-outlined text-base text-[#6c5a00]">download</span>
                         </a>`
                     : `${escapeHtml(m.content)}${editedTag}`;
+                let replyQuoteHtml = '';
+                if (m.replyToId) {
+                    const quoted = currentMessages.find(x => x.id === m.replyToId);
+                    if (quoted) {
+                        const quotedLabel = quoted.senderId === myAccountId ? 'You' : selectedTeacherName;
+                        const quotedRaw = quoted.messageType === 'image' ? '📷 Photo' : quoted.messageType === 'file' ? '📎 File' : quoted.content;
+                        const quotedText = quotedRaw.length > 60 ? quotedRaw.slice(0, 60) + '…' : quotedRaw;
+                        replyQuoteHtml = `<div onclick="scrollToMessage(${quoted.id})" class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 ${isMine ? 'border-white/60 bg-black/10' : 'border-[#ffd709] bg-black/5'} text-xs cursor-pointer">
+                            <p class="font-bold opacity-80">${escapeHtml(quotedLabel)}</p>
+                            <p class="opacity-70 truncate max-w-[200px]">${escapeHtml(quotedText)}</p>
+                        </div>`;
+                    } else {
+                        replyQuoteHtml = `<div class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 border-stone-400 bg-black/5 text-xs italic opacity-60">Original message unavailable</div>`;
+                    }
+                }
+                const replyBtn = `<button onclick="startReply(${m.id})" class="w-8 h-8 bg-[#eee8d3] shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100" title="Reply">
+                                <span class="material-symbols-outlined text-xs">reply</span>
+                            </button>`;
                 const editDeleteBtns = (!isImage && !isFile) ? `
-                        <div class="absolute -left-20 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        <div class="absolute -left-28 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            ${replyBtn}
                             <button onclick="openEditModal(${m.id}, '${escapeAttr(m.content)}')" class="w-8 h-8 bg-[#eee8d3] shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100">
                                 <span class="material-symbols-outlined text-xs">edit</span>
                             </button>
@@ -796,18 +832,24 @@
                                 <span class="material-symbols-outlined text-xs">delete</span>
                             </button>
                         </div>` : `
-                        <div class="absolute -left-10 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        <div class="absolute -left-20 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            ${replyBtn}
                             <button onclick="deleteMessage(${m.id})" class="w-8 h-8 bg-[#eee8d3] shadow-lg rounded-full text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all scale-90 hover:scale-100">
                                 <span class="material-symbols-outlined text-xs">delete</span>
                             </button>
+                        </div>`;
+                const receivedReplyBtn = `
+                        <div class="absolute -right-10 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            ${replyBtn}
                         </div>`;
 
                 let bubble;
                 if (isMine) {
                     bubble = `
-                        <div class="flex flex-row-reverse gap-4 max-w-[75%] ml-auto" data-msg-id="${m.id}">
+                        <div class="flex flex-row-reverse gap-4 max-w-[75%] ml-auto transition-all rounded-2xl" data-msg-id="${m.id}">
                             <div class="relative flex flex-col items-end">
                                 <div class="${(isImage || isFile) ? 'relative group/msg' : 'chat-bubble-sent bg-primary text-on-primary p-3.5 shadow-md shadow-primary/20 leading-relaxed text-sm font-semibold relative group/msg'}">
+                                    ${replyQuoteHtml}
                                     ${bubbleContent}
                                     ${editDeleteBtns}
                                 </div>
@@ -819,13 +861,15 @@
                         </div>`;
                 } else {
                     bubble = `
-                        <div class="flex gap-3 max-w-[75%]">
+                        <div class="flex gap-3 max-w-[75%] transition-all rounded-2xl" data-msg-id="${m.id}">
                             <div class="w-8 h-8 rounded-full bg-[#ffd709]/40 flex items-center justify-center text-[#6c5a00] font-black text-xs self-end mb-5 flex-shrink-0">
                                 ${selectedTeacherName.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <div class="${(isImage || isFile) ? '' : 'chat-bubble-received bg-[#eee8d3] text-[#312f23] p-3.5 shadow-sm leading-relaxed text-sm font-medium'}">
-                                    ${bubbleContent}${(isImage || isFile) ? '' : editedTag}
+                                <div class="relative group/msg ${(isImage || isFile) ? '' : 'chat-bubble-received bg-[#eee8d3] text-[#312f23] p-3.5 shadow-sm leading-relaxed text-sm font-medium'}">
+                                    ${replyQuoteHtml}
+                                    ${bubbleContent}
+                                    ${receivedReplyBtn}
                                 </div>
                                 <p class="text-[10px] font-bold text-stone-400 mt-1.5 ml-2">${time}</p>
                             </div>
@@ -855,7 +899,8 @@
                                 senderId: myAccountId,
                                 receiverId: selectedTeacherId,
                                 content: pendingImageUrl,
-                                messageType: 'image'
+                                messageType: 'image',
+                                replyToId: replyingTo ? replyingTo.id : null
                             })
                         });
                         if (!r.ok) {
@@ -885,12 +930,14 @@
                                 senderId: myAccountId,
                                 receiverId: selectedTeacherId,
                                 content,
-                                messageType: 'text'
+                                messageType: 'text',
+                                replyToId: replyingTo ? replyingTo.id : null
                             })
                         });
                     } catch (e) { console.error('Failed to send message', e); }
                 }
 
+                cancelReply();
                 await loadMessages();
             } finally { sendingMessage = false; sendBtn.disabled = false; }
         }
@@ -969,8 +1016,9 @@
                     await fetch('/api/chat/send', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ senderId: myAccountId, receiverId: selectedTeacherId, content, messageType: 'file' })
+                        body: JSON.stringify({ senderId: myAccountId, receiverId: selectedTeacherId, content, messageType: 'file', replyToId: replyingTo ? replyingTo.id : null })
                     });
+                    cancelReply();
                     await loadMessages();
                 } else {
                     alert('Upload failed: ' + (data.error || 'Unknown error'));
@@ -1042,6 +1090,31 @@
             } finally {
                 btn.innerHTML = '<span class="material-symbols-outlined">download</span>';
             }
+        }
+
+        function startReply(id) {
+            const msg = currentMessages.find(x => x.id === id);
+            if (!msg) return;
+            replyingTo = msg;
+            const label = msg.senderId === myAccountId ? 'You' : selectedTeacherName;
+            const raw = msg.messageType === 'image' ? '📷 Photo' : msg.messageType === 'file' ? '📎 File' : msg.content;
+            document.getElementById('reply-preview-label').textContent = label;
+            document.getElementById('reply-preview-text').textContent = raw.length > 80 ? raw.slice(0, 80) + '…' : raw;
+            document.getElementById('reply-preview-bar').classList.remove('hidden');
+            document.getElementById('message-input').focus();
+        }
+
+        function cancelReply() {
+            replyingTo = null;
+            document.getElementById('reply-preview-bar').classList.add('hidden');
+        }
+
+        function scrollToMessage(id) {
+            const el = document.querySelector(`[data-msg-id="${id}"]`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('ring-4', 'ring-[#ffd709]');
+            setTimeout(() => el.classList.remove('ring-4', 'ring-[#ffd709]'), 1200);
         }
 
         function openEditModal(messageId, currentContent) {

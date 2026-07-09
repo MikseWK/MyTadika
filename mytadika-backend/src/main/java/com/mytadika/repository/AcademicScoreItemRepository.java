@@ -9,6 +9,8 @@ import java.util.List;
 public interface AcademicScoreItemRepository extends JpaRepository<AcademicScoreItem, Long> {
     List<AcademicScoreItem> findByAcademicRecordId(Long academicRecordId);
 
+    List<AcademicScoreItem> findByAcademicRecordIdIn(List<Long> academicRecordIds);
+
     @Modifying
     @Query("DELETE FROM AcademicScoreItem s WHERE s.academicRecordId = :academicRecordId")
     void deleteByAcademicRecordId(@Param("academicRecordId") Long academicRecordId);

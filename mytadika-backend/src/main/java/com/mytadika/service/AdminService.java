@@ -2,11 +2,15 @@ package com.mytadika.service;
 
 import com.mytadika.model.*;
 import com.mytadika.repository.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -111,7 +115,37 @@ public class AdminService {
                 && accountRepo.findByRoleType(Account.RoleType.ADMIN).size() <= 1) {
             throw new IllegalArgumentException("Cannot delete the last remaining admin account.");
         }
-        accountRepo.deleteById(accountId);
+        if (account.getRoleType() == Account.RoleType.PARENT) {
+            // Already-soft-deleted children are invisible to the app but their parent_id FK
+            // still points here — auto-unlink those so they don't block deletion. Students
+            // that are still active are left alone; those correctly still block the delete.
+            for (Student child : studentRepo.findByParentId(accountId)) {
+                if (child.getDeletedAt() != null) {
+                    child.setParentId(null);
+                    studentRepo.save(child);
+                }
+            }
+        }
+        if (account.getRoleType() == Account.RoleType.TEACHER
+                && !classroomRepo.findByTeacherAccountId(accountId).isEmpty()) {
+            // The "classrooms" table has no DB-level FK back to accounts, so deleting a
+            // teacher who still owns one would silently succeed and leave the classroom
+            // pointing at a deleted account — check explicitly instead.
+            throw new IllegalArgumentException(
+                    "This teacher still owns a classroom. Reassign or delete that classroom first, then try again.");
+        }
+        try {
+            accountRepo.deleteById(accountId);
+            accountRepo.flush();
+        } catch (DataIntegrityViolationException e) {
+            String detail = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : "";
+            if (detail.contains("\"student\"")) {
+                throw new IllegalArgumentException(
+                        "This parent still has children linked to their account. Unlink or delete those students first, then try again.");
+            }
+            throw new IllegalArgumentException(
+                    "This account can't be deleted because other records still reference it.");
+        }
     }
 
     @Transactional
@@ -198,10 +232,40 @@ public class AdminService {
         return result;
     }
 
+    private static final int MIN_STUDENT_AGE = 4;
+    private static final int MAX_STUDENT_AGE = 6;
+
+    // Enrollment age is gated at 4-6 years old (kindergarten range) — only enforced
+    // when a date of birth is being set/changed, not retroactively against existing
+    // students on unrelated edits (a child turning 7 mid-year shouldn't block their
+    // other records from being updated).
+    private void validateAge(String dateOfBirth) {
+        if (dateOfBirth == null || dateOfBirth.isBlank()) {
+            throw new IllegalArgumentException("Date of birth is required.");
+        }
+        LocalDate dob;
+        try {
+            dob = LocalDate.parse(dateOfBirth);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date of birth format.");
+        }
+        LocalDate today = LocalDate.now();
+        if (dob.isAfter(today)) {
+            throw new IllegalArgumentException("Date of birth cannot be in the future.");
+        }
+        int age = Period.between(dob, today).getYears();
+        if (age < MIN_STUDENT_AGE || age > MAX_STUDENT_AGE) {
+            throw new IllegalArgumentException(
+                    "Student must be between " + MIN_STUDENT_AGE + " and " + MAX_STUDENT_AGE +
+                    " years old (calculated age: " + age + ").");
+        }
+    }
+
     @Transactional
     public Map<String, Object> createStudent(Map<String, String> body) {
         String fullName = body.get("fullName");
         if (fullName == null || fullName.isBlank()) throw new IllegalArgumentException("Full name is required.");
+        validateAge(body.get("dateOfBirth"));
         String studentCode = generateStudentCode();
         Student student = Student.builder()
                 .fullName(fullName.trim())
@@ -230,7 +294,10 @@ public class AdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Student not found."));
         if (body.containsKey("fullName") && body.get("fullName") != null && !body.get("fullName").isBlank())
             student.setFullName(body.get("fullName").trim());
-        if (body.containsKey("dateOfBirth")) student.setDateOfBirth(body.get("dateOfBirth"));
+        if (body.containsKey("dateOfBirth")) {
+            validateAge(body.get("dateOfBirth"));
+            student.setDateOfBirth(body.get("dateOfBirth"));
+        }
         if (body.containsKey("gender")) student.setGender(body.get("gender"));
         if (body.containsKey("medicalInfo")) student.setMedicalInfo(body.get("medicalInfo"));
         if (body.containsKey("emergencyContact")) student.setEmergencyContact(body.get("emergencyContact"));

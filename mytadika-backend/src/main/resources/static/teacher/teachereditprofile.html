@@ -3,6 +3,7 @@
 <html lang="en">
 
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Edit Teacher Profile | MyTadika</title>
@@ -321,16 +322,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Meet Link -->
-                                <div class="md:col-span-1">
-                                    <label class="block font-label text-sm font-bold text-secondary mb-2 px-1">Video Meet Link</label>
-                                    <div class="relative">
-                                        <input id="input-meet"
-                                            class="w-full bg-surface-container-low border-0 rounded-lg px-6 py-4 focus:ring-4 focus:ring-primary-container text-on-surface font-medium transition-all"
-                                            placeholder="https://meet.google.com/..." type="url" />
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant">videocam</span>
-                                    </div>
-                                </div>
 
 
                             <!-- Action Buttons -->
@@ -512,7 +503,6 @@
                 document.getElementById('input-qualification').value = p.qualification || '';
                 document.getElementById('input-experience').value = p.experience || '';
                 document.getElementById('input-focus').value = p.focusArea || '';
-                document.getElementById('input-meet').value = p.meetLink || '';
 
                 // Sidebar
                 document.getElementById('sidebar-name').textContent = p.fullName || 'Teacher';
@@ -695,7 +685,6 @@
             const qualification = document.getElementById('input-qualification').value.trim();
             const experience = document.getElementById('input-experience').value.trim();
             const focusArea = document.getElementById('input-focus').value.trim();
-            const meetLink = document.getElementById('input-meet').value.trim();
 
             if (!fullName) {
                 showAlert('Full name cannot be empty.', false);
@@ -741,7 +730,7 @@
                 const res = await fetch(`/api/profile/${accountId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, phoneNumber, address, description, qualification, experience, focusArea, meetLink })
+                    body: JSON.stringify({ fullName, phoneNumber, address, description, qualification, experience, focusArea })
                 });
                 const data = await res.json();
 

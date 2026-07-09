@@ -20,6 +20,7 @@ import com.mytadika.service.HealthAdviceService;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -47,8 +48,8 @@ public class HealthController {
                 private Double ageMonths;
 
                 @NotNull(message = "weightKg is required")
-                @Min(value = 2, message = "weightKg must be >= 2.5")
-                @Max(value = 30, message = "weightKg must be <= 30")
+                @DecimalMin(value = "2.5", message = "weightKg must be >= 2.5")
+                @DecimalMax(value = "30", message = "weightKg must be <= 30")
                 private Double weightKg;
 
                 @NotNull(message = "heightCm is required")
@@ -83,6 +84,19 @@ public class HealthController {
         @Data
         public static class AllergyUpdateDTO {
                 private List<String> allergies;
+        }
+
+        // Surfaces the specific @Valid failure message (e.g. "weightKg must be >= 2.5")
+        // instead of Spring's default blank "Bad Request" body, so the frontend can show
+        // the caller exactly what was wrong instead of a generic "failed to save".
+        @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+        public ResponseEntity<?> handleValidationError(org.springframework.web.bind.MethodArgumentNotValidException e) {
+                String message = e.getBindingResult().getFieldErrors().stream()
+                                .map(err -> err.getDefaultMessage())
+                                .filter(m -> m != null)
+                                .findFirst()
+                                .orElse("Invalid request.");
+                return ResponseEntity.badRequest().body(Map.of("error", message));
         }
 
         /**
@@ -184,6 +198,76 @@ public class HealthController {
                                 .build();
 
                 return ResponseEntity.ok(response);
+        }
+
+        /**
+         * Updates an existing health measurement record — recomputes BMI and
+         * nutrition status via the same AI prediction path used when creating one.
+         */
+        @PutMapping("/records/{id}")
+        @Transactional
+        public ResponseEntity<?> updateRecord(@PathVariable Long id, @Valid @RequestBody HealthRequestDTO request) {
+                HealthRecord record = healthRecordRepository.findById(id).orElse(null);
+                if (record == null) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Health record not found"));
+                }
+
+                AiPredictionClient.PredictionResponse modelResponse = aiPredictionClient.predict(
+                                request.getChildId(),
+                                request.getAgeMonths(),
+                                request.getWeightKg(),
+                                request.getHeightCm(),
+                                request.getMuacCm(),
+                                request.getGender());
+
+                HealthAdviceService.AdviceResult adviceResult = healthAdviceService.generateAdvice(
+                                request.getChildId(),
+                                request.getAgeMonths(),
+                                request.getActivityLevel(),
+                                request.getAllergies() != null ? request.getAllergies() : Collections.emptyList(),
+                                request.getShownAdviceIds() != null ? request.getShownAdviceIds()
+                                                : Collections.emptyList(),
+                                modelResponse);
+
+                double heightM = request.getHeightCm() / 100.0;
+                double bmi = request.getWeightKg() / (heightM * heightM);
+
+                record.setAgeMonths(request.getAgeMonths());
+                record.setWeightKg(request.getWeightKg());
+                record.setHeightCm(request.getHeightCm());
+                record.setMuacCm(request.getMuacCm());
+                record.setBmi(bmi);
+                record.setNutritionStatus(adviceResult.getStatus());
+
+                HealthRecord saved = healthRecordRepository.save(record);
+
+                if (request.getAllergies() != null) {
+                        Long studentId = saved.getStudentId();
+                        AllergyProfile allergyProfile = allergyProfileRepository.findById(studentId)
+                                        .orElse(AllergyProfile.builder().studentId(studentId).build());
+                        allergyProfile.setAllergiesList(request.getAllergies());
+                        allergyProfileRepository.save(allergyProfile);
+                }
+
+                RecordResponseDTO response = RecordResponseDTO.builder()
+                                .recordId(saved.getId())
+                                .healthRecord(saved)
+                                .advice(adviceResult)
+                                .build();
+
+                return ResponseEntity.ok(response);
+        }
+
+        /**
+         * Deletes a health measurement record.
+         */
+        @DeleteMapping("/records/{id}")
+        public ResponseEntity<?> deleteRecord(@PathVariable Long id) {
+                if (!healthRecordRepository.existsById(id)) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Health record not found"));
+                }
+                healthRecordRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("status", "deleted"));
         }
 
         /**
