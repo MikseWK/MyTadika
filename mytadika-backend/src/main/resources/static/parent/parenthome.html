@@ -321,8 +321,14 @@ async function loadPendingFee() {
     const iconEl = document.getElementById('pending-fee-icon');
     try {
         if (!children.length) { titleEl.textContent = 'No fees to show'; return; }
-        const feesRes = await fetch(`/api/fees/students/${children[0].id}`);
-        const fees = feesRes.ok ? await feesRes.json() : [];
+        // Check every child's fees, not just the first — a parent with multiple
+        // children needs pending fees from any of them to surface here.
+        const feesByChild = await Promise.all(children.map(async c => {
+            const res = await fetch(`/api/fees/students/${c.id}`);
+            const fees = res.ok ? await res.json() : [];
+            return fees.map(f => ({ ...f, childName: c.fullName }));
+        }));
+        const fees = feesByChild.flat();
         const today = new Date().toISOString().slice(0, 10);
         const pending = fees.filter(f => f.status === 'PENDING').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
@@ -331,10 +337,12 @@ async function loadPendingFee() {
         const next = pending[0];
         const overdue = next.dueDate < today;
         const total = next.totalAmount != null ? next.totalAmount : next.amount;
+        const childPrefix = children.length > 1 ? `${next.childName} · ` : '';
+        const extra = pending.length > 1 ? ` (+${pending.length - 1} more)` : '';
         titleEl.textContent = `RM ${Number(total).toFixed(2)} ${overdue ? 'overdue' : 'due'}`;
         subEl.textContent = next.lateFeeAmount
-            ? `${next.description} · incl. RM ${Number(next.lateFeeAmount).toFixed(2)} late fee`
-            : `${next.description} · Due ${next.dueDate}`;
+            ? `${childPrefix}${next.description} · incl. RM ${Number(next.lateFeeAmount).toFixed(2)} late fee${extra}`
+            : `${childPrefix}${next.description} · Due ${next.dueDate}${extra}`;
         if (overdue) titleEl.classList.add('text-red-600');
     } catch (e) {
         titleEl.textContent = 'Fees';
