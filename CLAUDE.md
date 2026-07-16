@@ -1,7 +1,7 @@
 # CLAUDE.md — MyTadika Development Guide
 ### Core Administrative & Health Analytics Module — HTML/JS + Spring Boot
 
-> **Related docs:** `FYP1 Report (Ch 1–4)` = requirements/use-cases/ERD spec. `plan.md` = AI/ML deep-dive (Tasks 1–7 complete). This file = concrete build plan for whoever is writing code.
+> **Related docs:** `FYP1 Report (Ch 1–4)` = requirements/use-cases/ERD spec. `docs/plan.md` and `docs/system_development_plan.md` are the teammate's original AI/ML and React/Vite SPA planning docs — **historical/stale**: the AI/ML pipeline they describe was superseded by the rules-engine approach actually shipped, and the React/Vite SPA was never built (frontend is plain static HTML/JS served by Spring Boot, per §8). `docs/integration-plan.md` records the actual merge of the teammate's backend modules and frontend into this repo — treat it as the current source of truth for what shipped. This file = concrete build plan for whoever is writing code.
 
 ---
 
@@ -38,11 +38,11 @@ Shared entities (`Account`, `Classroom`) are stubbed just enough to compile; ful
 | HTTP client | Axios (loaded via CDN or npm) |
 | Charts | Chart.js (replaces Recharts) |
 | Styling | Tailwind CSS via CDN `<script>` tag; CSS custom properties for design tokens |
-| Auth client | `@supabase/supabase-js` via CDN — sign up/in, Google/Facebook OAuth, session + token refresh |
-| Backend | Spring Boot 3.x (Java 21 LTS), Maven |
+| Auth client | `components/auth-fetch.js` — patches `window.fetch` to attach `Authorization: Bearer <token>` from `localStorage`; no Supabase JS client in the shipped frontend |
+| Backend | Spring Boot 3.5.15 (Java 21 LTS), Maven |
 | Persistence | Spring Data JPA + Hibernate (`PostgreSQLDialect`) |
-| Database | **PostgreSQL hosted on Supabase** |
-| Auth (backend) | `spring-boot-starter-oauth2-resource-server` — validates Supabase JWTs via JWKS |
+| Database | **PostgreSQL hosted on Supabase** (JDBC only — Supabase Auth/PostgREST are not used) |
+| Auth (backend) | Self-issued stateless JWT (`security/JwtService.java`, `security/JwtAuthenticationFilter.java`) — **not** Supabase OAuth2/JWKS; that approach was abandoned. Spring Boot issues, signs, and validates its own tokens against the `accounts` table. |
 | Validation | Jakarta Bean Validation |
 | Boilerplate | Lombok |
 | ML serving | Python FastAPI microservice (`AI/`) — Spring Boot calls it over HTTP, per `plan.md` |
@@ -55,8 +55,8 @@ Shared entities (`Account`, `Classroom`) are stubbed just enough to compile; ful
 |---|---|---|
 | Database | **PostgreSQL on Supabase** | Already on Supabase. Spring Boot connects via standard JDBC/JPA — same as any Postgres instance. |
 | DB connection mode | **Supavisor Session Pooler (port 5432)** | Direct connection needs IPv6 (paid add-on). Transaction pooler (6543) disables Hibernate prepared statements → cryptic errors. Session pooler is IPv4-compatible on all plans. Get string from Dashboard → Connect → "Session pooler." |
-| Auth | **Supabase Auth + Spring Boot as OAuth2 Resource Server** | Keeps one source of truth. Google/Facebook login free via `signInWithOAuth`. Spring Boot only verifies tokens, doesn't issue them. Custom Spring Security JWT is still viable if you want auth logic in your own code — flag it. |
-| Primary keys | **Auto-increment `Integer`** | `INTEGER` (~2.1B ceiling) is proportionate for a kindergarten app. `@GeneratedValue(strategy = GenerationType.IDENTITY)`. Use `Integer` everywhere: entity fields, DTOs, `@PathVariable`, `JpaRepository<Entity, Integer>`. |
+| Auth | **Self-issued Spring Security JWT** (superseded the original Supabase Auth plan) | `AuthController`/`AuthService` verify email+password against the `accounts` table (BCrypt) and issue a JWT via `JwtService`; `JwtAuthenticationFilter` validates it on every request. No Supabase Auth, no Google/Facebook OAuth, no JWKS — Supabase is used purely as a Postgres host (JDBC) and for Storage (profile images, memory photos). Frontend attaches the token via `components/auth-fetch.js`, not a Supabase JS session. |
+| Primary keys | **`Account.accountId`: 28-char app-generated `String`** (UUID-without-dashes, truncated); **all other entities: auto-increment `Long`** via `@GeneratedValue(strategy = GenerationType.IDENTITY)` | Renegotiated with the teammate so both modules share one `accounts` table — their auth/account-creation flow generates the id client-side before insert. Other entities (`Student`, `AcademicRecord`, `HealthRecord`, `MemoryPost`, `Fee`, etc.) kept plain auto-increment `Long`, not `Integer`. FK columns referencing `Account` are typed `String` (often `xAccountId` fields rather than `@ManyToOne` object references — see e.g. `Classroom.teacherAccountId`, `MemoryPost.authorAccountId`). |
 | Academic raw scores | **Normalized `academic_score_item` table** (not JSON blob) | Queryable, indexable. |
 | `Student.gender` | **Added field** (not in FYP1 data dictionary) | Required for WHO z-score sex-specific LMS lookup tables in the ML pipeline. |
 | `AI_Report` entity | **Out of scope to build** — teammate's domain | May read from your `health_record`/`HealthAdvice` data (join on `student_id`). Agree on a read contract with teammate; don't build or write to it here. |
@@ -67,50 +67,49 @@ Shared entities (`Account`, `Classroom`) are stubbed just enough to compile; ful
 
 ## 4. Monorepo Structure
 
+Two top-level folders: `frontend/` (static HTML/JS source of truth) and `backend/` (Spring Boot). They deploy as **one unit** — `backend/pom.xml` adds `frontend/` as an extra Maven resource directory with `targetPath=static`, so at build time (`mvn compile`/`test`/`package`/`spring-boot:run`) Maven copies it into the classpath's `static/` folder and Spring Boot's default static-resource handler serves it same-origin (no CORS, no bridge page). **Editing a file under `frontend/` requires re-running Maven (`mvn process-resources` or restarting `spring-boot:run`) to pick it up** — there's no live-reload across that copy step. The earlier plan of a separate `mytadika-frontend/` ES-module SPA was abandoned and removed; the earlier merged layout (frontend physically inside `mytadika-backend/src/main/resources/static/`) was itself restructured into this frontend/backend split — see `docs/integration-plan.md` for how the consolidation happened.
+
 ```text
 MyTadika/
 ├── CLAUDE.md
-├── mytadika-backend/
-│   └── src/main/java/com/mytadika/backend/
-│       ├── config/         SecurityConfig, CorsConfig, OpenApiConfig
-│       ├── controller/     AuthController, StudentController, AcademicController, HealthController
-│       ├── service/        AuthService, StudentService, AcademicService,
-│       │                   HealthAdviceService, AiPredictionClient, GradeCalculationService
-│       ├── repository/     one JpaRepository<Entity, Integer> per entity
-│       ├── model/          JPA entities
-│       ├── dto/            *RequestDTO / *ResponseDTO per entity
-│       ├── security/       SupabaseJwtAuthConverter, AccountResolver
-│       └── exception/      ResourceNotFoundException, UnauthorizedAccessException,
-│                           InvalidInputException, GlobalExceptionHandler
-└── mytadika-frontend/
-    ├── pages/
-    │   ├── login.html
-    │   ├── dashboard-parent.html
-    │   ├── dashboard-teacher.html
-    │   ├── profile.html
-    │   ├── students.html
-    │   ├── academic.html
-    │   └── health.html
-    ├── css/
-    │   └── styles.css              ← CSS custom property tokens + component classes
-    ├── js/
-    │   ├── supabaseClient.js       ← createClient() setup, exported as ES module
-    │   ├── api/
-    │   │   ├── axiosClient.js      ← axios instance + JWT interceptor
-    │   │   ├── authApi.js
-    │   │   ├── studentApi.js
-    │   │   ├── academicApi.js
-    │   │   └── healthApi.js
-    │   ├── auth/
-    │   │   └── authGuard.js        ← session check + role check on every page load
-    │   └── pages/
-    │       ├── login.js
-    │       ├── dashboard.js
-    │       ├── students.js
-    │       ├── academic.js
-    │       └── health.js
-    └── assets/
-        └── images/
+├── start.ps1                        ← one-command dev launcher (Windows)
+├── docs/
+│   ├── integration-plan.md          ← current source of truth for the merge/consolidation
+│   ├── plan.md                      ← historical (teammate's AI/ML plan, superseded)
+│   └── system_development_plan.md   ← historical (teammate's React/Vite SPA plan, never built)
+│
+├── frontend/                        ← static HTML/JS source of truth, no build step
+│   ├── login.html, forgotpassword.html, resetpassword.html, createparentaccount.html
+│   ├── components/    auth-fetch.js (Bearer-token fetch patch), sidebar-*.html,
+│   │                  topbar-*.html, sidebar-loader.js — shared across all role pages
+│   ├── parent/        parenthome.html, parentacademic.html, parenthealth.html,
+│   │                  parentfees.html, parentmemory.html, parentclassroom.html, ...
+│   ├── teacher/       teacherhome.html, teacheracademic.html, teacherhealth.html,
+│   │                  teachermemory.html, teacherclassroom.html, ...
+│   └── admin/         index.html, adminstudents.html, adminaccounts.html,
+│                      adminfees.html, admingallery.html, adminhealth*.html, ...
+│
+└── backend/
+    ├── pom.xml                      ← adds ../frontend as an extra resource dir → classpath static/
+    └── src/main/
+        ├── java/com/mytadika/
+        │   ├── config/       SecurityConfig, CorsConfig, WebConfig, StripeConfig, DbMigrationRunner, HolidayDataInitializer
+        │   ├── controller/   AuthController, AccountController, StudentController, AcademicController,
+        │   │                 HealthController, ClassroomController, ChatController, EventController,
+        │   │                 FeeController, PaymentController, MemoryController, NotificationController,
+        │   │                 AdminController, ProfileController, PresenceController, UploadController
+        │   ├── service/      one *Service per controller, plus GradeCalculationService, HealthAdviceService,
+        │   │                 AiPredictionClient, EmailService, SupabaseStorageService,
+        │   │                 StripePaymentService, ToyyibPayService, CustomUserDetailsService
+        │   ├── repository/   one JpaRepository<Entity, Long|String> per entity
+        │   ├── model/        JPA entities — Account.accountId is String; everything else is Long id
+        │   ├── dto/          *RequestDTO / *ResponseDTO per entity
+        │   ├── security/     JwtService, JwtAuthenticationFilter (self-issued JWT, not Supabase)
+        │   └── exception/    ResourceNotFoundException, UnauthorizedAccessException,
+        │                     InvalidInputException, ConflictException, ExternalServiceException,
+        │                     GlobalExceptionHandler, ErrorResponse
+        └── resources/
+            └── application.properties   ← DB, mail, Supabase Storage, Stripe, ToyyibPay config
 ```
 
 ---
@@ -335,7 +334,9 @@ public StudentResponseDTO getStudentScoped(Integer id, Account currentUser) {
 
 ### 7.2 Security & Auth
 
-Auth split: Supabase issues/refreshes tokens. Spring Boot only verifies them.
+> **Superseded.** The flow below (Supabase-issued JWT, JWKS verification, `SupabaseJwtAuthConverter`) was the original plan and was never built this way — see §2/§3. What actually shipped: `AuthController`/`AuthService` check email+password against `accounts` (BCrypt), `JwtService` signs and issues its own JWT, and `JwtAuthenticationFilter` validates it on every request (`SecurityConfig` at `backend/src/main/java/com/mytadika/config/SecurityConfig.java` — currently permits `/api/auth/**` login/register/password-reset, `/api/payments/webhook`, `/api/payments/toyyibpay/callback`, and all static asset paths; everything else requires a valid Bearer token). The frontend attaches that token via `components/auth-fetch.js` (§8.2), not a Supabase session. Keep the rest of this subsection for the RBAC scoping intent (role → data scope), not the literal auth mechanism.
+
+Auth split (as originally planned — not what shipped): Supabase issues/refreshes tokens. Spring Boot only verifies them.
 
 ```text
 Login/OAuth → supabase-js → session { access_token JWT, refresh_token }
@@ -469,127 +470,98 @@ Map.of(
 
 ## 8. Frontend Architecture (HTML/JS)
 
+> This section describes what's actually shipped, not the original ES-module SPA plan (see the historical-docs note in the header). Every page below lives under top-level `frontend/` and is served same-origin by Spring Boot (via the Maven resource copy into `backend`'s classpath, §4) — no separate frontend server, no CORS handshake for page loads.
+
 ### 8.1 Multi-Page Structure
 
-Each `.html` file is a standalone page. No build step, no bundler. JS files use ES Modules (`type="module"`), loaded at the bottom of each page's `<body>`.
-
-Every authenticated page includes two script tags in this order:
-```html
-<script type="module" src="../js/auth/authGuard.js"></script>
-<script type="module" src="../js/pages/[page].js"></script>
-```
+Each `.html` file is a standalone page, no build step, no bundler, no ES modules — plain `<script>` tags. Pages are split by role into `parent/`, `teacher/`, `admin/`, plus shared entry pages at the static root (`login.html`, `forgotpassword.html`, `resetpassword.html`, `createparentaccount.html`).
 
 CDN imports at the top of each HTML file:
 ```html
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = { darkMode: "class", theme: { extend: { colors: { /* §8.4 */ } } } };
+</script>
+```
+Chart.js is added via CDN only on pages that render charts (health growth chart).
+
+Every authenticated page includes, near the end of `<body>`:
+```html
+<script src="/components/auth-fetch.js"></script>
+<script src="/components/sidebar-loader.js"></script>
+<script>
+  loadSidebar('parent', 'health');   // role + which nav item to highlight
+  loadTopbar('parent');
+  // page-specific inline <script> below calls the REST API directly with fetch()
+</script>
 ```
 
 ### 8.2 Auth & Page Guard
 
-```js
-// js/auth/authGuard.js — add as first module script on every protected page
-import { supabase } from '../supabaseClient.js';
+There is **no Supabase JS client and no session object** in the shipped frontend. Login (`POST /api/auth/login`) returns a self-issued JWT (see §3/§7.2); the page stores it plus `accountId`, `fullName`, and `roleType` in `localStorage` (or `sessionStorage` for "remember me" off) and redirects to the role's home page.
 
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) {
-  window.location.href = '/pages/login.html';
-}
+`components/auth-fetch.js` is loaded on every protected page and monkey-patches `window.fetch` to attach `Authorization: Bearer <token>` to same-origin requests automatically — this exists because the pages themselves were written assuming the browser would send auth on its own, and it patches that gap without touching every call site. There is no separate `authGuard.js`/role-redirect module; role gating happens implicitly because each role only has links into its own `parent/`, `teacher/`, `admin/` folder, and `sidebar-loader.js`'s `enforceProfileComplete()` redirects parents/teachers with an incomplete profile to their edit-profile page.
 
-// Role guard: fetch local Account profile, cache in sessionStorage
-let profile = JSON.parse(sessionStorage.getItem('userProfile'));
-if (!profile) {
-  const res = await fetch('/api/auth/me', {
-    headers: { Authorization: `Bearer ${session.access_token}` }
-  });
-  profile = await res.json();
-  sessionStorage.setItem('userProfile', JSON.stringify(profile));
-}
-
-// Redirect wrong role (e.g. parent hitting teacher-only page)
-const allowedRoles = document.body.dataset.roles?.split(',') ?? [];
-if (allowedRoles.length && !allowedRoles.includes(profile.role)) {
-  window.location.href = '/pages/login.html';
-}
-
-export { session, profile };
-```
-
-Mark each page with the allowed roles:
-```html
-<body data-roles="TEACHER,ADMIN">
-```
-
-```js
-// js/api/axiosClient.js — reads token from supabase-js session
-import { supabase } from '../supabaseClient.js';
-
-const api = axios.create({ baseURL: 'http://localhost:8080/api' });
-api.interceptors.request.use(async (config) => {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-export default api;
-```
-
-**Nav by role** — render the correct sidebar HTML server-side (via a shared JS function) based on `profile.role` read from `sessionStorage`:
-
-| Parent | Teacher |
-|---|---|
-| Home, Academic Report, Health, Classroom*, Messages*, Memory Box*, Events*, Profile, Help | Home, Classroom*, Student Reports, Health, Messages*, Memory Box*, Profile |
-
-(*links to a `coming-soon.html` stub until teammate's module lands.)
+**Nav by role** — `sidebar-loader.js`'s `loadSidebar(role, activeNav)` fetches `/components/sidebar-<role>.html` and `topbar-<role>.html` and injects them into the page, highlights the active nav item, and polls unread-message/notification/fee badges every few seconds. `logout()` (also in `sidebar-loader.js`) clears `localStorage`/`sessionStorage` and redirects to `/login.html`.
 
 ### 8.3 Data Fetching
 
-Use `async/await` with the shared `axiosClient.js` instance directly in each `pages/*.js` file. No framework layer needed.
+No axios, no shared API client module — each page's inline `<script>` calls `fetch('/api/...')` directly (the `auth-fetch.js` patch means the Bearer token is attached automatically). Example pattern (from `parent/parenthealth.html`):
 
 ```js
-// js/pages/health.js (example pattern)
-import api from '../api/axiosClient.js';
-
-const studentId = new URLSearchParams(location.search).get('id');
-const { data: chart } = await api.get(`/health/students/${studentId}/growth-chart`);
-renderGrowthChart(chart); // calls Chart.js
+const studentId = new URLSearchParams(location.search).get('studentId');
+const res = await fetch(`/api/health/students/${studentId}/growth-chart`);
+const chart = await res.json();
+renderGrowthChart(chart); // Chart.js
 ```
 
-Read `studentId` (and other URL params) from `URLSearchParams` — this replaces React Router's `useParams`.
+Read `studentId` and other params from `URLSearchParams`, same as originally planned.
 
 ### 8.4 Design System
 
-CSS custom properties in `css/styles.css` (also usable as Tailwind config overrides via the CDN `tailwind.config` global):
+Defined per-page via the CDN `tailwind.config` block (§8.1), not a shared `css/styles.css` file — copy the block verbatim into new pages rather than reinventing colors:
 
-```css
-:root {
-  --color-primary:    #FFC727;  /* yellow — buttons, active nav */
-  --color-bg:         #FFF8E8;  /* cream page background */
-  --color-accent:     #FF9F43;  /* orange highlights */
-  --color-success:    #4CAF50;  /* NORMAL status */
-  --color-warning:    #FF9F43;  /* MODERATE */
-  --color-danger:     #FF6B6B;  /* SEVERE / alerts */
-  --color-ink:        #3D3D3D;  /* body text */
+```js
+colors: {
+  "primary": "#FFD700",            // KinderJoy Sun Yellow
+  "primary-dim": "#E6C200",
+  "secondary": "#FF8C42",          // Playful Orange
+  "secondary-container": "#FFF4E1",
+  "tertiary": "#6BCB77",           // Garden Green
+  "background": "#FFFDF5",         // Soft Cream
+  "surface": "#FFFFFF",
+  "on-surface": "#4A3F35",         // Warm Charcoal
+  "on-surface-variant": "#857668",
+  "outline": "#E8E2D9",
+  "surface-container-low": "#FFF9EB",
+  "surface-container-lowest": "#FFFFFF",
+  "surface-container-high": "#F7F2E9",
+  "surface-container-highest": "#EFE9DD"
 }
 ```
+Font: `Plus Jakarta Sans` for headline/body/label. Icons: Material Symbols Outlined (`FILL` toggled on the active nav icon). Cards generally use rounded-2xl/3xl + soft shadow; status badges follow green/amber/red = normal/moderate/severe, consistent with the original plan's `--color-success/warning/danger`.
 
-Cards: `border-radius: 1rem` + `box-shadow: 0 2px 8px rgba(0,0,0,.08)`. Status badges: green/amber/red = normal/moderate/severe.
+Chart.js growth chart: `type: 'line'`, dataset colour matches `primary`, `tension: 0.4` for a smooth curve.
 
-Chart.js growth chart config note: use `type: 'line'`, dataset colour `#FFC727`, and `tension: 0.4` for the smooth curve shown in the wireframe.
+### 8.5 Shared Components & Notable Pages
 
-### 8.5 Pages & Key JS Sections
-
-| Page (`.html`) | Page script (`pages/*.js`) responsibilities |
+| File | Responsibility |
 |---|---|
-| `login.html` | Role selector toggle, `supabase.auth.signInWithPassword`, `signInWithOAuth({provider:'google'})`, redirect after login |
-| `profile.html` | Load & display `GET /api/auth/me`, handle Edit Profile form submit (`PUT /api/accounts/me`) |
-| `dashboard-parent.html` | Greeting with child name, today's schedule list, quick-action buttons |
-| `dashboard-teacher.html` | Classroom summary cards, latest updates feed |
-| `students.html` | Student list table (`GET /api/students`), search/filter, link to individual profile |
-| `academic.html` | Score input form (teacher), performance summary + download button (parent) |
-| `health.html` | Measurement log form, Chart.js growth chart, AI Advice panel, allergy alert banner |
+| `components/auth-fetch.js` | Patches `window.fetch` to attach the JWT — include on every protected page |
+| `components/sidebar-loader.js` | `loadSidebar()`, `loadTopbar()`, unread/notification/fee badge polling, `initNotificationsPage()`, image lightbox (`openImageLightbox`), `logout()` |
+| `components/sidebar-*.html`, `topbar-*.html` | Per-role nav markup, injected by `sidebar-loader.js` |
+| `login.html` | Email/password form → `POST /api/auth/login`, stores JWT + profile fields, redirects by role |
+| `*/*editprofile.html` | `GET`/`PUT /api/profile/{accountId}` — the page `enforceProfileComplete()` redirects incomplete profiles to |
+| `*/*academic*.html` | Score input (teacher) / performance view (parent) — `/api/academic/**` |
+| `*/*health*.html` | Measurement log, Chart.js growth chart, AI advice panel, allergy banner — `/api/health/**` |
+| `*/*memory.html`, `admin/admingallery.html` | Photo feed with reactions/comments — `/api/memory/**` (§ Phase B) |
+| `*/*fees.html` | Fee list + Stripe/ToyyibPay checkout — `/api/fees/**`, `/api/payments/**` |
+| `*/*classroom.html` | Roster/classroom view — `/api/classroom/**` |
+| `*/*chatwith*.html`, `admin/adminmessages.html` | Chat — `/api/chat/**` |
+| `*/*events.html` | School events/holidays — `/api/events/**` |
+| `*/*notifications.html` | Full notification list, backed by `initNotificationsPage()` in `sidebar-loader.js` |
 
 ---
 

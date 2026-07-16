@@ -1,10 +1,14 @@
 # Secrets / local config
-mytadika-backend/src/main/resources/application.properties
-mytadika-backend/src/main/resources/application-local.properties
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-local.properties
 .env
 
-# Maven build output
-mytadika-backend/target/
+# Maven build files
+backend/target/
+backend/effective-pom.xml
+
+# Eclipse build output
+backend/bin/
 
 # Java
 *.class
@@ -22,4 +26,10 @@ AI/api/__pycache__/
 *.log
 
 # Local test config
-mytadika-backend/h2-test.properties
+backend/h2-test.properties
+
+# Local file uploads (runtime data, not source)
+backend/uploads/
+
+# Teammate snapshot used for integration (not part of the repo)
+latest teammate vers/

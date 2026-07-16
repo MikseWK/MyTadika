@@ -13,13 +13,13 @@ Malaysian kindergarten management system. FYP split:
 
 | Layer | Technology |
 |---|---|
-| Frontend | Plain HTML5 / CSS3 / JavaScript (ES Modules) — **no build step** |
+| Frontend | Plain HTML5 / CSS3 / JavaScript, no framework, **no build step** — source lives in top-level `frontend/`, Maven copies it into the backend's classpath at build time so Spring Boot serves it same-origin |
 | Styling | Tailwind CSS via CDN |
-| HTTP client | Axios via CDN |
 | Charts | Chart.js via CDN |
-| Backend | Spring Boot 3.x (Java 21), Maven |
+| Backend | Spring Boot 3.5 (Java 21), Maven |
 | Database | PostgreSQL on Supabase |
-| Auth | Custom BCrypt + self-issued JWT (HS256) |
+| Auth | Custom BCrypt + self-issued JWT (HS256), attached client-side via `frontend/components/auth-fetch.js` |
+| Payments | Stripe (test mode) + ToyyibPay (sandbox) |
 | ML service | Python FastAPI (`AI/` directory, port 8001) |
 
 ---
@@ -29,7 +29,6 @@ Malaysian kindergarten management system. FYP split:
 | Tool | Version | Notes |
 |---|---|---|
 | Java | 21 (LTS) | Maven wrapper (`./mvnw`) is included |
-| Node.js | 18+ | Only for `npx serve` — zero extra installs needed |
 | Python | 3.9+ | Only for the AI health advice service |
 
 ---
@@ -44,32 +43,25 @@ This opens **two terminal windows** simultaneously:
 
 | Window | Service | URL |
 |---|---|---|
-| 1 | Spring Boot backend | http://localhost:8080 |
-| 2 | Static frontend server | http://localhost:3000/pages/login.html |
-
-> `npx serve` downloads itself on first run — no `npm install` required.
+| 1 | Spring Boot backend (serves the frontend too) | http://localhost:8080/login.html |
+| 2 | FastAPI AI microservice | http://localhost:8001/health |
 
 ---
 
 ## Manual Start (alternative)
 
-### Backend
+### Backend + Frontend
+
+The frontend has no server of its own — Maven copies `frontend/` into the backend's classpath at build time, and Spring Boot serves it from the same origin/port as the API.
 
 ```powershell
-cd mytadika-backend
+cd backend
 .\mvnw spring-boot:run
 ```
 
-Verify it's up: `GET http://localhost:8080/api/auth/me` → `401` is correct (no token yet).
+Open: **http://localhost:8080/login.html**
 
-### Frontend
-
-```powershell
-cd mytadika-frontend
-npx serve . --listen 3000
-```
-
-Open: **http://localhost:3000/pages/login.html**
+> Editing a file under `frontend/` requires re-running `mvn spring-boot:run` (or `mvn process-resources`) to pick it up — there's no live-reload across the Maven resource copy step.
 
 ### AI Service (optional — needed for health advice generation)
 
@@ -109,29 +101,29 @@ MAIL_PASSWORD=your_gmail_app_password
 MyTadika/
 ├── start.ps1                        ← one-command launcher (Windows)
 ├── README.md
+├── docs/                            integration-plan.md (current), plan.md / system_development_plan.md (historical)
 │
-├── mytadika-backend/                ← Spring Boot (port 8080)
-│   └── src/main/java/com/mytadika/
-│       ├── controller/              AuthController, StudentController,
-│       │                            AcademicController, HealthController, AccountController
-│       ├── service/                 AuthService, StudentService, AcademicService,
-│       │                            HealthAdviceService, AccountService, EmailService
-│       ├── model/                   Account, Student, Classroom, AcademicRecord,
-│       │                            HealthRecord, AllergyProfile, PasswordResetToken
+├── frontend/                        ← Plain HTML/JS, no build step — source of truth
+│   ├── login.html, forgotpassword.html, resetpassword.html, createparentaccount.html
+│   ├── components/                  auth-fetch.js, sidebar-loader.js, sidebar-*.html, topbar-*.html
+│   ├── parent/                      parenthome.html, parentacademic.html, parenthealth.html,
+│   │                                parentfees.html, parentmemory.html, parentclassroom.html …
+│   ├── teacher/                     teacherhome.html, teacheracademic.html, teacherhealth.html …
+│   └── admin/                       index.html, adminstudents.html, adminfees.html, admingallery.html …
+│
+├── backend/                         ← Spring Boot (port 8080). pom.xml copies ../frontend
+│   └── src/main/java/com/mytadika/    into its classpath's static/ at build time.
+│       ├── controller/              AuthController, StudentController, AcademicController,
+│       │                            HealthController, ClassroomController, ChatController,
+│       │                            EventController, FeeController, PaymentController,
+│       │                            MemoryController, NotificationController, AdminController …
+│       ├── service/                 one *Service per controller, plus GradeCalculationService,
+│       │                            HealthAdviceService, StripePaymentService, ToyyibPayService …
+│       ├── model/                   Account, Student, Classroom, AcademicRecord, HealthRecord,
+│       │                            Fee, MemoryPost/Comment/Reaction, ChatMessage …
 │       ├── repository/
 │       ├── security/                JwtService, JwtAuthenticationFilter
-│       └── config/                  SecurityConfig, CorsConfig
-│
-├── mytadika-frontend/               ← Plain HTML/JS (port 3000, no build)
-│   ├── pages/                       login.html, create-account.html, dashboard-*.html,
-│   │                                students.html, academic.html, health.html, profile.html …
-│   ├── css/styles.css               design tokens (--color-primary, --color-bg …)
-│   ├── js/
-│   │   ├── api/                     axiosClient.js, authApi.js, studentApi.js,
-│   │   │                            academicApi.js, healthApi.js
-│   │   ├── auth/authGuard.js        session check + role guard on every page
-│   │   └── pages/                   per-page JS modules
-│   └── assets/images/
+│       └── config/                  SecurityConfig, CorsConfig, StripeConfig, WebConfig
 │
 └── AI/                              ← FastAPI ML microservice (port 8001)
 ```
@@ -176,7 +168,7 @@ All endpoints except auth require `Authorization: Bearer <jwt>`.
 ## Running Tests
 
 ```powershell
-cd mytadika-backend
+cd backend
 .\mvnw test
 ```
 
