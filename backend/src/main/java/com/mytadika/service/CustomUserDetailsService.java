@@ -1,7 +1,6 @@
 package com.mytadika.service;
 
 import com.mytadika.model.Account;
-import com.mytadika.model.Role;
 import com.mytadika.repository.AccountRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
@@ -27,6 +26,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new User(
                 acc.getEmail(),
                 acc.getPassword(),
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + acc.getRole().name())));
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + acc.getRoleType().name())));
     }
 }

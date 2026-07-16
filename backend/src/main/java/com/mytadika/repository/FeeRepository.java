@@ -6,5 +6,5 @@ import java.util.List;
 public interface FeeRepository extends JpaRepository<Fee, Long> {
     List<Fee> findByStudentIdOrderByDueDateDesc(Long studentId);
     List<Fee> findAllByOrderByDueDateAsc();
-    List<Fee> findByStudentIdInAndStatus(List<Long> studentIds, String status);
+    List<Fee> findByStudentIdIn(List<Long> studentIds);
 }

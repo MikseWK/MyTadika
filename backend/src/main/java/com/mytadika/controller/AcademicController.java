@@ -1,17 +1,11 @@
 package com.mytadika.controller;
 
-import com.mytadika.dto.AcademicRecordRequestDTO;
-import com.mytadika.dto.AcademicRecordResponseDTO;
-import com.mytadika.model.Account;
 import com.mytadika.service.AcademicService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/academic")
@@ -31,37 +25,55 @@ public class AcademicController {
             "Bahasa Melayu", "English", "Math", "Science", "Creative Arts", "Physical Education");
 
     @GetMapping("/subjects")
-    public ResponseEntity<List<String>> getSubjects() {
+    public ResponseEntity<?> getSubjects() {
         return ResponseEntity.ok(SUBJECTS);
     }
 
     @GetMapping("/students/{studentId}/records")
-    public ResponseEntity<List<AcademicRecordResponseDTO>> listRecords(
-            @PathVariable Long studentId,
-            @AuthenticationPrincipal Account currentUser) {
-        return ResponseEntity.ok(academicService.listForStudent(studentId, currentUser));
+    public ResponseEntity<?> getRecords(@PathVariable Long studentId) {
+        return ResponseEntity.ok(academicService.getRecordsByStudent(studentId));
     }
 
     @PostMapping("/students/{studentId}/records")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<AcademicRecordResponseDTO> createRecord(
-            @PathVariable Long studentId,
-            @Valid @RequestBody AcademicRecordRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(academicService.createRecord(studentId, request));
+    public ResponseEntity<?> createRecord(@PathVariable Long studentId, @RequestBody Map<String, Object> body) {
+        try {
+            String term = (String) body.get("term");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> subjects = (List<Map<String, Object>>) body.get("subjects");
+            return ResponseEntity.ok(academicService.createRecord(studentId, term, subjects));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/records/{id}")
-    public ResponseEntity<AcademicRecordResponseDTO> getRecord(
-            @PathVariable Long id,
-            @AuthenticationPrincipal Account currentUser) {
-        return ResponseEntity.ok(academicService.getRecordScoped(id, currentUser));
+    public ResponseEntity<?> getRecord(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(academicService.getRecord(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/records/{id}")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<AcademicRecordResponseDTO> updateRecord(
-            @PathVariable Long id,
-            @Valid @RequestBody AcademicRecordRequestDTO request) {
-        return ResponseEntity.ok(academicService.updateRecord(id, request));
+    public ResponseEntity<?> updateRecord(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        try {
+            String term = (String) body.get("term");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> subjects = (List<Map<String, Object>>) body.get("subjects");
+            return ResponseEntity.ok(academicService.updateRecord(id, term, subjects));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/records/{id}")
+    public ResponseEntity<?> deleteRecord(@PathVariable Long id) {
+        try {
+            academicService.deleteRecord(id);
+            return ResponseEntity.ok(Map.of("status", "deleted"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

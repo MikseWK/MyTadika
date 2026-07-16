@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/** Malaysia preschool grading scale (CLAUDE.md §6.3). */
 @Service
 public class GradeCalculationService {
 
@@ -13,12 +12,12 @@ public class GradeCalculationService {
         return scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
     }
 
-    public String calculateGrade(double averageMark) {
-        if (averageMark >= 80) return "A";
-        if (averageMark >= 70) return "B";
-        if (averageMark >= 60) return "C";
-        if (averageMark >= 50) return "D";
-        if (averageMark >= 40) return "E";
+    public String calculateGrade(double average) {
+        if (average >= 80) return "A";
+        if (average >= 70) return "B";
+        if (average >= 60) return "C";
+        if (average >= 50) return "D";
+        if (average >= 40) return "E";
         return "F";
     }
 

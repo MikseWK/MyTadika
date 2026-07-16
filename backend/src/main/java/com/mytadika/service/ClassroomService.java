@@ -269,6 +269,12 @@ public class ClassroomService {
                 tm.put("name", t.getFullName());
                 tm.put("image", t.getProfileImageUrl());
                 tm.put("isOwner", true);
+                tm.put("email", t.getEmail());
+                tm.put("phoneNumber", t.getPhoneNumber());
+                tm.put("description", t.getDescription());
+                tm.put("qualification", t.getQualification());
+                tm.put("experience", t.getExperience());
+                tm.put("focusArea", t.getFocusArea());
                 teachers.add(tm);
             });
             memberRepo.findByClassroomIdAndRole(classroomId, "teacher").forEach(m -> {
@@ -279,7 +285,13 @@ public class ClassroomService {
                         tm.put("name", t.getFullName());
                         tm.put("image", t.getProfileImageUrl());
                         tm.put("isOwner", false);
-                        teachers.add(tm);
+                        tm.put("email", t.getEmail());
+                        tm.put("phoneNumber", t.getPhoneNumber());
+                        tm.put("description", t.getDescription());
+                        tm.put("qualification", t.getQualification());
+                        tm.put("experience", t.getExperience());
+                        tm.put("focusArea", t.getFocusArea());
+                                teachers.add(tm);
                     });
                 }
             });
@@ -469,7 +481,7 @@ public class ClassroomService {
     public Classroom updateClassroom(Long id, Map<String, String> body) {
         Classroom c = classroomRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Classroom not found"));
-        if (body.containsKey("name") && !body.get("name").isBlank()) c.setName(body.get("name").trim());
+        if (body.containsKey("name") && body.get("name") != null && !body.get("name").isBlank()) c.setName(body.get("name").trim());
         if (body.containsKey("section")) c.setSection(body.get("section"));
         if (body.containsKey("color") && body.get("color") != null) c.setColor(body.get("color"));
         if (body.containsKey("teacherAccountId") && body.get("teacherAccountId") != null && !body.get("teacherAccountId").isBlank())
@@ -507,7 +519,7 @@ public class ClassroomService {
             throw new IllegalArgumentException("Email is required.");
         com.mytadika.model.Account account = accountRepo.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new IllegalArgumentException("No account found with that email."));
-        if (account.getRole() != com.mytadika.model.Role.TEACHER)
+        if (account.getRoleType() != com.mytadika.model.Account.RoleType.TEACHER)
             throw new IllegalArgumentException("That account is not a teacher.");
         Classroom classroom = classroomRepo.findById(classroomId)
                 .orElseThrow(() -> new IllegalArgumentException("Classroom not found."));

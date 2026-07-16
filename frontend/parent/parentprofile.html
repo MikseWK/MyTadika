@@ -2,6 +2,7 @@
 <html class="light" lang="en">
 
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>MyTadika - Parent Profile</title>
@@ -112,7 +113,6 @@
         .spin { animation: spin 1s linear infinite; }
     </style>
     <script src="/components/sidebar-loader.js"></script>
-  <script src="/components/auth-fetch.js"></script>
 </head>
 
 <body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
@@ -228,18 +228,36 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-on-surface-variant mb-1">Current Password</label>
-                    <input id="pw-current" type="password"
-                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                    <div class="relative">
+                        <input id="pw-current" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-current', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-on-surface-variant mb-1">New Password</label>
-                    <input id="pw-new" type="password"
-                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                    <div class="relative">
+                        <input id="pw-new" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-new', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-on-surface-variant mb-1">Confirm New Password</label>
-                    <input id="pw-confirm" type="password"
-                        class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                    <div class="relative">
+                        <input id="pw-confirm" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-confirm', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
             </div>
             <p id="pw-error" class="hidden text-xs text-error mt-3"></p>
@@ -363,6 +381,14 @@
 
         function closePasswordModal() {
             document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function toggleProfilePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('.material-symbols-outlined');
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            icon.textContent = isHidden ? 'visibility_off' : 'visibility';
         }
 
         let submittingPassword = false;

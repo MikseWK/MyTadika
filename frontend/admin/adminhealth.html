@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Health &amp; Nutrition – MyTadika Admin</title>
@@ -28,7 +29,6 @@
         .spin { animation: spin 1s linear infinite; }
     </style>
     <script src="/components/sidebar-loader.js"></script>
-  <script src="/components/auth-fetch.js"></script>
 </head>
 <body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
 
@@ -37,7 +37,7 @@
     <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
         <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100 flex-shrink-0">
             <div>
-                <h3 class="text-lg font-black text-[#312f23] font-headline">Log Measurement</h3>
+                <h3 id="modal-heading" class="text-lg font-black text-[#312f23] font-headline">Log Measurement</h3>
                 <p id="modal-student-name" class="text-sm font-bold text-[#6c5a00] mt-0.5"></p>
             </div>
             <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-500">
@@ -47,12 +47,12 @@
         <div class="px-6 py-5 space-y-4 overflow-y-auto">
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Weight (kg) *</label>
-                    <input id="log-weight" type="number" step="0.1" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Weight (kg) * <span class="font-normal text-stone-400">(2.5–30)</span></label>
+                    <input id="log-weight" type="number" step="0.1" min="2.5" max="30" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Height (cm) *</label>
-                    <input id="log-height" type="number" step="0.1" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Height (cm) * <span class="font-normal text-stone-400">(45–130)</span></label>
+                    <input id="log-height" type="number" step="0.1" min="45" max="130" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
                 </div>
             </div>
             <div>
@@ -193,6 +193,8 @@
 
     let growthChart = null;
     let allergyTags = [];
+    let historyRecords = [];
+    let editingMeasurementId = null;
 
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -229,6 +231,7 @@
             const res = await fetch(`/api/health/history/${selectedStudentId}`);
             history = res.ok ? await res.json() : [];
         } catch (e) { history = []; }
+        historyRecords = history;
 
         document.getElementById('record-loading').classList.add('hidden');
         if (!history.length) {
@@ -255,6 +258,14 @@
                 <span class="text-stone-500">${new Date(h.recordedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}</span>
                 <span class="text-stone-600">BMI ${h.bmi.toFixed(1)} · ${h.weightKg}kg · ${h.heightCm}cm</span>
                 <span class="text-xs font-bold px-2 py-0.5 rounded-full uppercase ${STATUS_STYLE[h.nutritionStatus] || 'bg-stone-100 text-stone-500'}">${esc(h.nutritionStatus)}</span>
+                <span class="flex items-center gap-1 ml-2">
+                    <button onclick="openEditMeasurementModal(${h.id})" class="w-7 h-7 flex items-center justify-center rounded-full text-[#6c5a00] hover:bg-[#ffd709]/20 transition-colors">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="deleteMeasurement(${h.id})" class="w-7 h-7 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition-colors">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </span>
             </div>`).join('');
 
         const chronological = [...history].reverse();
@@ -385,6 +396,8 @@
 
     // ── Log measurement modal ───────────────────────────────────────────────────
     function openModal() {
+        editingMeasurementId = null;
+        document.getElementById('modal-heading').textContent = 'Log Measurement';
         document.getElementById('log-weight').value = '';
         document.getElementById('log-height').value = '';
         document.getElementById('log-muac').value = '';
@@ -393,6 +406,29 @@
         document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
         document.getElementById('modal-overlay').classList.remove('hidden');
     }
+
+    function openEditMeasurementModal(id) {
+        const record = historyRecords.find(h => h.id === id);
+        if (!record) return;
+        editingMeasurementId = id;
+        document.getElementById('modal-heading').textContent = 'Edit Measurement';
+        document.getElementById('log-weight').value = record.weightKg;
+        document.getElementById('log-height').value = record.heightCm;
+        document.getElementById('log-muac').value = record.muacCm || '';
+        document.getElementById('log-activity').value = '1';
+        document.getElementById('modal-error').classList.add('hidden');
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
+        document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    async function deleteMeasurement(id) {
+        if (!confirm('Delete this measurement record? This cannot be undone.')) return;
+        try {
+            await fetch(`/api/health/records/${id}`, { method: 'DELETE' });
+            await Promise.all([loadHistory(), loadAdvice()]);
+        } catch (e) { alert('Failed to delete measurement.'); }
+    }
+
     function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
     document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 
@@ -410,13 +446,26 @@
             errEl.classList.remove('hidden');
             return;
         }
+        if (weightKg < 2.5 || weightKg > 30) {
+            errEl.textContent = 'Weight must be between 2.5 and 30 kg.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (heightCm < 45 || heightCm > 130) {
+            errEl.textContent = 'Height must be between 45 and 130 cm.';
+            errEl.classList.remove('hidden');
+            return;
+        }
 
         submittingMeasurement = true;
         const btn = document.getElementById('measurement-submit-btn');
         btn.disabled = true;
         try {
-            const res = await fetch('/api/health/record', {
-                method: 'POST',
+            const isEdit = editingMeasurementId !== null;
+            const url = isEdit ? `/api/health/records/${editingMeasurementId}` : '/api/health/record';
+            const method = isEdit ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     childId: selectedStudentId,
@@ -429,7 +478,9 @@
                 })
             });
             if (!res.ok) {
-                errEl.textContent = 'Failed to save measurement.';
+                let msg = 'Failed to save measurement.';
+                try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+                errEl.textContent = msg;
                 errEl.classList.remove('hidden');
                 return;
             }

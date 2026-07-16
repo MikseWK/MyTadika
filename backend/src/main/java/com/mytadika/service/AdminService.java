@@ -2,12 +2,15 @@ package com.mytadika.service;
 
 import com.mytadika.model.*;
 import com.mytadika.repository.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,9 +35,9 @@ public class AdminService {
 
     // ── Dashboard Stats ─────────────────────────────────────────────────────
     public Map<String, Object> getDashboardStats() {
-        long teachers = accountRepo.findByRole(Role.TEACHER).size();
-        long parents  = accountRepo.findByRole(Role.PARENT).size();
-        long admins   = accountRepo.findByRole(Role.ADMIN).size();
+        long teachers = accountRepo.findByRoleType(Account.RoleType.TEACHER).size();
+        long parents  = accountRepo.findByRoleType(Account.RoleType.PARENT).size();
+        long admins   = accountRepo.findByRoleType(Account.RoleType.ADMIN).size();
         long students  = studentRepo.findAll().stream().filter(s -> s.getDeletedAt() == null).count();
         long classrooms = classroomRepo.findAll().size();
         Map<String, Object> stats = new LinkedHashMap<>();
@@ -51,7 +54,7 @@ public class AdminService {
     public List<Map<String, Object>> listAccounts(String roleFilter) {
         List<Account> accounts;
         if (roleFilter != null && !roleFilter.isBlank() && !roleFilter.equalsIgnoreCase("ALL")) {
-            try { accounts = accountRepo.findByRole(Role.valueOf(roleFilter.toUpperCase())); }
+            try { accounts = accountRepo.findByRoleType(Account.RoleType.valueOf(roleFilter.toUpperCase())); }
             catch (IllegalArgumentException e) { accounts = accountRepo.findAll(); }
         } else {
             accounts = accountRepo.findAll();
@@ -62,11 +65,11 @@ public class AdminService {
             map.put("accountId", a.getAccountId());
             map.put("fullName", a.getFullName());
             map.put("email", a.getEmail());
-            map.put("roleType", a.getRole().name());
+            map.put("roleType", a.getRoleType().name());
             map.put("phoneNumber", a.getPhoneNumber());
             map.put("createdAt", a.getCreatedAt() != null ? a.getCreatedAt().toLocalDate().toString() : null);
             map.put("profileImageUrl", a.getProfileImageUrl());
-            if (a.getRole() == Role.PARENT) {
+            if (a.getRoleType() == Account.RoleType.PARENT) {
                 map.put("childCount", studentRepo.findByParentIdAndDeletedAtIsNull(a.getAccountId()).size());
             }
             result.add(map);
@@ -79,7 +82,7 @@ public class AdminService {
     public void updateAccountRole(String accountId, String role) {
         Account account = accountRepo.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found."));
-        try { account.setRole(Role.valueOf(role.toUpperCase())); }
+        try { account.setRoleType(Account.RoleType.valueOf(role.toUpperCase())); }
         catch (IllegalArgumentException e) { throw new IllegalArgumentException("Invalid role: " + role); }
         accountRepo.save(account);
     }
@@ -98,7 +101,7 @@ public class AdminService {
         }
         if (body.containsKey("phoneNumber")) account.setPhoneNumber(body.get("phoneNumber"));
         if (body.get("role") != null && !body.get("role").isBlank()) {
-            try { account.setRole(Role.valueOf(body.get("role").toUpperCase())); }
+            try { account.setRoleType(Account.RoleType.valueOf(body.get("role").toUpperCase())); }
             catch (IllegalArgumentException e) { throw new IllegalArgumentException("Invalid role: " + body.get("role")); }
         }
         accountRepo.save(account);
@@ -108,11 +111,41 @@ public class AdminService {
     public void deleteAccount(String accountId) {
         Account account = accountRepo.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found."));
-        if (account.getRole() == Role.ADMIN
-                && accountRepo.findByRole(Role.ADMIN).size() <= 1) {
+        if (account.getRoleType() == Account.RoleType.ADMIN
+                && accountRepo.findByRoleType(Account.RoleType.ADMIN).size() <= 1) {
             throw new IllegalArgumentException("Cannot delete the last remaining admin account.");
         }
-        accountRepo.deleteById(accountId);
+        if (account.getRoleType() == Account.RoleType.PARENT) {
+            // Already-soft-deleted children are invisible to the app but their parent_id FK
+            // still points here — auto-unlink those so they don't block deletion. Students
+            // that are still active are left alone; those correctly still block the delete.
+            for (Student child : studentRepo.findByParentId(accountId)) {
+                if (child.getDeletedAt() != null) {
+                    child.setParentId(null);
+                    studentRepo.save(child);
+                }
+            }
+        }
+        if (account.getRoleType() == Account.RoleType.TEACHER
+                && !classroomRepo.findByTeacherAccountId(accountId).isEmpty()) {
+            // The "classrooms" table has no DB-level FK back to accounts, so deleting a
+            // teacher who still owns one would silently succeed and leave the classroom
+            // pointing at a deleted account — check explicitly instead.
+            throw new IllegalArgumentException(
+                    "This teacher still owns a classroom. Reassign or delete that classroom first, then try again.");
+        }
+        try {
+            accountRepo.deleteById(accountId);
+            accountRepo.flush();
+        } catch (DataIntegrityViolationException e) {
+            String detail = e.getMostSpecificCause() != null ? e.getMostSpecificCause().getMessage() : "";
+            if (detail.contains("\"student\"")) {
+                throw new IllegalArgumentException(
+                        "This parent still has children linked to their account. Unlink or delete those students first, then try again.");
+            }
+            throw new IllegalArgumentException(
+                    "This account can't be deleted because other records still reference it.");
+        }
     }
 
     @Transactional
@@ -125,8 +158,8 @@ public class AdminService {
         if (fullName == null || fullName.isBlank()) throw new IllegalArgumentException("Full name is required.");
         if (password == null || password.length() < 6) throw new IllegalArgumentException("Password must be at least 6 characters.");
         if (role == null) throw new IllegalArgumentException("Role is required.");
-        Role assignedRole;
-        try { assignedRole = Role.valueOf(role.toUpperCase()); }
+        Account.RoleType roleType;
+        try { roleType = Account.RoleType.valueOf(role.toUpperCase()); }
         catch (IllegalArgumentException e) { throw new IllegalArgumentException("Invalid role."); }
         if (accountRepo.existsByEmail(email.trim().toLowerCase()))
             throw new IllegalArgumentException("An account with this email already exists.");
@@ -134,13 +167,13 @@ public class AdminService {
         Account account = Account.builder()
                 .accountId(accountId).fullName(fullName.trim())
                 .email(email.trim().toLowerCase()).password(passwordEncoder.encode(password))
-                .role(assignedRole).createdAt(LocalDateTime.now()).build();
+                .roleType(roleType).createdAt(LocalDateTime.now()).build();
         accountRepo.save(account);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("accountId", account.getAccountId());
         result.put("fullName", account.getFullName());
         result.put("email", account.getEmail());
-        result.put("roleType", account.getRole().name());
+        result.put("roleType", account.getRoleType().name());
         return result;
     }
 
@@ -199,15 +232,45 @@ public class AdminService {
         return result;
     }
 
+    private static final int MIN_STUDENT_AGE = 4;
+    private static final int MAX_STUDENT_AGE = 6;
+
+    // Enrollment age is gated at 4-6 years old (kindergarten range) — only enforced
+    // when a date of birth is being set/changed, not retroactively against existing
+    // students on unrelated edits (a child turning 7 mid-year shouldn't block their
+    // other records from being updated).
+    private void validateAge(String dateOfBirth) {
+        if (dateOfBirth == null || dateOfBirth.isBlank()) {
+            throw new IllegalArgumentException("Date of birth is required.");
+        }
+        LocalDate dob;
+        try {
+            dob = LocalDate.parse(dateOfBirth);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date of birth format.");
+        }
+        LocalDate today = LocalDate.now();
+        if (dob.isAfter(today)) {
+            throw new IllegalArgumentException("Date of birth cannot be in the future.");
+        }
+        int age = Period.between(dob, today).getYears();
+        if (age < MIN_STUDENT_AGE || age > MAX_STUDENT_AGE) {
+            throw new IllegalArgumentException(
+                    "Student must be between " + MIN_STUDENT_AGE + " and " + MAX_STUDENT_AGE +
+                    " years old (calculated age: " + age + ").");
+        }
+    }
+
     @Transactional
     public Map<String, Object> createStudent(Map<String, String> body) {
         String fullName = body.get("fullName");
         if (fullName == null || fullName.isBlank()) throw new IllegalArgumentException("Full name is required.");
+        validateAge(body.get("dateOfBirth"));
         String studentCode = generateStudentCode();
         Student student = Student.builder()
                 .fullName(fullName.trim())
-                .dateOfBirth(parseDate(body.get("dateOfBirth")))
-                .gender(parseGender(body.get("gender")))
+                .dateOfBirth(body.get("dateOfBirth"))
+                .gender(body.get("gender"))
                 .medicalInfo(body.get("medicalInfo"))
                 .emergencyContact(body.get("emergencyContact"))
                 .studentCode(studentCode)
@@ -215,7 +278,7 @@ public class AdminService {
                 .build();
         if (body.get("parentEmail") != null && !body.get("parentEmail").isBlank()) {
             accountRepo.findByEmail(body.get("parentEmail").trim().toLowerCase())
-                    .ifPresent(p -> student.setParent(p));
+                    .ifPresent(p -> student.setParentId(p.getAccountId()));
         }
         studentRepo.save(student);
         Map<String, Object> result = new LinkedHashMap<>();
@@ -231,17 +294,20 @@ public class AdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Student not found."));
         if (body.containsKey("fullName") && body.get("fullName") != null && !body.get("fullName").isBlank())
             student.setFullName(body.get("fullName").trim());
-        if (body.containsKey("dateOfBirth")) student.setDateOfBirth(parseDate(body.get("dateOfBirth")));
-        if (body.containsKey("gender")) student.setGender(parseGender(body.get("gender")));
+        if (body.containsKey("dateOfBirth")) {
+            validateAge(body.get("dateOfBirth"));
+            student.setDateOfBirth(body.get("dateOfBirth"));
+        }
+        if (body.containsKey("gender")) student.setGender(body.get("gender"));
         if (body.containsKey("medicalInfo")) student.setMedicalInfo(body.get("medicalInfo"));
         if (body.containsKey("emergencyContact")) student.setEmergencyContact(body.get("emergencyContact"));
         if (body.containsKey("parentEmail")) {
             String pe = body.get("parentEmail");
             if (pe != null && !pe.isBlank()) {
                 accountRepo.findByEmail(pe.trim().toLowerCase())
-                        .ifPresent(p -> student.setParent(p));
+                        .ifPresent(p -> student.setParentId(p.getAccountId()));
             } else {
-                student.setParent(null);
+                student.setParentId(null);
             }
         }
         studentRepo.save(student);
@@ -261,17 +327,5 @@ public class AdminService {
                 .mapToInt(s -> { try { return Integer.parseInt(s.getStudentCode().substring(3)); } catch (Exception e) { return 0; } })
                 .max().orElse(20000);
         return "STU" + (max + 1);
-    }
-
-    private LocalDate parseDate(String value) {
-        if (value == null || value.isBlank()) return null;
-        try { return LocalDate.parse(value); }
-        catch (Exception e) { throw new IllegalArgumentException("Invalid date of birth."); }
-    }
-
-    private Gender parseGender(String value) {
-        if (value == null || value.isBlank()) return null;
-        try { return Gender.valueOf(value.toUpperCase()); }
-        catch (IllegalArgumentException e) { throw new IllegalArgumentException("Invalid gender."); }
     }
 }

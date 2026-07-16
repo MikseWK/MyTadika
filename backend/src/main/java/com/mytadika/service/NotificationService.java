@@ -65,4 +65,8 @@ public class NotificationService {
     public void delete(Long id) {
         notifRepo.deleteById(id);
     }
+
+    public void deleteAll(String accountId) {
+        notifRepo.deleteByAccountId(accountId);
+    }
 }

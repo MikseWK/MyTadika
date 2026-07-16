@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTadika – Manage Classrooms</title>
@@ -24,7 +25,6 @@
         .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
         .color-swatch.selected { outline: 3px solid #6c5a00; outline-offset: 2px; }
     </style>
-  <script src="/components/auth-fetch.js"></script>
 </head>
 <body class="text-stone-800 min-h-screen">
 
@@ -208,6 +208,29 @@
             </button>
         </div>
         <div id="who-modal-body" class="overflow-y-auto px-5 py-2 flex-1"></div>
+    </div>
+</div>
+
+<!-- Teacher Profile Modal -->
+<div id="teacher-profile-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4" onclick="if(event.target===this) closeTeacherProfileModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div class="relative h-24 flex-shrink-0" style="background-color:#ffd709;">
+            <button onclick="closeTeacherProfileModal()" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+                <div id="tp-avatar-wrap" style="width:88px;height:88px;border-radius:50%;border:4px solid white;box-shadow:0 8px 24px rgba(0,0,0,0.18);overflow:hidden;background:#ffd709;display:flex;align-items:center;justify-content:center;"></div>
+            </div>
+        </div>
+        <div class="pt-14 pb-6 px-6 text-center flex flex-col gap-4">
+            <div>
+                <h2 id="tp-name" class="text-lg font-extrabold text-[#312f23]"></h2>
+                <span id="tp-owner-badge" class="hidden text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full mt-1 inline-block">Owner</span>
+            </div>
+            <p id="tp-description" class="text-sm text-stone-500 leading-relaxed"></p>
+            <div id="tp-stats" class="grid grid-cols-3 gap-3"></div>
+            <div id="tp-info-rows" class="w-full space-y-2 text-left"></div>
+        </div>
     </div>
 </div>
 
@@ -722,8 +745,61 @@ async function deleteAssignment(id) {
 // ══════════════════════════════════════════════════════════════════════
 // PEOPLE
 // ══════════════════════════════════════════════════════════════════════
+let peopleTeachersCache = [];
+
+function openTeacherProfileModal(accountId) {
+    const t = peopleTeachersCache.find(x => x.accountId === accountId);
+    if (!t) return;
+
+    document.getElementById('tp-name').textContent = t.name || '—';
+    document.getElementById('tp-owner-badge').classList.toggle('hidden', !t.isOwner);
+
+    const avatarWrap = document.getElementById('tp-avatar-wrap');
+    avatarWrap.innerHTML = t.image
+        ? `<img src="${esc(t.image)}" style="width:100%;height:100%;object-fit:cover;" alt="">`
+        : `<span style="font-size:1.75rem;font-weight:900;color:#6c5a00;">${esc((t.name||'?').charAt(0).toUpperCase())}</span>`;
+
+    document.getElementById('tp-description').textContent = t.description || 'No description yet.';
+
+    document.getElementById('tp-stats').innerHTML = `
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#ffd709] text-xl mb-1" style="font-variation-settings:'FILL' 1;">school</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.qualification || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Qualification</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF8A3D] text-xl mb-1" style="font-variation-settings:'FILL' 1;">history_edu</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.experience || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Experience</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF6B6B] text-xl mb-1" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.focusArea || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Focus Area</p>
+        </div>`;
+
+    const infoRow = (icon, label, value) => `
+        <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+            <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+            </div>
+        </div>`;
+    const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+    if (t.phoneNumber) rows.push(infoRow('call', 'Phone', t.phoneNumber));
+    document.getElementById('tp-info-rows').innerHTML = rows.join('');
+
+    document.getElementById('teacher-profile-modal').classList.remove('hidden');
+}
+
+function closeTeacherProfileModal() {
+    document.getElementById('teacher-profile-modal').classList.add('hidden');
+}
+
 function renderPeople(data) {
     const { teachers = [], students = [] } = data;
+    peopleTeachersCache = teachers;
     function row(p, removable) {
         const av = p.image
             ? `<img src="${esc(p.image)}" class="w-full h-full object-cover" alt="">`
@@ -733,6 +809,7 @@ function renderPeople(data) {
         const isTeacher = !p.studentId;
         const avatarBg = isTeacher ? 'bg-[#6c5a00]' : genderColor;
         const ownerBadge = p.isOwner ? `<span class="text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full ml-1">Owner</span>` : '';
+        const profileClickAttr = isTeacher ? ` onclick="openTeacherProfileModal('${esc(p.accountId)}')" style="cursor:pointer;"` : '';
         const sub = p.studentCode
             ? `<span class="text-xs text-stone-400">${esc(p.studentCode)} · Parent: ${esc(p.parentName||'')}</span>`
             : '';
@@ -759,9 +836,9 @@ function renderPeople(data) {
                 <span class="material-symbols-outlined text-base">favorite</span></a>`
             : '';
         return `<div class="flex items-center gap-3 py-3 border-b border-stone-50 last:border-0">
-            <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+            <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center overflow-hidden flex-shrink-0"${profileClickAttr}>${av}</div>
             <div class="flex-1 min-w-0">
-                <p class="font-medium text-stone-700 text-sm leading-tight">${displayName}${ownerBadge}</p>
+                <p class="font-medium text-stone-700 text-sm leading-tight"${profileClickAttr}>${displayName}${ownerBadge}</p>
                 ${sub}
             </div>
             ${academicBtn}
@@ -1051,7 +1128,29 @@ async function showAssignmentCompletions(assignmentId, doneCount, total) {
 
 function closeWhoModal() { document.getElementById('who-modal').classList.add('hidden'); }
 
-loadClassrooms();
+// Deep link from e.g. the teacher home page's Upcoming Classwork "View" button:
+// ?classroomId=&tab=&assignmentId=
+function openFromDeepLink() {
+    const params = new URLSearchParams(location.search);
+
+    // e.g. from the teacher home page's "Add Classroom" tile: ?create=1
+    if (params.get('create') === '1') {
+        openCreateModal();
+        history.replaceState(null, '', location.pathname);
+        return;
+    }
+
+    const classroomId = Number(params.get('classroomId'));
+    const tab = params.get('tab') || 'stream';
+    const assignmentId = params.get('assignmentId') ? Number(params.get('assignmentId')) : null;
+    if (!classroomId) return;
+
+    if (assignmentId !== null) pendingOpenAssignmentId = assignmentId;
+    openClassroom(classroomId, tab);
+    history.replaceState(null, '', location.pathname);
+}
+
+loadClassrooms().then(openFromDeepLink);
 </script>
 
 <script>loadSidebar('teacher', 'classroom'); loadTopbar('teacher');</script>

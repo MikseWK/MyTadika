@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Health &amp; Nutrition – MyTadika</title>
@@ -27,7 +28,6 @@
         .spin { animation: spin 1s linear infinite; }
     </style>
     <script src="/components/sidebar-loader.js"></script>
-  <script src="/components/auth-fetch.js"></script>
 </head>
 <body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
 
@@ -61,9 +61,18 @@
                 <span id="nutrition-badge" class="ml-auto hidden text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide"></span>
             </div>
 
-            <div id="allergy-banner" class="hidden bg-red-50 border border-red-200 rounded-2xl px-5 py-3 mb-6 flex items-center gap-3 text-red-700">
-                <span class="material-symbols-outlined">warning</span>
-                <p class="text-sm font-semibold"><span id="allergy-list"></span></p>
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 mb-6">
+                <h3 class="text-sm font-bold text-[#312f23] font-headline mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-500 text-lg">warning</span>
+                    Allergy Profile
+                </h3>
+                <div id="allergy-tags" class="flex flex-wrap gap-2 mb-3"></div>
+                <div class="flex gap-2">
+                    <input id="allergy-input" type="text" placeholder="Add an allergy (e.g. peanut, milk)…"
+                        onkeydown="if(event.key==='Enter') addAllergyTag()"
+                        class="flex-1 px-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <button id="allergy-add-btn" onclick="addAllergyTag()" class="px-4 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Add</button>
+                </div>
             </div>
 
             <div id="no-records" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
@@ -121,6 +130,7 @@
     let children = [];
     let selectedStudentId = null;
     let growthChart = null;
+    let allergyTags = [];
 
     function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -228,19 +238,53 @@
     }
 
     async function loadAllergies() {
-        let allergies = [];
         try {
             const res = await fetch(`/api/health/allergies/${selectedStudentId}`);
-            allergies = res.ok ? await res.json() : [];
-        } catch (e) { allergies = []; }
+            allergyTags = res.ok ? await res.json() : [];
+        } catch (e) { allergyTags = []; }
+        renderAllergyTags();
+    }
 
-        const banner = document.getElementById('allergy-banner');
-        if (allergies.length) {
-            banner.classList.remove('hidden');
-            document.getElementById('allergy-list').textContent = 'Allergies: ' + allergies.join(', ');
-        } else {
-            banner.classList.add('hidden');
-        }
+    function renderAllergyTags() {
+        const wrap = document.getElementById('allergy-tags');
+        wrap.innerHTML = allergyTags.length
+            ? allergyTags.map(a => `
+                <span class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-xs font-bold">
+                    ${esc(a)}
+                    <span class="material-symbols-outlined text-sm cursor-pointer" onclick="removeAllergyTag('${esc(a)}')">close</span>
+                </span>`).join('')
+            : '<p class="text-xs text-stone-400">No allergies recorded.</p>';
+    }
+
+    async function addAllergyTag() {
+        const input = document.getElementById('allergy-input');
+        const val = input.value.trim().toLowerCase();
+        if (!val) return;
+        input.value = '';
+        if (allergyTags.includes(val)) return;
+        allergyTags.push(val);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function removeAllergyTag(tag) {
+        allergyTags = allergyTags.filter(a => a !== tag);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function saveAllergies() {
+        const btn = document.getElementById('allergy-add-btn');
+        if (btn) btn.disabled = true;
+        try {
+            await fetch(`/api/health/allergies/${selectedStudentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allergies: allergyTags })
+            });
+            await loadAdvice();
+        } catch (e) { alert('Failed to save allergies.'); }
+        finally { if (btn) btn.disabled = false; }
     }
 
     async function loadAdvice() {

@@ -1,18 +1,16 @@
 package com.mytadika.service;
 
-import com.mytadika.dto.*;
-import com.mytadika.exception.ConflictException;
-import com.mytadika.exception.InvalidInputException;
-import com.mytadika.exception.ResourceNotFoundException;
+import com.mytadika.dto.AuthRequest;
+import com.mytadika.dto.AuthResponse;
+import com.mytadika.dto.ChangePasswordRequest;
+import com.mytadika.dto.ForgotPasswordRequest;
+import com.mytadika.dto.RegisterRequest;
+import com.mytadika.dto.ResetPasswordRequest;
 import com.mytadika.model.Account;
 import com.mytadika.model.PasswordResetToken;
-import com.mytadika.model.Role;
 import com.mytadika.repository.AccountRepository;
 import com.mytadika.repository.PasswordResetTokenRepository;
-import com.mytadika.security.JwtService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,53 +21,45 @@ import java.util.UUID;
 @Service
 public class AuthService {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-
     private final AccountRepository accountRepository;
     private final PasswordResetTokenRepository resetTokenRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
-    private final JwtService jwtService;
-    private final PasswordEncoder passwordEncoder;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthService(AccountRepository accountRepository,
                        PasswordResetTokenRepository resetTokenRepository,
                        EmailService emailService,
-                       NotificationService notificationService,
-                       JwtService jwtService,
-                       PasswordEncoder passwordEncoder) {
+                       NotificationService notificationService) {
         this.accountRepository = accountRepository;
         this.resetTokenRepository = resetTokenRepository;
         this.emailService = emailService;
         this.notificationService = notificationService;
-        this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder;
     }
 
-    public LoginResponseDTO login(LoginRequestDTO request) {
-        Account account = accountRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidInputException("Incorrect email or password. Please try again."));
+    public AuthResponse login(AuthRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
-            throw new InvalidInputException("Incorrect email or password. Please try again.");
+            throw new RuntimeException("Invalid email or password");
         }
 
-        if (account.getRole() != request.getRole()) {
-            throw new InvalidInputException("Incorrect email or password. Please try again.");
-        }
+        String fakeToken = "TOKEN_" + account.getAccountId();
 
-        String token = jwtService.generateToken(account);
-        return new LoginResponseDTO(
-                token,
-                account.getAccountId(),
-                account.getRole().name(),
-                account.getFullName(),
-                account.getEmail());
+        return AuthResponse.builder()
+                .token(fakeToken)
+                .accountId(account.getAccountId())
+                .roleType(account.getRoleType().name())
+                .fullName(account.getFullName())
+                .email(account.getEmail())
+                .build();
     }
 
-    public void register(RegisterRequestDTO request) {
-        if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("An account with this email already exists.");
+    public void register(RegisterRequest request) {
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        if (accountRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("An account with this email already exists");
         }
 
         String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 28);
@@ -77,9 +67,9 @@ public class AuthService {
         Account account = Account.builder()
                 .accountId(accountId)
                 .fullName(request.getFullName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.PARENT)
+                .roleType(Account.RoleType.PARENT)
                 .createdAt(LocalDateTime.now())
                 .build();
 
@@ -88,40 +78,16 @@ public class AuthService {
     }
 
     private void notifyAdminsOfNewRegistration(Account account) {
-        List<Account> admins = accountRepository.findByRole(Role.ADMIN);
+        List<Account> admins = accountRepository.findByRoleType(Account.RoleType.ADMIN);
         String title = "New parent registered: " + account.getFullName();
         String body = account.getEmail() + " just created a parent account.";
         for (Account admin : admins)
             notificationService.create(admin.getAccountId(), title, body, "/admin/adminaccounts.html?role=PARENT");
     }
 
-    /** Admin-only: provision a staff account with a specified role. */
-    public Account registerStaff(RegisterStaffRequestDTO request) {
-        if (request.getRole() == Role.PARENT) {
-            throw new InvalidInputException(
-                    "Parent accounts are self-registered, not provisioned through this endpoint.");
-        }
-        if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException("An account with this email already exists.");
-        }
-
-        String accountId = UUID.randomUUID().toString().replace("-", "").substring(0, 28);
-
-        Account account = Account.builder()
-                .accountId(accountId)
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole())
-                .phoneNumber(request.getPhoneNumber())
-                .build();
-
-        return accountRepository.save(account);
-    }
-
-    public void forgotPassword(ForgotPasswordRequestDTO request) {
-        // Silently succeed if account not found — prevents email enumeration
-        accountRepository.findByEmail(request.getEmail()).ifPresent(account -> {
+    public void forgotPassword(ForgotPasswordRequest request) {
+        // Only send email if account exists — silently succeed otherwise
+        accountRepository.findByEmail(request.getEmail().trim().toLowerCase()).ifPresent(account -> {
             String token = UUID.randomUUID().toString();
 
             PasswordResetToken resetToken = PasswordResetToken.builder()
@@ -131,30 +97,25 @@ public class AuthService {
                     .build();
 
             resetTokenRepository.save(resetToken);
-            try {
-                emailService.sendPasswordResetEmail(account.getEmail(), token);
-            } catch (Exception e) {
-                // SMTP not configured or failed — token is already saved.
-                // Log for the developer; the API still returns 200 to the caller.
-                log.warn("Password reset email could not be sent to {}: {}", account.getEmail(), e.getMessage());
-            }
+            emailService.sendPasswordResetEmail(account.getEmail(), token);
         });
     }
 
     @Transactional
-    public void resetPassword(ResetPasswordRequestDTO request) {
+    public void resetPassword(ResetPasswordRequest request) {
         PasswordResetToken resetToken = resetTokenRepository.findByToken(request.getToken())
-                .orElseThrow(() -> new InvalidInputException("Invalid or expired reset link."));
+                .orElseThrow(() -> new RuntimeException("Invalid or expired reset link"));
 
         if (resetToken.isUsed()) {
-            throw new InvalidInputException("This reset link has already been used.");
+            throw new RuntimeException("This reset link has already been used");
         }
+
         if (resetToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new InvalidInputException("This reset link has expired. Please request a new one.");
+            throw new RuntimeException("This reset link has expired. Please request a new one");
         }
 
         Account account = accountRepository.findByEmail(resetToken.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found."));
+                .orElseThrow(() -> new RuntimeException("Account not found"));
 
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
@@ -163,16 +124,15 @@ public class AuthService {
         resetTokenRepository.save(resetToken);
     }
 
-    /** Self-service password change — scoped to the authenticated caller, never a client-supplied id. */
-    public void changePassword(Account currentUser, ChangePasswordRequest request) {
-        Account account = accountRepository.findById(currentUser.getAccountId())
-                .orElseThrow(() -> new ResourceNotFoundException("Account not found."));
+    public void changePassword(ChangePasswordRequest request) {
+        Account account = accountRepository.findById(request.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), account.getPassword())) {
-            throw new InvalidInputException("Current password is incorrect.");
+            throw new RuntimeException("Current password is incorrect");
         }
         if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
-            throw new InvalidInputException("New password must be at least 6 characters.");
+            throw new RuntimeException("New password must be at least 6 characters");
         }
 
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));

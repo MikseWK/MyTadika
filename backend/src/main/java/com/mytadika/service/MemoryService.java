@@ -46,8 +46,8 @@ public class MemoryService {
 
     @Transactional
     public Map<String, Object> createPost(Long classroomId, String authorAccountId, String caption,
-                                           List<MultipartFile> files) throws IOException {
-        if (files == null || files.isEmpty()) throw new IllegalArgumentException("At least one photo is required.");
+                                           List<MultipartFile> files, Integer coverIndex) throws IOException {
+        if (files == null || files.isEmpty()) throw new IllegalArgumentException("At least one photo or video is required.");
         Classroom classroom = classroomRepository.findById(classroomId)
                 .orElseThrow(() -> new IllegalArgumentException("Classroom not found."));
 
@@ -57,9 +57,14 @@ public class MemoryService {
                 .caption(caption != null && !caption.isBlank() ? caption.trim() : null)
                 .build());
 
+        List<MemoryImage> saved = new ArrayList<>();
         for (MultipartFile file : files) {
             if (file.isEmpty()) continue;
-            memoryImageRepository.save(MemoryImage.builder().memoryPostId(post.getId()).imageUrl(uploadOne(file)).build());
+            saved.add(saveMedia(post.getId(), file));
+        }
+        if (coverIndex != null && coverIndex >= 0 && coverIndex < saved.size()) {
+            post.setCoverMediaId(saved.get(coverIndex).getId());
+            memoryPostRepository.save(post);
         }
 
         try {
@@ -69,34 +74,52 @@ public class MemoryService {
         return toPostMap(post, classroom.getName(), authorAccountId);
     }
 
-    private String uploadOne(MultipartFile file) throws IOException {
+    private MemoryImage saveMedia(Long postId, MultipartFile file) throws IOException {
         String original = file.getOriginalFilename();
         String ext = (original != null && original.contains(".")) ? original.substring(original.lastIndexOf('.')) : ".jpg";
         String filename = "memory_" + UUID.randomUUID() + ext;
-        return storageService.uploadImage(file.getBytes(), filename, file.getContentType());
+        String url = storageService.uploadImage(file.getBytes(), filename, file.getContentType());
+        String mediaType = detectMediaType(file.getContentType(), original);
+        return memoryImageRepository.save(MemoryImage.builder().memoryPostId(postId).imageUrl(url).mediaType(mediaType).build());
     }
 
-    // Updates the caption, removes any images whose id is in removeImageIds, and appends any newFiles.
+    private String detectMediaType(String contentType, String originalFilename) {
+        if (contentType != null && contentType.startsWith("video/")) return "VIDEO";
+        String lower = (originalFilename == null ? "" : originalFilename).toLowerCase();
+        if (lower.matches(".*\\.(mp4|mov|webm|avi|mkv|m4v)$")) return "VIDEO";
+        return "IMAGE";
+    }
+
+    // Updates the caption, removes any images/videos whose id is in removeImageIds, appends any
+    // newFiles, and optionally changes which existing item is used as the feed thumbnail (cover).
     @Transactional
     public Map<String, Object> editPost(Long postId, String caption, List<Long> removeImageIds,
-                                         List<MultipartFile> newFiles) throws IOException {
+                                         List<MultipartFile> newFiles, Long coverMediaId) throws IOException {
         MemoryPost post = memoryPostRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Memory post not found."));
         post.setCaption(caption != null && !caption.isBlank() ? caption.trim() : null);
-        memoryPostRepository.save(post);
 
         if (removeImageIds != null && !removeImageIds.isEmpty()) {
             memoryImageRepository.deleteAllById(removeImageIds);
+            // Don't leave the cover pointing at a photo/video that no longer exists.
+            if (post.getCoverMediaId() != null && removeImageIds.contains(post.getCoverMediaId())) {
+                post.setCoverMediaId(null);
+            }
         }
         if (newFiles != null) {
             for (MultipartFile file : newFiles) {
                 if (file.isEmpty()) continue;
-                memoryImageRepository.save(MemoryImage.builder().memoryPostId(post.getId()).imageUrl(uploadOne(file)).build());
+                saveMedia(post.getId(), file);
             }
         }
-        if (memoryImageRepository.findByMemoryPostIdOrderByIdAsc(postId).isEmpty()) {
-            throw new IllegalArgumentException("A memory post must have at least one photo.");
+        List<MemoryImage> remaining = memoryImageRepository.findByMemoryPostIdOrderByIdAsc(postId);
+        if (remaining.isEmpty()) {
+            throw new IllegalArgumentException("A memory post must have at least one photo or video.");
         }
+        if (coverMediaId != null && remaining.stream().anyMatch(m -> m.getId().equals(coverMediaId))) {
+            post.setCoverMediaId(coverMediaId);
+        }
+        memoryPostRepository.save(post);
 
         String classroomName = classroomRepository.findById(post.getClassroomId()).map(Classroom::getName).orElse("classroom");
         return toPostMap(post, classroomName, post.getAuthorAccountId());
@@ -162,12 +185,13 @@ public class MemoryService {
         if (posts.isEmpty()) return Collections.emptyList();
 
         List<Long> postIds = posts.stream().map(MemoryPost::getId).collect(Collectors.toList());
-        Map<Long, List<Map<String, Object>>> imagesByPost = new HashMap<>();
+        Map<Long, List<Map<String, Object>>> mediaByPost = new HashMap<>();
         memoryImageRepository.findByMemoryPostIdInOrderByIdAsc(postIds).forEach(img -> {
-            Map<String, Object> imgMap = new LinkedHashMap<>();
-            imgMap.put("id", img.getId());
-            imgMap.put("url", img.getImageUrl());
-            imagesByPost.computeIfAbsent(img.getMemoryPostId(), k -> new ArrayList<>()).add(imgMap);
+            Map<String, Object> mediaMap = new LinkedHashMap<>();
+            mediaMap.put("id", img.getId());
+            mediaMap.put("url", img.getImageUrl());
+            mediaMap.put("type", img.getMediaType() != null ? img.getMediaType() : "IMAGE");
+            mediaByPost.computeIfAbsent(img.getMemoryPostId(), k -> new ArrayList<>()).add(mediaMap);
         });
 
         List<String> authorIds = posts.stream().map(MemoryPost::getAuthorAccountId).distinct().collect(Collectors.toList());
@@ -192,9 +216,7 @@ public class MemoryService {
             map.put("classroomName", classroomNamesById.getOrDefault(post.getClassroomId(), "Classroom"));
             map.put("caption", post.getCaption());
             map.put("createdAt", post.getCreatedAt() != null ? post.getCreatedAt().toString() : null);
-            List<Map<String, Object>> images = imagesByPost.getOrDefault(post.getId(), Collections.emptyList());
-            map.put("images", images.stream().map(i -> i.get("url")).collect(Collectors.toList()));
-            map.put("imageIds", images.stream().map(i -> i.get("id")).collect(Collectors.toList()));
+            map.put("media", orderWithCoverFirst(mediaByPost.getOrDefault(post.getId(), Collections.emptyList()), post.getCoverMediaId()));
             Account author = authorsById.get(post.getAuthorAccountId());
             map.put("authorAccountId", post.getAuthorAccountId());
             map.put("authorName", author != null ? author.getFullName() : "Teacher");
@@ -205,6 +227,21 @@ public class MemoryService {
             result.add(map);
         }
         return result;
+    }
+
+    // Moves the chosen cover item to the front of the list (used as the feed thumbnail);
+    // falls back to upload order (oldest first) when no cover has been explicitly picked.
+    private List<Map<String, Object>> orderWithCoverFirst(List<Map<String, Object>> media, Long coverMediaId) {
+        if (coverMediaId == null || media.size() < 2) return media;
+        int idx = -1;
+        for (int i = 0; i < media.size(); i++) {
+            if (coverMediaId.equals(media.get(i).get("id"))) { idx = i; break; }
+        }
+        if (idx <= 0) return media;
+        List<Map<String, Object>> reordered = new ArrayList<>(media);
+        Map<String, Object> cover = reordered.remove(idx);
+        reordered.add(0, cover);
+        return reordered;
     }
 
     private Map<String, Object> toPostMap(MemoryPost post, String classroomName, String viewerAccountId) {
@@ -270,7 +307,7 @@ public class MemoryService {
         for (String recipientId : recipients) {
             Account recipient = accountsById.get(recipientId);
             if (recipient == null) continue;
-            String link = switch (recipient.getRole()) {
+            String link = switch (recipient.getRoleType()) {
                 case TEACHER -> "/teacher/teachermemory.html?postId=" + post.getId();
                 case ADMIN -> "/admin/admingallery.html?postId=" + post.getId();
                 default -> "/parent/parentmemory.html?postId=" + post.getId();

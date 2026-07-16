@@ -22,21 +22,6 @@ public class DbMigrationRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        // Fix legacy student.date_of_birth column (was not stored as a native date type,
-        // so Hibernate's ddl-auto=update ALTER COLUMN ... SET DATA TYPE fails without USING).
-        try {
-            String dobType = jdbc.queryForObject(
-                "SELECT data_type FROM information_schema.columns " +
-                "WHERE table_name='student' AND column_name='date_of_birth'",
-                String.class);
-            if (dobType != null && !dobType.equals("date")) {
-                jdbc.execute("ALTER TABLE student ALTER COLUMN date_of_birth TYPE date USING date_of_birth::date");
-                System.out.println("[DbMigrationRunner] Converted student.date_of_birth to native date type.");
-            }
-        } catch (Exception e) {
-            System.err.println("[DbMigrationRunner] Could not convert student.date_of_birth: " + e.getMessage());
-        }
-
         // Add topic column to announcements if it doesn't exist yet
         try {
             Integer topicColExists = jdbc.queryForObject(
@@ -167,6 +152,23 @@ public class DbMigrationRunner implements ApplicationRunner {
             }
         } catch (Exception e) {
             System.err.println("[DbMigrationRunner] Could not create classwork_completions table: " + e.getMessage());
+        }
+
+        // Drop legacy 'classroom' (singular) table — a dead leftover from before the entity
+        // was renamed to 'classrooms' (plural). Nothing reads/writes it anymore, but its
+        // lingering FK constraint (fk_classroom_teacher) was falsely blocking deletion of
+        // teacher accounts that have zero real classrooms, since Postgres doesn't know the
+        // table is abandoned. Dropping it removes the constraint too (CASCADE).
+        try {
+            Integer legacyExists = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='classroom'",
+                Integer.class);
+            if (legacyExists != null && legacyExists > 0) {
+                jdbc.execute("DROP TABLE classroom CASCADE");
+                System.out.println("[DbMigrationRunner] Dropped legacy 'classroom' (singular) table.");
+            }
+        } catch (Exception e) {
+            System.err.println("[DbMigrationRunner] Could not drop legacy classroom table: " + e.getMessage());
         }
 
         // Create notifications table

@@ -106,7 +106,7 @@ public class ToyyibPayService {
         } catch (Exception ignored) { }
 
         if (paid && !"PAID".equals(fee.getStatus())) {
-            feeService.markPaid(feeId);
+            feeService.markPaid(feeId, "TOYYIBPAY");
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -124,7 +124,7 @@ public class ToyyibPayService {
 
         Long feeId = Long.valueOf(orderId);
         feeRepository.findById(feeId).ifPresent(fee -> {
-            if (!"PAID".equals(fee.getStatus())) feeService.markPaid(feeId);
+            if (!"PAID".equals(fee.getStatus())) feeService.markPaid(feeId, "TOYYIBPAY");
         });
     }
 

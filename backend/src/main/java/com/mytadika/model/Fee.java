@@ -14,6 +14,7 @@ public class Fee {
     @Column(nullable = false, length = 10) private String status;
     @Column(name = "late_fee_amount") private Double lateFeeAmount;
     @Column(name = "paid_at") private LocalDateTime paidAt;
+    @Column(name = "payment_method", length = 20) private String paymentMethod;
     @Column(name = "created_at", nullable = false) private LocalDateTime createdAt;
     @PrePersist protected void onCreate() { if (createdAt == null) createdAt = LocalDateTime.now(); if (status == null) status = "PENDING"; }
 }

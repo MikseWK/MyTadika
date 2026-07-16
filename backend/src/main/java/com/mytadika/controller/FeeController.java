@@ -23,19 +23,19 @@ public class FeeController {
         return ResponseEntity.ok(feeService.getAllFees());
     }
 
-    @GetMapping("/pending-count/{accountId}")
-    public ResponseEntity<?> getPendingCount(@PathVariable String accountId) {
-        return ResponseEntity.ok(feeService.getPendingCount(accountId));
-    }
-
-    @GetMapping("/pending-counts/{accountId}")
-    public ResponseEntity<?> getPendingCounts(@PathVariable String accountId) {
-        return ResponseEntity.ok(feeService.getPendingCounts(accountId));
-    }
-
     @GetMapping("/students/{studentId}")
     public ResponseEntity<?> getFeesByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(feeService.getFeesByStudent(studentId));
+    }
+
+    @GetMapping("/pending-count/{parentAccountId}")
+    public ResponseEntity<?> getPendingCountForParent(@PathVariable String parentAccountId) {
+        return ResponseEntity.ok(Map.of("count", feeService.getPendingCountForParent(parentAccountId)));
+    }
+
+    @GetMapping("/pending-counts/{parentAccountId}")
+    public ResponseEntity<?> getPendingCountsByStudent(@PathVariable String parentAccountId) {
+        return ResponseEntity.ok(feeService.getPendingCountsByStudentForParent(parentAccountId));
     }
 
     @PostMapping("/students/{studentId}")
@@ -72,6 +72,19 @@ public class FeeController {
             Double amount = body.get("amount") != null ? ((Number) body.get("amount")).doubleValue() : null;
             String dueDate = (String) body.get("dueDate");
             return ResponseEntity.ok(feeService.bulkUpdateFees(feeIds, description, amount, dueDate));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/bulk")
+    public ResponseEntity<?> bulkDeleteFees(@RequestBody Map<String, Object> body) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<Number> rawIds = (List<Number>) body.get("feeIds");
+            List<Long> feeIds = rawIds == null ? null : rawIds.stream().map(Number::longValue).collect(Collectors.toList());
+            int count = feeService.bulkDeleteFees(feeIds);
+            return ResponseEntity.ok(Map.of("deleted", count));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

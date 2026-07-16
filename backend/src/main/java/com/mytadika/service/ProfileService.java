@@ -2,7 +2,6 @@ package com.mytadika.service;
 
 import com.mytadika.dto.UpdateProfileRequest;
 import com.mytadika.model.Account;
-import com.mytadika.model.Role;
 import com.mytadika.repository.AccountRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,12 +31,11 @@ public class ProfileService {
         profile.put("phoneNumber", account.getPhoneNumber());
         profile.put("address", account.getAddress());
         profile.put("profileImageUrl", account.getProfileImageUrl());
-        profile.put("roleType", account.getRole().name());
+        profile.put("roleType", account.getRoleType().name());
         profile.put("description", account.getDescription());
         profile.put("qualification", account.getQualification());
         profile.put("experience", account.getExperience());
         profile.put("focusArea", account.getFocusArea());
-        profile.put("meetLink", account.getMeetLink());
         return profile;
     }
 
@@ -54,7 +52,6 @@ public class ProfileService {
         if (request.getQualification() != null) account.setQualification(request.getQualification());
         if (request.getExperience() != null) account.setExperience(request.getExperience());
         if (request.getFocusArea() != null) account.setFocusArea(request.getFocusArea());
-        if (request.getMeetLink() != null) account.setMeetLink(request.getMeetLink());
         accountRepository.save(account);
     }
 

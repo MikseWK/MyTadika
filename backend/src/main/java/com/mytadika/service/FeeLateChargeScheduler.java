@@ -1,7 +1,6 @@
 package com.mytadika.service;
 
 import com.mytadika.model.Account;
-import com.mytadika.model.Role;
 import com.mytadika.model.Fee;
 import com.mytadika.model.Student;
 import com.mytadika.repository.AccountRepository;
@@ -74,7 +73,7 @@ public class FeeLateChargeScheduler {
     }
 
     private void notifyAdminsDigest(List<String> charged) {
-        List<Account> admins = accountRepository.findByRole(Role.ADMIN);
+        List<Account> admins = accountRepository.findByRoleType(Account.RoleType.ADMIN);
         String title = charged.size() + " fee" + (charged.size() != 1 ? "s" : "") + " just went overdue";
         String body = String.join("; ", charged);
         for (Account admin : admins)

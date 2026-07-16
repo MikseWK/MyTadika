@@ -2,9 +2,9 @@ package com.mytadika.service;
 
 import com.mytadika.dto.ChatMessageRequest;
 import com.mytadika.model.Account;
-import com.mytadika.model.Role;
 import com.mytadika.model.ChatContact;
 import com.mytadika.model.ChatMessage;
+import com.mytadika.model.ClassMember;
 import com.mytadika.model.Classroom;
 import com.mytadika.model.Student;
 import com.mytadika.model.StudentClassroom;
@@ -12,6 +12,7 @@ import com.mytadika.model.TeacherContact;
 import com.mytadika.repository.AccountRepository;
 import com.mytadika.repository.ChatContactRepository;
 import com.mytadika.repository.ChatMessageRepository;
+import com.mytadika.repository.ClassMemberRepository;
 import com.mytadika.repository.ClassroomRepository;
 import com.mytadika.repository.StudentClassroomRepository;
 import com.mytadika.repository.StudentRepository;
@@ -44,6 +45,7 @@ public class ChatService {
     private final StudentRepository studentRepository;
     private final StudentClassroomRepository studentClassroomRepository;
     private final ClassroomRepository classroomRepository;
+    private final ClassMemberRepository classMemberRepository;
     private final SupabaseStorageService storageService;
     private final NotificationService notificationService;
 
@@ -54,6 +56,7 @@ public class ChatService {
                        StudentRepository studentRepository,
                        StudentClassroomRepository studentClassroomRepository,
                        ClassroomRepository classroomRepository,
+                       ClassMemberRepository classMemberRepository,
                        SupabaseStorageService storageService,
                        NotificationService notificationService) {
         this.chatMessageRepository = chatMessageRepository;
@@ -63,6 +66,7 @@ public class ChatService {
         this.studentRepository = studentRepository;
         this.studentClassroomRepository = studentClassroomRepository;
         this.classroomRepository = classroomRepository;
+        this.classMemberRepository = classMemberRepository;
         this.storageService = storageService;
         this.notificationService = notificationService;
     }
@@ -92,9 +96,9 @@ public class ChatService {
     public List<Map<String, Object>> getContacts(String accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-        if (account.getRole() == Role.PARENT) {
+        if (account.getRoleType() == Account.RoleType.PARENT) {
             return getContactsForParent(accountId);
-        } else if (account.getRole() == Role.TEACHER) {
+        } else if (account.getRoleType() == Account.RoleType.TEACHER) {
             List<Map<String, Object>> combined = new ArrayList<>();
             combined.addAll(getContactsForTeacher(accountId));
             combined.addAll(getTeacherPeerContacts(accountId));
@@ -160,7 +164,6 @@ public class ChatService {
                     map.put("experience", teacher.getExperience());
                     map.put("focusArea", teacher.getFocusArea());
                     map.put("phoneNumber", teacher.getPhoneNumber());
-                    map.put("meetLink", teacher.getMeetLink());
                     map.put("lastActiveAt", teacher.getLastActiveAt() != null ? teacher.getLastActiveAt().toString() : null);
                     map.put("lastMessage", last != null ? messagePreview(last) : null);
                     map.put("lastMessageAt", last != null ? last.getSentAt().toString() : null);
@@ -254,7 +257,6 @@ public class ChatService {
                     map.put("experience", other.getExperience());
                     map.put("focusArea", other.getFocusArea());
                     map.put("phoneNumber", other.getPhoneNumber());
-                    map.put("meetLink", other.getMeetLink());
                     map.put("roleType", "TEACHER");
                     map.put("lastActiveAt", other.getLastActiveAt() != null ? other.getLastActiveAt().toString() : null);
                     map.put("lastMessage", last != null ? messagePreview(last) : null);
@@ -274,7 +276,7 @@ public class ChatService {
     // consistent "School Admin" contact regardless of which admin answers.
 
     public Map<String, Object> getAdminInboxIdentity() {
-        Account inbox = accountRepository.findFirstByRoleOrderByCreatedAtAsc(Role.ADMIN)
+        Account inbox = accountRepository.findFirstByRoleTypeOrderByCreatedAtAsc(Account.RoleType.ADMIN)
                 .orElseThrow(() -> new RuntimeException("No admin account exists yet"));
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("accountId", inbox.getAccountId());
@@ -342,7 +344,7 @@ public class ChatService {
     // "new message" recipient picker can group parents by classroom instead of showing
     // one long flat list — batched to avoid a query per parent.
     public List<Map<String, Object>> getParents() {
-        List<Account> parents = accountRepository.findByRole(Role.PARENT);
+        List<Account> parents = accountRepository.findByRoleType(Account.RoleType.PARENT);
         List<String> parentIds = parents.stream().map(Account::getAccountId).collect(Collectors.toList());
 
         List<Student> allStudents = studentRepository.findByParentIdIn(parentIds);
@@ -374,28 +376,46 @@ public class ChatService {
 
                     List<Student> kids = studentsByParent.getOrDefault(p.getAccountId(), Collections.emptyList());
                     Set<String> classNames = new LinkedHashSet<>();
-                    for (Student kid : kids)
-                        for (Classroom c : classroomsByStudent.getOrDefault(kid.getId(), Collections.emptyList()))
-                            classNames.add(c.getName());
+                    List<Map<String, Object>> children = new ArrayList<>();
+                    for (Student kid : kids) {
+                        List<Classroom> kidClassrooms = classroomsByStudent.getOrDefault(kid.getId(), Collections.emptyList());
+                        List<String> kidClassNames = kidClassrooms.stream().map(Classroom::getName).collect(Collectors.toList());
+                        classNames.addAll(kidClassNames);
+                        Map<String, Object> childMap = new LinkedHashMap<>();
+                        childMap.put("name", kid.getFullName());
+                        childMap.put("classroomNames", kidClassNames);
+                        children.add(childMap);
+                    }
                     map.put("childNames", kids.stream().map(Student::getFullName).collect(Collectors.joining(", ")));
+                    map.put("children", children);
                     map.put("classroomNames", new ArrayList<>(classNames));
                     return map;
                 })
                 .collect(Collectors.toList());
     }
 
-    // Enriched with the classes each teacher owns, so the "new message" recipient
-    // picker can filter teachers by classroom too — batched (one query for all
-    // classrooms) rather than one lookup per teacher.
+    // Enriched with the classes each teacher teaches — as owner OR co-teacher — so the
+    // "new message" recipient picker can filter teachers by classroom too. Batched
+    // (one query for all classrooms/memberships) rather than one lookup per teacher.
     public List<Map<String, Object>> getTeachers() {
+        List<Classroom> allClassrooms = classroomRepository.findAll();
         Map<String, List<String>> classroomNamesByTeacher = new HashMap<>();
-        for (Classroom c : classroomRepository.findAll()) {
+        for (Classroom c : allClassrooms) {
             if (c.getTeacherAccountId() != null) {
                 classroomNamesByTeacher.computeIfAbsent(c.getTeacherAccountId(), k -> new ArrayList<>()).add(c.getName());
             }
         }
+        Map<Long, Classroom> classroomsById = allClassrooms.stream()
+                .collect(Collectors.toMap(Classroom::getId, c -> c));
+        for (ClassMember m : classMemberRepository.findAll()) {
+            if (!"teacher".equals(m.getRole())) continue;
+            Classroom c = classroomsById.get(m.getClassroomId());
+            if (c == null) continue;
+            List<String> names = classroomNamesByTeacher.computeIfAbsent(m.getAccountId(), k -> new ArrayList<>());
+            if (!names.contains(c.getName())) names.add(c.getName());
+        }
 
-        return accountRepository.findByRole(Role.TEACHER)
+        return accountRepository.findByRoleType(Account.RoleType.TEACHER)
                 .stream()
                 .map(t -> {
                     Map<String, Object> map = new LinkedHashMap<>();
@@ -408,7 +428,6 @@ public class ChatService {
                     map.put("experience", t.getExperience());
                     map.put("focusArea", t.getFocusArea());
                     map.put("phoneNumber", t.getPhoneNumber());
-                    map.put("meetLink", t.getMeetLink());
                     map.put("lastActiveAt", t.getLastActiveAt() != null ? t.getLastActiveAt().toString() : null);
                     map.put("classroomNames", classroomNamesByTeacher.getOrDefault(t.getAccountId(), Collections.emptyList()));
                     return map;
@@ -431,6 +450,7 @@ public class ChatService {
                     map.put("read", m.isRead());
                     map.put("edited", m.isEdited());
                     map.put("messageType", m.getMessageType());
+                    map.put("replyToId", m.getReplyToId());
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -442,11 +462,11 @@ public class ChatService {
         Account sender = accountRepository.findById(request.getSenderId()).orElse(null);
         Account receiver = accountRepository.findById(request.getReceiverId()).orElse(null);
         if (sender != null && receiver != null) {
-            if (sender.getRole() == Role.TEACHER && receiver.getRole() == Role.PARENT) {
+            if (sender.getRoleType() == Account.RoleType.TEACHER && receiver.getRoleType() == Account.RoleType.PARENT) {
                 addContact(request.getReceiverId(), request.getSenderId());
-            } else if (sender.getRole() == Role.PARENT && receiver.getRole() == Role.TEACHER) {
+            } else if (sender.getRoleType() == Account.RoleType.PARENT && receiver.getRoleType() == Account.RoleType.TEACHER) {
                 addContact(request.getSenderId(), request.getReceiverId());
-            } else if (sender.getRole() == Role.TEACHER && receiver.getRole() == Role.TEACHER) {
+            } else if (sender.getRoleType() == Account.RoleType.TEACHER && receiver.getRoleType() == Account.RoleType.TEACHER) {
                 addTeacherContact(request.getSenderId(), request.getReceiverId());
             }
         }
@@ -461,21 +481,22 @@ public class ChatService {
                 .edited(false)
                 .deleted(false)
                 .messageType(type)
+                .replyToId(request.getReplyToId())
                 .build();
         ChatMessage saved = chatMessageRepository.save(msg);
 
         // Someone messaged the shared "School Admin" inbox — notify every real admin
         // account so whichever one is online sees it needs a reply.
         if (sender != null && receiver != null
-                && receiver.getRole() == Role.ADMIN
-                && sender.getRole() != Role.ADMIN) {
+                && receiver.getRoleType() == Account.RoleType.ADMIN
+                && sender.getRoleType() != Account.RoleType.ADMIN) {
             notifyAdminsOfNewMessage(sender);
         }
         return saved;
     }
 
     private void notifyAdminsOfNewMessage(Account sender) {
-        List<Account> admins = accountRepository.findByRole(Role.ADMIN);
+        List<Account> admins = accountRepository.findByRoleType(Account.RoleType.ADMIN);
         String title = "New message from " + sender.getFullName();
         for (Account admin : admins)
             notificationService.create(admin.getAccountId(), title, "Tap to reply in the School Admin inbox.", "/admin/adminmessages.html");

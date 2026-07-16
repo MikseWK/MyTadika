@@ -2,7 +2,6 @@ package com.mytadika.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 import java.time.LocalDateTime;
 
 @Entity
@@ -35,8 +34,10 @@ public class ChatMessage {
     @Column(nullable = false)
     private boolean deleted;
 
-    @Column(length = 10, nullable = false)
-    @ColumnDefault("'text'")
+    @Column(columnDefinition = "varchar(10) default 'text'")
     @Builder.Default
     private String messageType = "text";
+
+    @Column(name = "reply_to_id")
+    private Long replyToId;
 }

@@ -10,4 +10,5 @@ public class ChatMessageRequest {
     private String receiverId;
     private String content;
     private String messageType = "text";
+    private Long replyToId;
 }

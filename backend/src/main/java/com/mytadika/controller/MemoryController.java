@@ -19,9 +19,10 @@ public class MemoryController {
     public ResponseEntity<?> createPost(@RequestParam("classroomId") Long classroomId,
                                          @RequestParam("authorAccountId") String authorAccountId,
                                          @RequestParam(value = "caption", required = false) String caption,
-                                         @RequestParam("files") List<MultipartFile> files) {
+                                         @RequestParam("files") List<MultipartFile> files,
+                                         @RequestParam(value = "coverIndex", required = false) Integer coverIndex) {
         try {
-            return ResponseEntity.ok(memoryService.createPost(classroomId, authorAccountId, caption, files));
+            return ResponseEntity.ok(memoryService.createPost(classroomId, authorAccountId, caption, files, coverIndex));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
@@ -33,9 +34,10 @@ public class MemoryController {
     public ResponseEntity<?> editPost(@PathVariable Long id,
                                        @RequestParam(value = "caption", required = false) String caption,
                                        @RequestParam(value = "removeImageIds", required = false) List<Long> removeImageIds,
-                                       @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+                                       @RequestParam(value = "files", required = false) List<MultipartFile> files,
+                                       @RequestParam(value = "coverMediaId", required = false) Long coverMediaId) {
         try {
-            return ResponseEntity.ok(memoryService.editPost(id, caption, removeImageIds, files));
+            return ResponseEntity.ok(memoryService.editPost(id, caption, removeImageIds, files, coverMediaId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
