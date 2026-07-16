@@ -31,5 +31,6 @@ backend/h2-test.properties
 # Local file uploads (runtime data, not source)
 backend/uploads/
 
-# Teammate snapshot used for integration (not part of the repo)
+# Teammate snapshots used for integration (not part of the repo)
 latest teammate vers/
+teammate AI/
