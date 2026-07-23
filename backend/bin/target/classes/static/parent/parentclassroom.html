@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Classroom</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #fcf6e3;
+        }
+
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 40px -8px rgba(49, 47, 35, 0.15);
+        }
+
+        .tab-btn.active {
+            color: #312f23;
+            border-color: #ffd709;
+            font-weight: 700;
+        }
+
+        .modal-bg {
+            background: rgba(49, 47, 35, 0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            background: #312f23;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity .3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+    <!-- ── VIEW 1: CHILD SELECTION ──────────────────────────────────────────────── -->
+    <main id="view-list" class="ml-64 min-h-screen px-8 py-8" style="padding-top:88px">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-2xl font-black text-[#312f23] mb-1" style="font-family:'Plus Jakarta Sans',sans-serif">My
+                Children</h1>
+            <p class="text-stone-400 text-sm mb-8">Select a child to view their classrooms.</p>
+
+            <div id="list-loading" class="py-24 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 animate-spin">progress_activity</span>
+            </div>
+            <div id="list-empty" class="hidden py-24 flex flex-col items-center gap-4 text-stone-400">
+                <div class="w-20 h-20 rounded-full bg-stone-100 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-4xl">child_care</span>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-stone-500">No children linked yet.</p>
+                    <p class="text-sm mt-1">Contact your school admin to link your child's account.</p>
+                </div>
+                <a href="/parent/parentchatwithtecher.html?openAdmin=1"
+                    class="flex items-center gap-2 px-6 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all text-sm shadow-sm">
+                    <span class="material-symbols-outlined text-lg">admin_panel_settings</span>
+                    Message School Admin
+                </a>
+            </div>
+            <div id="children-grid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+        </div>
+    </main>
+
+    <!-- ── VIEW 2: CHILD'S CLASSROOMS ───────────────────────────────────────────── -->
+    <main id="view-child-classrooms" class="hidden ml-64 min-h-screen px-8 py-8" style="padding-top:88px">
+        <div class="max-w-4xl mx-auto">
+            <!-- Back + header -->
+            <button onclick="showList()"
+                class="flex items-center gap-1 text-stone-400 hover:text-[#312f23] text-sm font-medium transition-colors mb-6">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                My Children
+            </button>
+
+            <div class="flex items-center gap-4 mb-8">
+                <div id="child-avatar-2"
+                    class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span class="text-xl font-black text-white" id="child-initials-2"></span>
+                </div>
+                <div>
+                    <h1 id="child-name-2" class="text-2xl font-black text-[#312f23]"
+                        style="font-family:'Plus Jakarta Sans',sans-serif"></h1>
+                    <p class="text-stone-400 text-sm mt-0.5">Select a classroom to view details.</p>
+                </div>
+            </div>
+
+            <div id="classrooms-loading" class="py-24 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 animate-spin">progress_activity</span>
+            </div>
+            <div id="classrooms-empty" class="hidden py-16 flex flex-col items-center gap-4 text-stone-400">
+                <div class="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl">school</span>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold text-stone-500">Not enrolled in any classroom yet.</p>
+                    <p class="text-sm mt-1">Use a class code to join a classroom.</p>
+                </div>
+                <button id="join-from-empty-btn"
+                    class="flex items-center gap-2 px-6 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all text-sm shadow-sm">
+                    <span class="material-symbols-outlined text-lg">add</span>
+                    Join with Code
+                </button>
+            </div>
+            <div id="classrooms-grid" class="hidden grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+        </div>
+    </main>
+
+    <!-- ── VIEW 3: CLASSROOM DETAIL ─────────────────────────────────────────────── -->
+    <div id="view-detail" class="hidden ml-64 min-h-screen flex flex-col">
+
+        <!-- Banner -->
+        <div id="detail-header" class="px-8 pb-10 text-white flex flex-col" style="padding-top:72px; min-height:260px">
+            <div class="flex items-center mb-4">
+                <button onclick="goBackFromDetail()"
+                    class="flex items-center gap-1 text-white/80 hover:text-white text-sm font-medium transition-colors">
+                    <span class="material-symbols-outlined text-base">arrow_back</span>
+                    <span id="detail-back-label">My Children</span>
+                </button>
+            </div>
+            <h1 id="detail-name" class="text-3xl font-black leading-tight"
+                style="font-family:'Plus Jakarta Sans',sans-serif"></h1>
+            <p id="detail-section" class="text-white/80 text-sm mt-1"></p>
+            <button onclick="openTeacherInfoModal()" id="detail-teacher-btn" class="hidden flex items-center gap-2 mt-3 hover:opacity-80 transition-opacity text-left">
+                <div id="detail-teacher-avatar"
+                    class="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <span class="material-symbols-outlined text-sm"
+                        style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>
+                </div>
+                <span id="detail-teacher-name" class="text-white/90 text-sm font-medium"></span>
+                <span class="material-symbols-outlined text-white/70 text-base">info</span>
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white border-b border-stone-200 px-8 flex sticky top-0 z-20 shadow-sm">
+            <button onclick="switchTab('stream')" id="tab-btn-stream"
+                class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">Stream</button>
+            <button onclick="switchTab('classwork')" id="tab-btn-classwork"
+                class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">Classwork</button>
+            <button onclick="switchTab('people')" id="tab-btn-people"
+                class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">People</button>
+        </div>
+
+        <div id="tab-content" class="flex-1 py-8 px-8 max-w-3xl mx-auto w-full"></div>
+    </div>
+
+    <!-- ── JOIN MODAL ─────────────────────────────────────────────────────────── -->
+    <div id="join-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-lg font-black text-[#312f23] mb-1" style="font-family:'Plus Jakarta Sans',sans-serif">Join a
+                Classroom</h2>
+            <p id="join-child-label" class="text-sm text-stone-400 mb-5"></p>
+            <label class="block text-xs font-bold text-stone-500 mb-1">Class Code</label>
+            <input id="join-code-input" type="text" placeholder="e.g. 07151885"
+                class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] mb-1 uppercase tracking-widest"
+                onkeydown="if(event.key==='Enter') submitJoin()">
+            <p id="join-error" class="hidden text-xs text-red-500 mb-3"></p>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeJoinModal()"
+                    class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">Cancel</button>
+                <button id="join-submit-btn" onclick="submitJoin()"
+                    class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TEACHER INFO MODAL ────────────────────────────────────────────────── -->
+    <div id="teacher-info-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Teacher Details</h2>
+                <button onclick="closeTeacherInfoModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                    <span class="material-symbols-outlined text-lg">close</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-4 mb-5">
+                <div id="ti-avatar" class="w-16 h-16 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-xl font-black text-[#6c5a00] overflow-hidden flex-shrink-0"></div>
+                <div class="min-w-0">
+                    <h3 id="ti-name" class="text-lg font-black text-[#312f23] truncate"></h3>
+                    <p id="ti-focus" class="text-xs text-stone-400"></p>
+                </div>
+            </div>
+            <div id="ti-rows" class="space-y-2"></div>
+            <p id="ti-description" class="text-sm text-stone-500 leading-relaxed mt-4"></p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── State ─────────────────────────────────────────────────────────────────
+        let myAccountId = null;
+        let childrenCache = {};
+        let currentChildId = null;
+        let currentClassroomId = null;
+        let joiningChildId = null;
+        let activeTab = 'stream';
+        let pendingOpenAssignmentId = null;
+        let pendingOpenAnnouncementId = null;
+
+        const COLOR_MAP = {
+            indigo: '#4f46e5', emerald: '#059669', violet: '#7c3aed',
+            rose: '#e11d48', amber: '#d97706', sky: '#0284c7', teal: '#0d9488'
+        };
+        function hexOf(c) { return COLOR_MAP[c] || COLOR_MAP.indigo; }
+        function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        // For values embedded as single-quoted JS string args inside a double-quoted onclick="" attribute:
+        // escape backslashes/single-quotes for the JS layer, then double-quotes for the HTML layer.
+        function jsAttr(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+        function initials(n) { return (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
+        function formatDueDate(iso) {
+            const d = new Date(iso + 'T00:00:00');
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const diff = Math.round((d - today) / 86400000);
+            if (diff < 0) return { label: 'Overdue!', color: '#dc2626' };
+            if (diff === 0) return { label: 'Check today!', color: '#dc2626' };
+            if (diff === 1) return { label: 'Check tomorrow', color: '#ea580c' };
+            if (diff <= 3) return { label: `Check in ${diff} days`, color: '#d97706' };
+            if (diff <= 7) return { label: `In ${diff} days`, color: null };
+            return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), color: null };
+        }
+        function renderUpcomingWork(work, totalUpcoming, hex, moreClick, makeItemClick) {
+            if (!work || work.length === 0) return `
+                <div class="mx-5 mt-2 mb-3 pt-2 border-t border-stone-100 text-xs text-stone-300 italic">No upcoming work</div>`;
+            const items = work.map(w => {
+                const due = formatDueDate(w.dueDate);
+                const dueStyle = due.color ? `color:${due.color};font-weight:600` : 'color:#a8a29e';
+                const onclick = makeItemClick ? `onclick='event.stopPropagation();${makeItemClick(w.id)}'` : '';
+                const hoverClass = makeItemClick ? 'cursor-pointer hover:bg-stone-50 rounded-lg -mx-1 px-1 transition-colors' : '';
+                return `
+                <div ${onclick} class="flex items-center gap-2 py-1 ${hoverClass}">
+                    <span class="material-symbols-outlined text-sm flex-shrink-0" style="color:${hex}">assignment</span>
+                    <span class="flex-1 min-w-0 text-xs text-stone-600 truncate font-medium">${esc(w.title)}</span>
+                    <span class="text-xs flex-shrink-0 whitespace-nowrap" style="${dueStyle}">${due.label}</span>
+                </div>`;
+            }).join('');
+            const extra = (totalUpcoming || 0) - work.length;
+            const moreLink = extra > 0 ? `
+                <button onclick="event.stopPropagation();${moreClick}" class="mt-1 text-xs font-semibold hover:underline" style="color:${hex}">
+                    +${extra} more →
+                </button>` : '';
+            return `<div class="mx-5 mt-2 mb-3 pt-2 border-t border-stone-100">${items}${moreLink}</div>`;
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2800);
+        }
+        function showErr(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg; el.classList.remove('hidden');
+        }
+        function hideErr(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // ── Views ─────────────────────────────────────────────────────────────────
+        function showList() {
+            document.getElementById('view-list').classList.remove('hidden');
+            document.getElementById('view-child-classrooms').classList.add('hidden');
+            document.getElementById('view-detail').classList.add('hidden');
+            currentChildId = null;
+            currentClassroomId = null;
+        }
+
+        async function goBackFromDetail() {
+            const childId = currentChildId;
+            // Switch view immediately using cached data — no waiting
+            showChildClassrooms(childId);
+            // Refresh data silently in the background
+            try {
+                const res = await fetch(`/api/student/by-parent/${myAccountId}`);
+                const list = res.ok ? await res.json() : [];
+                childrenCache = {};
+                list.forEach(c => { childrenCache[c.id] = c; });
+                document.getElementById('children-grid').innerHTML = list.map(renderChildCard).join('');
+                // Re-render classrooms grid if still on the same child's view
+                if (currentChildId === childId && !document.getElementById('view-child-classrooms').classList.contains('hidden')) {
+                    showChildClassrooms(childId);
+                }
+            } catch (e) { /* keep cached data on error */ }
+        }
+
+        function showChildClassrooms(childId) {
+            const child = childrenCache[childId];
+            if (!child) return;
+            currentChildId = childId;
+            currentClassroomId = null;
+
+            const avatarEl = document.getElementById('child-avatar-2');
+            const avatarBg = child.gender === 'FEMALE' ? 'bg-rose-400' : 'bg-sky-500';
+            avatarEl.className = `w-14 h-14 rounded-2xl ${avatarBg} flex items-center justify-center flex-shrink-0 shadow-sm`;
+            document.getElementById('child-initials-2').textContent = initials(child.fullName);
+            document.getElementById('child-name-2').textContent = child.fullName;
+            document.getElementById('detail-back-label').textContent = child.fullName + "'s Classrooms";
+
+            document.getElementById('classrooms-loading').classList.add('hidden');
+            document.getElementById('classrooms-empty').classList.add('hidden');
+            document.getElementById('classrooms-grid').classList.add('hidden');
+
+            const classrooms = child.classrooms || [];
+            if (classrooms.length > 0) {
+                document.getElementById('classrooms-grid').classList.remove('hidden');
+                document.getElementById('classrooms-grid').innerHTML = classrooms.map(c => renderClassroomCard(child.id, c)).join('')
+                    + renderJoinClassroomCard(childId);
+            } else {
+                document.getElementById('classrooms-empty').classList.remove('hidden');
+                document.getElementById('join-from-empty-btn').onclick = () => openJoinModal(childId, child.fullName);
+            }
+
+            document.getElementById('view-list').classList.add('hidden');
+            document.getElementById('view-detail').classList.add('hidden');
+            document.getElementById('view-child-classrooms').classList.remove('hidden');
+        }
+
+        function renderJoinClassroomCard(childId) {
+            return `
+    <div class="bg-white rounded-2xl shadow-sm border-2 border-dashed border-stone-200 overflow-hidden card-hover cursor-pointer" onclick="openJoinModal(${childId}, childrenCache[${childId}].fullName)">
+        <div class="p-5 flex flex-col items-center justify-center gap-3 text-stone-400 min-h-[100px]">
+            <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">add</span>
+            </div>
+            <div class="text-center">
+                <p class="font-bold text-stone-500 text-sm">Join Another Classroom</p>
+                <p class="text-xs mt-0.5">Enter a class code</p>
+            </div>
+        </div>
+    </div>`;
+        }
+
+        let currentClassroomData = null;
+
+        function showDetail(childId, classroom, initialTab = 'stream') {
+            currentChildId = childId;
+            currentClassroomId = classroom.id;
+            currentClassroomData = classroom;
+
+            const hex = hexOf(classroom.color);
+            document.getElementById('detail-header').style.background = hex;
+            document.getElementById('detail-name').textContent = classroom.name || '—';
+            document.getElementById('detail-section').textContent = classroom.section || '';
+
+            const teacherAvatar = document.getElementById('detail-teacher-avatar');
+            if (classroom.teacherImage) {
+                teacherAvatar.innerHTML = `<img src="${esc(classroom.teacherImage)}" class="w-full h-full object-cover" alt="">`;
+            } else {
+                teacherAvatar.innerHTML = `<span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>`;
+            }
+            document.getElementById('detail-teacher-name').textContent = classroom.teacherName ? `Teacher: ${classroom.teacherName}` : '';
+            document.getElementById('detail-teacher-btn').classList.toggle('hidden', !classroom.teacherName);
+
+            document.getElementById('view-list').classList.add('hidden');
+            document.getElementById('view-child-classrooms').classList.add('hidden');
+            document.getElementById('view-detail').classList.remove('hidden');
+            switchTab(initialTab);
+        }
+
+        // ── Teacher info modal ───────────────────────────────────────────────────
+        function openTeacherInfoModal() {
+            const c = currentClassroomData;
+            if (!c || !c.teacherName) return;
+            showTeacherInfoModal({
+                name: c.teacherName, image: c.teacherImage, email: c.teacherEmail,
+                phone: c.teacherPhone, qualification: c.teacherQualification,
+                experience: c.teacherExperience, focusArea: c.teacherFocusArea,
+                description: c.teacherDescription
+            });
+        }
+
+        // Full teacher directory (email/phone/qualification/etc for every teacher, not just
+        // this classroom's owner) — used so co-teachers in the People tab are clickable too.
+        let teacherDirectory = {};
+        async function loadTeacherDirectory() {
+            try {
+                const res = await fetch('/api/chat/teachers');
+                const list = res.ok ? await res.json() : [];
+                teacherDirectory = {};
+                list.forEach(t => { teacherDirectory[t.accountId] = t; });
+            } catch (e) { teacherDirectory = {}; }
+        }
+
+        function openTeacherInfoModalByAccountId(accountId, fallbackName, fallbackImage) {
+            const t = teacherDirectory[accountId];
+            showTeacherInfoModal({
+                name: (t && t.fullName) || fallbackName,
+                image: (t && t.profileImageUrl) || fallbackImage,
+                email: t && t.email, phone: t && t.phoneNumber,
+                qualification: t && t.qualification, experience: t && t.experience,
+                focusArea: t && t.focusArea, description: t && t.description
+            });
+        }
+
+        function showTeacherInfoModal(t) {
+            if (!t || !t.name) return;
+            document.getElementById('ti-avatar').innerHTML = t.image
+                ? `<img src="${esc(t.image)}" class="w-full h-full object-cover" alt="">`
+                : esc(initials(t.name));
+            document.getElementById('ti-name').textContent = t.name;
+            document.getElementById('ti-focus').textContent = t.focusArea || 'Teacher';
+
+            const infoRow = (icon, label, value) => `
+                <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+                    <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                        <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+                    </div>
+                </div>`;
+            const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+            if (t.phone) rows.push(infoRow('call', 'Phone', t.phone));
+            if (t.qualification) rows.push(infoRow('school', 'Qualification', t.qualification));
+            if (t.experience) rows.push(infoRow('history_edu', 'Experience', t.experience));
+            document.getElementById('ti-rows').innerHTML = rows.join('');
+            document.getElementById('ti-description').textContent = t.description || '';
+
+            document.getElementById('teacher-info-modal').classList.remove('hidden');
+        }
+        function closeTeacherInfoModal() { document.getElementById('teacher-info-modal').classList.add('hidden'); }
+
+        function showDetailToClasswork(childId, classroom) {
+            showDetail(childId, classroom, 'classwork');
+        }
+
+        function openClassworkItem(childId, classroomId, assignmentId) {
+            const child = childrenCache[childId];
+            const classroom = child?.classrooms?.find(c => c.id === classroomId);
+            if (!classroom) return;
+            pendingOpenAssignmentId = assignmentId;
+            showDetail(childId, classroom, 'classwork');
+        }
+
+        // ── Classroom card for a child ─────────────────────────────────────────────
+        function renderClassroomCard(childId, classroom) {
+            const hex = hexOf(classroom.color);
+            // Free-text fields (teacher bio, etc.) can contain apostrophes, which would otherwise
+            // break out of this single-quoted onclick attribute — escape them as HTML entities so
+            // the browser restores the literal ' before the onclick JS ever runs.
+            const classroomJson = JSON.stringify(classroom).replace(/&/g, '&amp;').replace(/'/g, '&#39;');
+            return `
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden card-hover cursor-pointer"
+         onclick='showDetail(${childId}, ${classroomJson})'>
+        <div class="h-3" style="background:${hex}"></div>
+        <div class="p-5">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 text-white font-black text-lg shadow-sm"
+                     style="background:${hex}">
+                    ${esc(initials(classroom.name))}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-black text-stone-800 text-base leading-tight" style="font-family:'Plus Jakarta Sans',sans-serif">
+                        ${esc(classroom.name)}
+                    </h3>
+                    ${classroom.section ? `<p class="text-xs text-stone-400 mt-0.5">Section: ${esc(classroom.section)}</p>` : ''}
+                    ${classroom.teacherName ? `<p class="text-xs text-stone-400 mt-1">Teacher: ${esc(classroom.teacherName)}</p>` : ''}
+                </div>
+                <span class="material-symbols-outlined text-stone-300 flex-shrink-0">chevron_right</span>
+            </div>
+            ${renderUpcomingWork(classroom.upcomingWork, classroom.totalUpcoming, hex,
+                `showDetailToClasswork(${childId}, ${classroomJson})`,
+                id => `openClassworkItem(${childId}, ${classroom.id}, ${id})`
+            )}
+            <div class="px-5 pb-5">
+                <button onclick='event.stopPropagation(); showDetail(${childId}, ${classroomJson})'
+                    class="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+                    style="background:${hex}">
+                    Open Classroom
+                </button>
+            </div>
+        </div>
+    </div>`;
+        }
+
+        // ── Tabs ──────────────────────────────────────────────────────────────────
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-btn-${tab}`).classList.add('active');
+            loadTab(tab);
+        }
+        async function loadTab(tab) {
+            const el = document.getElementById('tab-content');
+            el.innerHTML = '<div class="py-12 flex justify-center"><span class="material-symbols-outlined text-3xl text-stone-300 animate-spin">progress_activity</span></div>';
+            try {
+                const url = tab === 'classwork' && currentChildId
+                    ? `/api/classroom/${currentClassroomId}/classwork?studentId=${currentChildId}`
+                    : `/api/classroom/${currentClassroomId}/${tab}`;
+                const res = await fetch(url);
+                const data = res.ok ? await res.json() : null;
+                if (!data) { el.innerHTML = '<p class="text-stone-400 text-sm text-center py-12">Failed to load.</p>'; return; }
+                if (tab === 'stream') {
+                    el.innerHTML = renderStream(data);
+                    // Mark all announcements as seen by this parent
+                    const myId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+                    if (myId) fetch(`/api/classroom/${currentClassroomId}/stream/viewed`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ accountId: myId })
+                    });
+                    if (pendingOpenAnnouncementId !== null) {
+                        const target = el.querySelector(`[data-id="${pendingOpenAnnouncementId}"]`);
+                        if (target) {
+                            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+                            target.classList.add('ring-2', 'ring-[#ffd709]');
+                            setTimeout(() => target.classList.remove('ring-2', 'ring-[#ffd709]'), 2500);
+                        }
+                        pendingOpenAnnouncementId = null;
+                    }
+                }
+                if (tab === 'classwork') {
+                    el.innerHTML = renderClasswork(data);
+                    if (pendingOpenAssignmentId !== null) {
+                        const target = el.querySelector(`details[data-id="${pendingOpenAssignmentId}"]`);
+                        if (target) {
+                            target.open = true;
+                            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+                        }
+                        pendingOpenAssignmentId = null;
+                    }
+                }
+                if (tab === 'people') el.innerHTML = renderPeople(data);
+            } catch (e) { el.innerHTML = '<p class="text-stone-400 text-sm text-center py-12">Failed to load.</p>'; }
+        }
+
+        // ── Stream ────────────────────────────────────────────────────────────────
+        const TOPIC_COLORS = {
+            'General': { bg: 'bg-stone-100', text: 'text-stone-500' },
+            'Bahasa Melayu': { bg: 'bg-blue-100', text: 'text-blue-700' },
+            'English': { bg: 'bg-sky-100', text: 'text-sky-700' },
+            'Math': { bg: 'bg-violet-100', text: 'text-violet-700' },
+            'Science': { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+            'Creative Arts': { bg: 'bg-rose-100', text: 'text-rose-700' },
+            'Physical Education': { bg: 'bg-orange-100', text: 'text-orange-700' },
+            // Legacy topics kept so older posts still render a color instead of falling back to gray.
+            'Art & Craft': { bg: 'bg-rose-100', text: 'text-rose-700' },
+            'Music': { bg: 'bg-purple-100', text: 'text-purple-700' },
+            'Islamic Studies': { bg: 'bg-teal-100', text: 'text-teal-700' },
+            'Moral Education': { bg: 'bg-amber-100', text: 'text-amber-700' },
+        };
+        function topicBadge(topic) {
+            const t = topic || 'General';
+            const c = TOPIC_COLORS[t] || { bg: 'bg-stone-100', text: 'text-stone-500' };
+            return `<span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${c.bg} ${c.text}">${esc(t)}</span>`;
+        }
+
+        let allStreamPosts = [];
+        let streamFilterTopic = 'All';
+
+        function renderStream(announcements) {
+            allStreamPosts = announcements;
+            streamFilterTopic = 'All';
+            return buildStreamHtml();
+        }
+
+        function buildStreamHtml() {
+            const filtered = streamFilterTopic === 'All'
+                ? allStreamPosts
+                : allStreamPosts.filter(a => (a.topic || 'General') === streamFilterTopic);
+
+            const usedTopics = [...new Set(allStreamPosts.map(a => a.topic || 'General'))];
+            const filterPills = ['All', ...usedTopics].map(t => `
+                <button onclick="setStreamFilter('${esc(t)}')"
+                    class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${streamFilterTopic === t
+                    ? 'bg-[#ffd709] text-[#6c5a00] border-[#ffd709]'
+                    : 'bg-white text-stone-500 border-stone-200 hover:border-[#ffd709]'}">${esc(t)}</button>`).join('');
+
+            if (!allStreamPosts.length) return `
+                <div class="py-16 text-center text-stone-400">
+                    <span class="material-symbols-outlined text-5xl mb-3 block">campaign</span>
+                    <p class="font-semibold">No announcements yet.</p>
+                </div>`;
+
+            return `
+                ${allStreamPosts.length > 0 ? `<div class="flex gap-2 flex-wrap mb-5">${filterPills}</div>` : ''}
+                ${filtered.length ? filtered.map(a => `
+                <div data-id="${a.id}" class="rounded-2xl border shadow-sm p-5 mb-4 ${a.pinned ? 'bg-amber-50 border-amber-200' : 'bg-white border-stone-100'}">
+                    ${a.pinned ? `<div class="flex items-center gap-1 text-amber-600 text-xs font-bold mb-2"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">push_pin</span> Pinned</div>` : ''}
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-9 h-9 rounded-full bg-[#ffd709] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            ${a.authorImage
+                    ? `<img src="${esc(a.authorImage)}" class="w-full h-full object-cover rounded-full" alt="">`
+                    : `<span class="text-xs font-black text-[#6c5a00]">${esc(initials(a.authorName))}</span>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <p class="font-bold text-stone-700 text-sm">${esc(a.authorName || 'Teacher')}</p>
+                                ${topicBadge(a.topic)}
+                            </div>
+                            <p class="text-xs text-stone-400">${esc(a.createdAt || '')}</p>
+                        </div>
+                    </div>
+                    ${a.title ? `<p class="font-bold text-stone-800 text-sm mb-1">${esc(a.title)}</p>` : ''}
+                    <p class="text-stone-700 text-sm leading-relaxed whitespace-pre-line">${esc(a.content)}</p>
+                    ${a.imageUrl ? `<img src="${esc(a.imageUrl)}" alt="" class="mt-3 rounded-xl max-w-full max-h-72 object-cover border border-stone-100 cursor-zoom-in hover:opacity-90 transition-opacity" onclick="openImageLightbox(this.src)">` : ''}
+                </div>`).join('') : `
+                <div class="py-12 text-center text-stone-400">
+                    <span class="material-symbols-outlined text-4xl mb-2 block">filter_list</span>
+                    <p class="font-semibold text-sm">No posts in this topic.</p>
+                </div>`}`;
+        }
+
+        function setStreamFilter(topic) {
+            streamFilterTopic = topic;
+            document.getElementById('tab-content').innerHTML = buildStreamHtml();
+        }
+
+        // ── Classwork ─────────────────────────────────────────────────────────────
+        let cwView = 'list'; // 'list' | 'calendar'
+        let cwFilterTopic = 'All';
+        let allAssignments = [];
+        let cwCalDate = new Date(); // month currently shown in the classwork calendar
+
+        function renderClasswork(assignments) {
+            allAssignments = assignments;
+            cwFilterTopic = 'All';
+            cwCalDate = new Date();
+            return buildClassworkHtml();
+        }
+
+        function buildClassworkHtml() {
+            if (!allAssignments.length) return `
+                <div class="py-16 text-center text-stone-400">
+                    <span class="material-symbols-outlined text-5xl mb-3 block">assignment</span>
+                    <p class="font-semibold">No activities yet.</p>
+                </div>`;
+
+            const topics = [...new Set(allAssignments.map(a => a.topic || 'General'))];
+            const filtered = cwFilterTopic === 'All' ? allAssignments : allAssignments.filter(a => (a.topic || 'General') === cwFilterTopic);
+
+            const filterPills = ['All', ...topics].map(t => `
+                <button onclick="setCwFilter('${esc(t)}')"
+                    class="px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${cwFilterTopic === t
+                    ? 'bg-[#ffd709] text-[#6c5a00] border-[#ffd709]'
+                    : 'bg-white text-stone-500 border-stone-200 hover:border-[#ffd709]'}">${esc(t)}</button>`).join('');
+
+            const viewToggle = `
+                <div class="flex items-center gap-1 bg-stone-100 rounded-xl p-1">
+                    <button onclick="setCwView('list')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${cwView === 'list' ? 'bg-white text-stone-700 shadow-sm' : 'text-stone-400'}">
+                        <span class="material-symbols-outlined text-sm">list</span> List
+                    </button>
+                    <button onclick="setCwView('calendar')" class="px-3 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${cwView === 'calendar' ? 'bg-white text-stone-700 shadow-sm' : 'text-stone-400'}">
+                        <span class="material-symbols-outlined text-sm">calendar_month</span> Calendar
+                    </button>
+                </div>`;
+
+            const toolbar = `<div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+                <div class="flex gap-2 flex-wrap">${filterPills}</div>
+                ${viewToggle}
+            </div>`;
+
+            return toolbar + (cwView === 'calendar' ? buildCalendarHtml(filtered) : buildListHtml(filtered));
+        }
+
+        function buildListHtml(items) {
+            if (!items.length) return `<div class="py-12 text-center text-stone-400 text-sm">No activities in this subject.</div>`;
+            const groups = {};
+            items.forEach(a => { const t = a.topic || 'General'; (groups[t] = groups[t] || []).push(a); });
+            return Object.entries(groups).map(([topic, list]) => `
+                <div class="mb-6">
+                    <h3 class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">${esc(topic)}</h3>
+                    ${list.map(a => assignmentCard(a)).join('')}
+                </div>`).join('');
+        }
+
+        function assignmentCard(a) {
+            const done = !!a.completed;
+            const dueInfo = a.dueDate ? (() => { const due = formatDueDate(a.dueDate); return `<span style="${due.color ? 'color:' + due.color + ';font-weight:600' : 'color:#a8a29e'}">${due.label}</span>`; })() : '';
+            return `
+            <details data-id="${a.id}" class="bg-white rounded-2xl border mb-2 overflow-hidden group transition-colors ${done ? 'border-emerald-200 bg-emerald-50/30' : 'border-stone-100 shadow-sm'}">
+                <summary class="flex items-center gap-3 px-5 py-4 cursor-pointer list-none">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-100' : 'bg-amber-100'}">
+                        <span class="material-symbols-outlined text-base ${done ? 'text-emerald-600' : 'text-amber-600'}"
+                              style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">${done ? 'task_alt' : 'assignment'}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm ${done ? 'text-stone-400 line-through' : 'text-stone-700'}">${esc(a.title)}</p>
+                        ${a.dueDate && !done ? `<p class="text-xs mt-0.5">${dueInfo}</p>` : ''}
+                    </div>
+                    <span class="material-symbols-outlined text-stone-300 text-base group-open:rotate-180 transition-transform flex-shrink-0">expand_more</span>
+                </summary>
+                <div class="px-5 pb-5 pt-3 border-t ${done ? 'border-emerald-100' : 'border-stone-50'}">
+                    ${a.description ? `<p class="text-sm text-stone-500 leading-relaxed mb-4">${esc(a.description)}</p>` : ''}
+                    <button onclick="toggleDone(${a.id}, ${done})"
+                        class="w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${done ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-stone-100 text-stone-600 hover:bg-emerald-100 hover:text-emerald-700'}">
+                        <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' ${done ? 1 : 0},'wght' 400,'GRAD' 0,'opsz' 24">task_alt</span>
+                        ${done ? 'Marked as Done' : 'Mark as Done'}
+                    </button>
+                </div>
+            </details>`;
+        }
+
+        function buildCalendarHtml(items) {
+            const now = new Date();
+            const year = cwCalDate.getFullYear(), month = cwCalDate.getMonth();
+            const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthName = cwCalDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+            // Build a map: "YYYY-MM-DD" -> [assignments]
+            const byDate = {};
+            items.forEach(a => { if (a.dueDate) { (byDate[a.dueDate] = byDate[a.dueDate] || []).push(a); } });
+
+            const pad = n => String(n).padStart(2, '0');
+            let cells = '';
+            // Empty cells before first day (week starts Sunday)
+            for (let i = 0; i < firstDay; i++) cells += `<div></div>`;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const iso = `${year}-${pad(month + 1)}-${pad(d)}`;
+                const dayItems = byDate[iso] || [];
+                const isToday = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+                const hasDue = dayItems.length > 0;
+                cells += `
+                <div class="min-h-[52px] rounded-xl p-1 ${isToday ? 'bg-[#ffd709]/20 ring-2 ring-[#ffd709]' : hasDue ? 'bg-white border border-stone-100' : ''}" style="overflow:visible">
+                    <p class="text-xs font-bold text-center mb-1 ${isToday ? 'text-[#6c5a00]' : 'text-stone-500'}">${d}</p>
+                    ${dayItems.slice(0, 2).map(a => {
+                    const done = !!a.completed;
+                    return `<div onclick="pendingOpenAssignmentId=${a.id};switchTab('classwork')"
+                            class="relative group text-[10px] leading-tight px-1 py-0.5 rounded mb-0.5 truncate cursor-pointer hover:opacity-80 transition-opacity ${done ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}" style="overflow:visible">
+                            ${esc(a.title)}
+                            <div class="absolute z-50 bottom-full left-0 mb-1 hidden group-hover:block pointer-events-none" style="min-width:160px;max-width:200px">
+                                <div style="background:#1c1917;color:#fff;border-radius:10px;padding:8px 10px;font-size:11px;line-height:1.4;white-space:normal;box-shadow:0 8px 24px rgba(0,0,0,.25)">
+                                    <p style="font-weight:700;margin-bottom:${a.description ? '4px' : '0'}">${esc(a.title)}</p>
+                                    ${a.description ? `<p style="color:#a8a29e">${esc(a.description)}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>`;
+                }).join('')}
+                    ${dayItems.length > 2 ? `<div class="text-[10px] text-stone-400 px-1">+${dayItems.length - 2} more</div>` : ''}
+                </div>`;
+            }
+
+            return `
+            <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="changeCwMonth(-1)" class="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors">
+                        <span class="material-symbols-outlined text-lg">chevron_left</span>
+                    </button>
+                    <button onclick="resetCwMonth()" class="text-sm font-bold text-stone-700 hover:text-[#6c5a00] transition-colors">${monthName}</button>
+                    <button onclick="changeCwMonth(1)" class="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors">
+                        <span class="material-symbols-outlined text-lg">chevron_right</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 gap-1 mb-2">
+                    ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => `<div class="text-[10px] font-bold text-stone-400 text-center">${d}</div>`).join('')}
+                </div>
+                <div class="grid grid-cols-7 gap-1" style="overflow:visible">${cells}</div>
+            </div>
+            ${items.filter(a => a.dueDate).length ? `
+            <div class="mt-4">
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">${monthName} activities</p>
+                ${items.filter(a => { if (!a.dueDate) return false; const d = new Date(a.dueDate + 'T00:00:00'); return d.getFullYear() === year && d.getMonth() === month; })
+                        .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+                        .map(a => assignmentCard(a)).join('')}
+            </div>` : ''}`;
+        }
+
+        function setCwFilter(topic) {
+            cwFilterTopic = topic;
+            document.getElementById('tab-content').innerHTML = buildClassworkHtml();
+        }
+        function setCwView(view) {
+            cwView = view;
+            document.getElementById('tab-content').innerHTML = buildClassworkHtml();
+        }
+        function changeCwMonth(delta) {
+            cwCalDate = new Date(cwCalDate.getFullYear(), cwCalDate.getMonth() + delta, 1);
+            document.getElementById('tab-content').innerHTML = buildClassworkHtml();
+        }
+        function resetCwMonth() {
+            cwCalDate = new Date();
+            document.getElementById('tab-content').innerHTML = buildClassworkHtml();
+        }
+
+        async function toggleDone(assignmentId, currentlyDone) {
+            const studentId = currentChildId;
+            if (!studentId) return;
+            const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+            try {
+                if (currentlyDone) {
+                    await fetch(`/api/classroom/assignments/${assignmentId}/done?studentId=${studentId}`, { method: 'DELETE' });
+                } else {
+                    await fetch(`/api/classroom/assignments/${assignmentId}/done`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ studentId, markedBy: myAccountId })
+                    });
+                }
+                loadTab('classwork');
+            } catch (e) { console.error('toggleDone error', e); }
+        }
+
+        // ── People ────────────────────────────────────────────────────────────────
+        function renderPeople(data) {
+            const { teachers = [], students = [] } = data;
+            function row(p) {
+                const genderColor = p.gender === 'FEMALE' ? 'bg-rose-400' : p.studentId ? 'bg-sky-500' : 'bg-[#6c5a00]';
+                const av = p.image
+                    ? `<img src="${esc(p.image)}" class="w-full h-full object-cover" alt="">`
+                    : `<span class="text-sm font-bold text-white">${esc(initials(p.studentName || p.name || '?'))}</span>`;
+                const displayName = p.studentName || p.name || '—';
+                const sub = p.studentCode
+                    ? `<p class="text-xs text-stone-400">${esc(p.studentCode)} · Parent: ${esc(p.parentName || '')}</p>`
+                    : '';
+                return `<div class="flex items-center gap-3 py-3 border-b border-stone-50 last:border-0">
+            <div class="w-10 h-10 rounded-full ${genderColor} flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-stone-700 text-sm">${esc(displayName)}</p>
+                ${sub}
+            </div>
+        </div>`;
+            }
+            function teacherRow(p) {
+                const av = p.image
+                    ? `<img src="${esc(p.image)}" class="w-full h-full object-cover" alt="">`
+                    : `<span class="text-sm font-bold text-white">${esc(initials(p.name || '?'))}</span>`;
+                return `<button onclick="openTeacherInfoModalByAccountId('${jsAttr(p.accountId)}', '${jsAttr(p.name)}', '${jsAttr(p.image || '')}')"
+            class="w-full flex items-center gap-3 py-3 border-b border-stone-50 last:border-0 hover:bg-stone-50 transition-colors text-left rounded-lg -mx-2 px-2">
+            <div class="w-10 h-10 rounded-full bg-[#6c5a00] flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-stone-700 text-sm">${esc(p.name || '—')}</p>
+                <p class="text-xs text-stone-400">Tap to view details</p>
+            </div>
+            <span class="material-symbols-outlined text-stone-300 flex-shrink-0">chevron_right</span>
+        </button>`;
+            }
+            return `
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#6c5a00]">person</span>
+            <h3 class="font-bold text-stone-700">Teacher</h3>
+        </div>
+        <div class="px-6">
+            ${teachers.length ? teachers.map(teacherRow).join('') : '<p class="text-stone-400 text-sm py-4">No teacher info.</p>'}
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#6c5a00]">group</span>
+            <h3 class="font-bold text-stone-700">Classmates</h3>
+            <span class="ml-auto text-xs text-stone-400">${students.length}</span>
+        </div>
+        <div class="px-6">
+            ${students.length ? students.map(row).join('') : '<p class="text-stone-400 text-sm py-4">No students yet.</p>'}
+        </div>
+    </div>`;
+        }
+
+        // ── Children list ─────────────────────────────────────────────────────────
+        async function loadChildren() {
+            myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+            if (!myAccountId) return;
+            try {
+                const res = await fetch(`/api/student/by-parent/${myAccountId}`);
+                const list = res.ok ? await res.json() : [];
+                document.getElementById('list-loading').classList.add('hidden');
+                if (!list.length) { document.getElementById('list-empty').classList.remove('hidden'); return; }
+                list.forEach(c => { childrenCache[c.id] = c; });
+                document.getElementById('children-grid').classList.remove('hidden');
+                document.getElementById('children-grid').innerHTML = list.map(renderChildCard).join('');
+            } catch (e) {
+                console.error('loadChildren error:', e);
+                document.getElementById('list-loading').classList.add('hidden');
+                document.getElementById('list-empty').classList.remove('hidden');
+            }
+        }
+
+        function renderChildCard(c) {
+            const avatarBg = c.gender === 'FEMALE' ? 'bg-rose-400' : 'bg-sky-500';
+            const classrooms = c.classrooms || [];
+            const classroomInfo = classrooms.length === 0
+                ? 'No classroom yet'
+                : `<span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-xs">school</span>${classrooms.length} classroom${classrooms.length !== 1 ? 's' : ''}</span>`;
+            return `
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden card-hover cursor-pointer"
+         onclick="showChildClassrooms(${c.id})">
+        <div class="p-5 flex gap-4 items-center">
+            <div class="w-14 h-14 rounded-2xl ${avatarBg} flex items-center justify-center flex-shrink-0 shadow-sm">
+                <span class="text-xl font-black text-white">${esc(initials(c.fullName))}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="font-black text-stone-800 text-base leading-tight" style="font-family:'Plus Jakarta Sans',sans-serif">${esc(c.fullName)}</h3>
+                <span class="inline-block text-xs font-mono text-stone-400 bg-stone-100 rounded-full px-2 py-0.5 mt-1">${esc(c.studentCode)}</span>
+                <p class="text-xs text-stone-400 mt-1.5">${classroomInfo}</p>
+            </div>
+            <span class="material-symbols-outlined text-stone-300 flex-shrink-0">chevron_right</span>
+        </div>
+    </div>`;
+        }
+
+        // ── Join Modal ────────────────────────────────────────────────────────────
+        function openJoinModal(childId, childName) {
+            joiningChildId = childId;
+            document.getElementById('join-child-label').textContent = `For: ${childName}`;
+            document.getElementById('join-code-input').value = '';
+            hideErr('join-error');
+            document.getElementById('join-modal').classList.remove('hidden');
+            document.getElementById('join-code-input').focus();
+        }
+        function closeJoinModal() {
+            document.getElementById('join-modal').classList.add('hidden');
+            joiningChildId = null;
+        }
+        let submittingJoin = false;
+        async function submitJoin() {
+            if (submittingJoin) return;
+            const classCode = document.getElementById('join-code-input').value.trim().toUpperCase();
+            if (!classCode) { showErr('join-error', 'Please enter the class code.'); return; }
+            hideErr('join-error');
+            submittingJoin = true;
+            const joinBtn = document.getElementById('join-submit-btn');
+            joinBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/student/${joiningChildId}/join`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ classCode })
+                });
+                if (res.ok) {
+                    closeJoinModal();
+                    childrenCache = {};
+                    // Reload children and return to the child's classroom view
+                    const prevChildId = joiningChildId;
+                    document.getElementById('view-child-classrooms').classList.add('hidden');
+                    document.getElementById('view-list').classList.remove('hidden');
+                    document.getElementById('list-loading').classList.remove('hidden');
+                    document.getElementById('children-grid').classList.add('hidden');
+                    await loadChildren();
+                    showToast('Joined classroom!');
+                    // Navigate back to the child's classrooms
+                    if (childrenCache[prevChildId]) showChildClassrooms(prevChildId);
+                } else {
+                    let msg = 'Failed to join.';
+                    try { const d = await res.json(); msg = d.error || msg; } catch (_) { }
+                    showErr('join-error', msg);
+                }
+            } catch (e) { showErr('join-error', 'Network error.'); }
+            finally { submittingJoin = false; joinBtn.disabled = false; }
+        }
+
+        // ── Deep link from a notification (?childId=&classroomId=&tab=&postId=) ────
+        function openFromDeepLink() {
+            const params = new URLSearchParams(location.search);
+            const childId = Number(params.get('childId'));
+            const classroomId = Number(params.get('classroomId'));
+            const tab = params.get('tab') || 'stream';
+            const postId = params.get('postId') ? Number(params.get('postId')) : null;
+            if (!childId || !classroomId) return;
+
+            const child = childrenCache[childId];
+            const classroom = child?.classrooms?.find(c => c.id === classroomId);
+            if (!classroom) return;
+
+            if (postId !== null) {
+                if (tab === 'classwork') pendingOpenAssignmentId = postId;
+                else pendingOpenAnnouncementId = postId;
+            }
+            showDetail(childId, classroom, tab);
+            history.replaceState(null, '', location.pathname);
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────────────
+        loadChildren().then(openFromDeepLink);
+        loadTeacherDirectory();
+    </script>
+
+    <script>loadSidebar('parent', 'classroom'); loadTopbar('parent');</script>
+</body>
+
+</html>

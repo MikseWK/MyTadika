@@ -1,0 +1,78 @@
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 z-40 bg-[#fcf6e3] w-64 shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-y-auto">
+    <a href="/parent/parenthome.html" class="px-8 mb-10 block">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#ffd709] flex items-center justify-center">
+                <span class="material-symbols-outlined text-[#6c5a00]">school</span>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-[#6c5a00] font-headline tracking-tight">MyTadika</h1>
+                <p class="text-xs text-stone-600 font-medium">Pre-K Class A</p>
+            </div>
+        </div>
+    </a>
+    <nav class="space-y-2 px-2">
+        <a href="/parent/parenthome.html" data-nav="home"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">home</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Home</span>
+        </a>
+        <a href="/parent/parentacademic.html" data-nav="report"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">bar_chart</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">View Report</span>
+        </a>
+        <a href="/parent/parentchatwithtecher.html" data-nav="messages"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">chat_bubble</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm flex-1">Messages</span>
+            <span id="nav-unread-badge" class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"></span>
+        </a>
+        <a href="/parent/parentmemory.html" data-nav="memory"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">auto_stories</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Memory Box</span>
+        </a>
+        <a href="/parent/parentevents.html" data-nav="events"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">calendar_today</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Events</span>
+        </a>
+        <a href="/parent/parenthealth.html" data-nav="health"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">medical_services</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Health</span>
+        </a>
+        <a href="/parent/parentfees.html" data-nav="fees"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">payments</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm flex-1">Fees</span>
+            <span id="nav-fees-badge" class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"></span>
+        </a>
+        <a href="/parent/parentclassroom.html" data-nav="classroom"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">school</span>
+            <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Classroom</span>
+        </a>
+    </nav>
+    <div class="px-2 mt-6">
+        <p class="px-6 mb-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Account</p>
+        <div class="mx-2 p-1.5 rounded-[2rem] bg-white/60">
+            <a href="/parent/parentprofile.html" data-nav="profile"
+                class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined nav-icon">account_circle</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm" id="sidebar-user-name">Profile</span>
+            </a>
+            <div class="border-t border-stone-200 mx-3 my-1"></div>
+            <a href="/parent/parenthelp.html" data-nav="help"
+                class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 hover:bg-[#ffc69a]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined nav-icon">help</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Help</span>
+            </a>
+            <div class="border-t border-stone-200 mx-3 my-1"></div>
+            <button onclick="logout()" class="w-full flex items-center gap-3 text-red-500 px-4 py-3 hover:bg-red-50 transition-all rounded-full">
+                <span class="material-symbols-outlined">logout</span>
+                <span class="font-['Be_Vietnam_Pro'] font-medium text-sm">Logout</span>
+            </button>
+        </div>
+    </div>
+</aside>

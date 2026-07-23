@@ -1,0 +1,87 @@
+<aside class="fixed left-0 top-0 h-full flex flex-col py-8 z-40 bg-[#fcf6e3] w-64 shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] overflow-y-auto">
+    <a href="/admin/index.html" class="px-8 mb-10 block">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-[#ffd709] flex items-center justify-center">
+                <span class="material-symbols-outlined text-[#6c5a00]" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">admin_panel_settings</span>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-[#6c5a00] tracking-tight" style="font-family:'Plus Jakarta Sans',sans-serif">MyTadika</h1>
+                <p class="text-[10px] text-stone-500 font-bold uppercase tracking-widest">Admin Portal</p>
+            </div>
+        </div>
+    </a>
+    <nav class="space-y-1 px-2">
+        <a href="/admin/index.html" data-nav="home"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">dashboard</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Dashboard</span>
+        </a>
+        <a href="/admin/adminstudents.html" data-nav="students"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">child_care</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Students</span>
+        </a>
+        <a href="/admin/adminhealthlist.html" data-nav="health"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">medical_services</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Health</span>
+        </a>
+        <a href="/admin/adminacademiclist.html" data-nav="academic"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">bar_chart</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Academic</span>
+        </a>
+        <a href="/admin/adminaccounts.html" data-nav="accounts"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">manage_accounts</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Accounts</span>
+        </a>
+        <a href="/admin/adminclassrooms.html" data-nav="classrooms"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">school</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Classrooms</span>
+        </a>
+        <a href="/admin/admingallery.html" data-nav="gallery"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">photo_library</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Gallery</span>
+        </a>
+        <a href="/admin/adminfees.html" data-nav="fees"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">payments</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Fees</span>
+        </a>
+        <a href="/admin/adminmessages.html" data-nav="messages"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">forum</span>
+            <span class="font-medium text-sm flex-1" style="font-family:'Be Vietnam Pro',sans-serif">Messages</span>
+            <span id="nav-unread-badge" class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center"></span>
+        </a>
+        <a href="/admin/adminevents.html" data-nav="events"
+            class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 mx-2 hover:bg-[#ffd709]/20 transition-all rounded-full">
+            <span class="material-symbols-outlined nav-icon">calendar_today</span>
+            <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Events</span>
+        </a>
+    </nav>
+    <div class="px-2 mt-6">
+        <p class="px-6 mb-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest">Account</p>
+        <div class="mx-2 p-1.5 rounded-[2rem] bg-white/60">
+            <a href="/admin/adminprofile.html" data-nav="profile"
+                class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 hover:bg-[#ffd709]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined nav-icon" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>
+                <span class="font-medium text-sm" id="sidebar-user-name" style="font-family:'Be Vietnam Pro',sans-serif">Admin</span>
+            </a>
+            <div class="border-t border-stone-200 mx-3 my-1"></div>
+            <a href="/admin/adminhelp.html" data-nav="help"
+                class="nav-item flex items-center gap-3 text-stone-600 px-4 py-3 hover:bg-[#ffd709]/20 transition-all rounded-full">
+                <span class="material-symbols-outlined nav-icon">help</span>
+                <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Help</span>
+            </a>
+            <div class="border-t border-stone-200 mx-3 my-1"></div>
+            <button onclick="logout()" class="w-full flex items-center gap-3 text-red-500 px-4 py-3 hover:bg-red-50 transition-all rounded-full">
+                <span class="material-symbols-outlined">logout</span>
+                <span class="font-medium text-sm" style="font-family:'Be Vietnam Pro',sans-serif">Logout</span>
+            </button>
+        </div>
+    </div>
+</aside>

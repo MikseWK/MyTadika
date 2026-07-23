@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Classrooms</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Classrooms</h1>
+                <p class="text-stone-500 text-sm mt-1">View classes and reassign teachers if one leaves.</p>
+            </div>
+            <button onclick="openCreateModal()"
+                class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add</span>
+                Add Classroom
+            </button>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                <p class="text-2xl font-black text-[#312f23]" id="stat-total">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Total Classrooms</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                <p class="text-2xl font-black text-[#312f23]" id="stat-students">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Students Enrolled</p>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                <p class="text-2xl font-black text-[#312f23]" id="stat-teachers">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Teachers Managing Classes</p>
+            </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                <div class="relative max-w-sm flex-1 w-full">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-stone-300 text-lg">search</span>
+                    </span>
+                    <input id="search-input" type="search" placeholder="Search by class or teacher name…" autocomplete="off"
+                        class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="filterClassrooms()">
+                </div>
+                <span class="text-xs text-stone-400" id="list-count"></span>
+            </div>
+
+            <div id="list-loading" class="py-16 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+            <div id="list-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
+                <span class="material-symbols-outlined text-4xl">school</span>
+                <p class="text-sm">No classrooms found.</p>
+            </div>
+
+            <div class="overflow-x-auto hidden" id="table-wrap">
+                <table class="w-full text-left">
+                    <thead class="bg-stone-50">
+                        <tr class="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                            <th class="px-6 py-3">Class</th>
+                            <th class="px-6 py-3">Teacher</th>
+                            <th class="px-6 py-3">Students</th>
+                            <th class="px-6 py-3">Class Code</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classrooms-tbody" class="divide-y divide-stone-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Add/Edit Classroom Modal -->
+<div id="classroom-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 id="classroom-modal-title" class="text-xl font-black text-[#312f23] mb-5" style="font-family:'Plus Jakarta Sans',sans-serif">Add Classroom</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Class Name *</label>
+                <input id="cm-name" type="text" placeholder="e.g. Pre-K Class A"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Section</label>
+                <input id="cm-section" type="text" placeholder="e.g. Morning Session"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Teacher *</label>
+                <select id="cm-teacher" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="">— Select teacher —</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-2">Color Theme</label>
+                <div class="flex gap-3 flex-wrap">
+                    <button data-color="indigo"  onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-indigo-600 selected"></button>
+                    <button data-color="emerald" onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-emerald-600"></button>
+                    <button data-color="violet"  onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-violet-600"></button>
+                    <button data-color="rose"    onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-rose-600"></button>
+                    <button data-color="amber"   onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-amber-500"></button>
+                    <button data-color="sky"     onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-sky-600"></button>
+                    <button data-color="teal"    onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-teal-600"></button>
+                </div>
+            </div>
+        </div>
+        <p id="cm-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeClassroomModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="classroom-submit-btn" onclick="submitClassroomForm()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Manage Students / Teachers Modal -->
+<div id="manage-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-5">
+            <h2 id="manage-modal-title" class="text-xl font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Manage Classroom</h2>
+            <button onclick="closeManageModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- Teachers -->
+        <div class="mb-6">
+            <p class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Teachers</p>
+            <div id="manage-teachers-list" class="space-y-2 mb-3"></div>
+            <div class="flex gap-2">
+                <input id="manage-teacher-email" type="email" placeholder="Add teacher by email…" list="teacher-email-suggestions" autocomplete="off"
+                    class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                    onkeydown="if(event.key==='Enter') addManageTeacher()">
+                <datalist id="teacher-email-suggestions"></datalist>
+                <button id="manage-teacher-add-btn" onclick="addManageTeacher()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-w-[68px] flex items-center justify-center">Add</button>
+            </div>
+            <p id="manage-teacher-error" class="hidden text-xs text-red-500 mt-2"></p>
+        </div>
+
+        <!-- Students -->
+        <div>
+            <p class="text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Students Enrolled</p>
+            <div id="manage-students-list" class="space-y-2 mb-3"></div>
+            <div class="flex gap-2">
+                <input id="manage-student-code" type="text" placeholder="Add student by code (e.g. STU20001)…"
+                    class="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                    onkeydown="if(event.key==='Enter') addManageStudent()">
+                <button id="manage-student-add-btn" onclick="addManageStudent()" class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed min-w-[68px] flex items-center justify-center">Add</button>
+            </div>
+            <p id="manage-student-error" class="hidden text-xs text-red-500 mt-2"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Profile Modal -->
+<div id="teacher-profile-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4" onclick="if(event.target===this) closeTeacherProfileModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div class="relative h-24 flex-shrink-0" style="background-color:#ffd709;">
+            <button onclick="closeTeacherProfileModal()" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+                <div id="tp-avatar-wrap" style="width:88px;height:88px;border-radius:50%;border:4px solid white;box-shadow:0 8px 24px rgba(0,0,0,0.18);overflow:hidden;background:#ffd709;display:flex;align-items:center;justify-content:center;"></div>
+            </div>
+        </div>
+        <div class="pt-14 pb-6 px-6 text-center flex flex-col gap-4">
+            <div>
+                <h2 id="tp-name" class="text-lg font-extrabold text-[#312f23]"></h2>
+                <span id="tp-owner-badge" class="hidden text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full mt-1 inline-block">Owner</span>
+            </div>
+            <p id="tp-description" class="text-sm text-stone-500 leading-relaxed"></p>
+            <div id="tp-stats" class="grid grid-cols-3 gap-3"></div>
+            <div id="tp-info-rows" class="w-full space-y-2 text-left"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.remove('hidden'); }
+
+let allClassrooms = [];
+let allTeachers = [];
+let editingId = null;
+let selectedColor = 'indigo';
+
+function selectColor(btn) {
+    document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('selected', 'ring-2', 'ring-offset-2', 'ring-stone-400'));
+    btn.classList.add('selected', 'ring-2', 'ring-offset-2', 'ring-stone-400');
+    selectedColor = btn.dataset.color;
+}
+
+async function loadTeachers() {
+    try {
+        const res = await fetch('/api/admin/accounts?role=TEACHER');
+        allTeachers = res.ok ? await res.json() : [];
+        const select = document.getElementById('cm-teacher');
+        select.innerHTML = '<option value="">— Select teacher —</option>' +
+            allTeachers.map(t => `<option value="${t.accountId}">${esc(t.fullName)}</option>`).join('');
+        document.getElementById('teacher-email-suggestions').innerHTML =
+            allTeachers.map(t => `<option value="${esc(t.email)}">`).join('');
+    } catch (e) { allTeachers = []; }
+}
+
+async function loadClassrooms() {
+    try {
+        const res = await fetch('/api/classroom/all');
+        allClassrooms = res.ok ? await res.json() : [];
+        updateStats();
+        filterClassrooms();
+        document.getElementById('list-loading').classList.add('hidden');
+    } catch (e) {
+        document.getElementById('list-loading').classList.add('hidden');
+    }
+}
+
+function updateStats() {
+    document.getElementById('stat-total').textContent = allClassrooms.length;
+    document.getElementById('stat-students').textContent = allClassrooms.reduce((s, c) => s + (c.studentCount || 0), 0);
+    document.getElementById('stat-teachers').textContent = new Set(allClassrooms.map(c => c.teacherAccountId)).size;
+}
+
+function filterClassrooms() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase();
+    let list = allClassrooms;
+    if (q) list = list.filter(c =>
+        (c.name || '').toLowerCase().includes(q) || (c.teacherName || '').toLowerCase().includes(q));
+    renderClassrooms(list);
+    document.getElementById('list-count').textContent = `${list.length} classroom${list.length !== 1 ? 's' : ''}`;
+}
+
+function renderClassrooms(list) {
+    const tbody = document.getElementById('classrooms-tbody');
+    const wrap = document.getElementById('table-wrap');
+    const empty = document.getElementById('list-empty');
+    if (!list.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+
+    tbody.innerHTML = list.map(c => `
+        <tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-${c.color || 'indigo'}-500 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-white text-base">school</span>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-sm text-stone-800">${esc(c.name)}</p>
+                        ${c.section ? `<p class="text-xs text-stone-400">${esc(c.section)}</p>` : ''}
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                ${c.teacherName ? `
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-[#ffd709] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        ${c.teacherImage ? `<img src="${esc(c.teacherImage)}" class="w-full h-full object-cover" alt="">` : `<span class="text-[10px] font-bold text-[#6c5a00]">${esc(initials(c.teacherName))}</span>`}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-stone-700">${esc(c.teacherName)}</p>
+                        <p class="text-xs text-stone-400">${esc(c.teacherEmail || '')}</p>
+                    </div>
+                </div>` : `<span class="text-xs text-amber-500 font-semibold">No teacher assigned</span>`}
+            </td>
+            <td class="px-6 py-4 text-sm text-stone-600">${c.studentCount || 0} enrolled</td>
+            <td class="px-6 py-4">
+                <span class="font-mono text-xs font-bold text-[#6c5a00] bg-[#ffd709]/20 px-2 py-1 rounded-lg">${esc(c.classCode || '—')}</span>
+            </td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                    <button onclick="openManageModal(${c.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Manage Students / Teachers">
+                        <span class="material-symbols-outlined text-base">group</span>
+                    </button>
+                    <button onclick="openEditModal(${c.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit / Reassign Teacher">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="deleteClassroom(${c.id},'${esc(c.name)}')"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Delete">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function openCreateModal() {
+    editingId = null;
+    document.getElementById('classroom-modal-title').textContent = 'Add Classroom';
+    document.getElementById('cm-name').value = '';
+    document.getElementById('cm-section').value = '';
+    document.getElementById('cm-teacher').value = '';
+    document.getElementById('cm-error').classList.add('hidden');
+    selectColor(document.querySelector('.color-swatch[data-color="indigo"]'));
+    document.getElementById('classroom-modal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+    const c = allClassrooms.find(x => x.id === id);
+    if (!c) return;
+    editingId = id;
+    document.getElementById('classroom-modal-title').textContent = 'Edit Classroom';
+    document.getElementById('cm-name').value = c.name || '';
+    document.getElementById('cm-section').value = c.section || '';
+    document.getElementById('cm-teacher').value = c.teacherAccountId || '';
+    document.getElementById('cm-error').classList.add('hidden');
+    const swatch = document.querySelector(`.color-swatch[data-color="${c.color || 'indigo'}"]`);
+    selectColor(swatch || document.querySelector('.color-swatch[data-color="indigo"]'));
+    document.getElementById('classroom-modal').classList.remove('hidden');
+}
+
+function closeClassroomModal() { document.getElementById('classroom-modal').classList.add('hidden'); }
+
+let submittingClassroom = false;
+async function submitClassroomForm() {
+    if (submittingClassroom) return;
+    const name = document.getElementById('cm-name').value.trim();
+    const teacherAccountId = document.getElementById('cm-teacher').value;
+    if (!name) { showErr('cm-error', 'Class name is required.'); return; }
+    if (!teacherAccountId) { showErr('cm-error', 'Please select a teacher.'); return; }
+
+    const body = {
+        name,
+        section: document.getElementById('cm-section').value.trim() || null,
+        color: selectedColor,
+        teacherAccountId,
+    };
+
+    submittingClassroom = true;
+    const btn = document.getElementById('classroom-submit-btn');
+    btn.disabled = true;
+    try {
+        const res = editingId
+            ? await fetch(`/api/classroom/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+            : await fetch('/api/classroom', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) {
+            closeClassroomModal();
+            showToast(editingId ? 'Classroom updated!' : 'Classroom created!');
+            await loadClassrooms();
+        } else {
+            let msg = 'Failed to save.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('cm-error', msg);
+        }
+    } catch (e) { showErr('cm-error', 'Network error.'); }
+    finally { submittingClassroom = false; btn.disabled = false; }
+}
+
+async function deleteClassroom(id, name) {
+    if (!confirm(`Delete "${name}"? This removes all its announcements and activities too.`)) return;
+    const res = await fetch(`/api/classroom/${id}`, { method: 'DELETE' });
+    if (res.ok) { showToast('Classroom deleted.'); await loadClassrooms(); }
+    else showToast('Failed to delete.');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MANAGE STUDENTS / TEACHERS
+// ══════════════════════════════════════════════════════════════════════
+let manageClassroomId = null;
+
+async function openManageModal(id) {
+    manageClassroomId = id;
+    const c = allClassrooms.find(x => x.id === id);
+    document.getElementById('manage-modal-title').textContent = c ? `Manage ${c.name}` : 'Manage Classroom';
+    document.getElementById('manage-teacher-email').value = '';
+    document.getElementById('manage-student-code').value = '';
+    document.getElementById('manage-teacher-error').classList.add('hidden');
+    document.getElementById('manage-student-error').classList.add('hidden');
+    document.getElementById('manage-modal').classList.remove('hidden');
+    await loadManagePeople();
+}
+
+function closeManageModal() { document.getElementById('manage-modal').classList.add('hidden'); manageClassroomId = null; }
+
+async function loadManagePeople() {
+    try {
+        const res = await fetch(`/api/classroom/${manageClassroomId}/people`);
+        const data = res.ok ? await res.json() : { teachers: [], students: [] };
+        renderManageTeachers(data.teachers || []);
+        renderManageStudents(data.students || []);
+    } catch (e) {
+        renderManageTeachers([]); renderManageStudents([]);
+    }
+}
+
+let manageTeachersCache = [];
+
+function openTeacherProfileModal(accountId) {
+    const t = manageTeachersCache.find(x => x.accountId === accountId);
+    if (!t) return;
+
+    document.getElementById('tp-name').textContent = t.name || '—';
+    document.getElementById('tp-owner-badge').classList.toggle('hidden', !t.isOwner);
+
+    const avatarWrap = document.getElementById('tp-avatar-wrap');
+    avatarWrap.innerHTML = t.image
+        ? `<img src="${esc(t.image)}" style="width:100%;height:100%;object-fit:cover;" alt="">`
+        : `<span style="font-size:1.75rem;font-weight:900;color:#6c5a00;">${esc((t.name||'?').charAt(0).toUpperCase())}</span>`;
+
+    document.getElementById('tp-description').textContent = t.description || 'No description yet.';
+
+    document.getElementById('tp-stats').innerHTML = `
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#ffd709] text-xl mb-1" style="font-variation-settings:'FILL' 1;">school</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.qualification || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Qualification</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF8A3D] text-xl mb-1" style="font-variation-settings:'FILL' 1;">history_edu</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.experience || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Experience</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF6B6B] text-xl mb-1" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.focusArea || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Focus Area</p>
+        </div>`;
+
+    const infoRow = (icon, label, value) => `
+        <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+            <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+            </div>
+        </div>`;
+    const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+    if (t.phoneNumber) rows.push(infoRow('call', 'Phone', t.phoneNumber));
+    document.getElementById('tp-info-rows').innerHTML = rows.join('');
+
+    document.getElementById('teacher-profile-modal').classList.remove('hidden');
+}
+
+function closeTeacherProfileModal() {
+    document.getElementById('teacher-profile-modal').classList.add('hidden');
+}
+
+function renderManageTeachers(teachers) {
+    manageTeachersCache = teachers;
+    const el = document.getElementById('manage-teachers-list');
+    el.innerHTML = teachers.length ? teachers.map(t => `
+        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-stone-50 rounded-xl">
+            <div class="flex items-center gap-2 min-w-0" onclick="openTeacherProfileModal('${esc(t.accountId)}')" style="cursor:pointer;">
+                <div class="w-7 h-7 rounded-full bg-[#ffd709] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    ${t.image ? `<img src="${esc(t.image)}" class="w-full h-full object-cover" alt="">` : `<span class="text-[10px] font-bold text-[#6c5a00]">${esc(initials(t.name))}</span>`}
+                </div>
+                <span class="text-sm font-medium text-stone-700 truncate">${esc(t.name)}</span>
+                ${t.isOwner ? '<span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex-shrink-0">Owner</span>' : ''}
+            </div>
+            ${t.isOwner ? '' : `<button onclick="removeManageTeacher('${t.accountId}')" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 flex-shrink-0" title="Remove"><span class="material-symbols-outlined text-base">close</span></button>`}
+        </div>`).join('') : '<p class="text-xs text-stone-400 py-2">No teachers yet.</p>';
+}
+
+function renderManageStudents(students) {
+    const el = document.getElementById('manage-students-list');
+    el.innerHTML = students.length ? students.map(s => `
+        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-stone-50 rounded-xl">
+            <div class="min-w-0">
+                <p class="text-sm font-medium text-stone-700 truncate">${esc(s.studentName)}</p>
+                <p class="text-xs text-stone-400">${esc(s.studentCode || '')}</p>
+            </div>
+            <button onclick="removeManageStudent(${s.studentId})" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 flex-shrink-0" title="Remove"><span class="material-symbols-outlined text-base">close</span></button>
+        </div>`).join('') : '<p class="text-xs text-stone-400 py-2">No students enrolled yet.</p>';
+}
+
+async function addManageTeacher() {
+    const email = document.getElementById('manage-teacher-email').value.trim().toLowerCase();
+    const errEl = document.getElementById('manage-teacher-error');
+    errEl.classList.add('hidden');
+    if (!email) { errEl.textContent = 'Please enter an email address.'; errEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('manage-teacher-add-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base spin">progress_activity</span>';
+    try {
+        const res = await fetch(`/api/classroom/${manageClassroomId}/teachers`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+        });
+        if (res.ok) {
+            document.getElementById('manage-teacher-email').value = '';
+            await loadManagePeople();
+            await loadClassrooms();
+            showToast('Teacher added!');
+        } else {
+            let msg = 'Failed to add teacher.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            errEl.textContent = msg; errEl.classList.remove('hidden');
+        }
+    } catch (e) { errEl.textContent = 'Network error.'; errEl.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = 'Add'; }
+}
+
+async function removeManageTeacher(accountId) {
+    if (!confirm('Remove this teacher from the classroom?')) return;
+    const res = await fetch(`/api/classroom/${manageClassroomId}/teachers/${accountId}`, { method: 'DELETE' });
+    if (res.ok) await loadManagePeople();
+    else showToast('Failed to remove teacher.');
+}
+
+async function addManageStudent() {
+    const studentCode = document.getElementById('manage-student-code').value.trim().toUpperCase();
+    const errEl = document.getElementById('manage-student-error');
+    errEl.classList.add('hidden');
+    if (!studentCode) { errEl.textContent = 'Please enter a Student Code.'; errEl.classList.remove('hidden'); return; }
+    const btn = document.getElementById('manage-student-add-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base spin">progress_activity</span>';
+    try {
+        const res = await fetch(`/api/classroom/${manageClassroomId}/enroll-by-code`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentCode })
+        });
+        if (res.ok) {
+            document.getElementById('manage-student-code').value = '';
+            await loadManagePeople();
+            await loadClassrooms();
+            showToast('Student added!');
+        } else {
+            let msg = 'Failed to add student.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            errEl.textContent = msg; errEl.classList.remove('hidden');
+        }
+    } catch (e) { errEl.textContent = 'Network error.'; errEl.classList.remove('hidden'); }
+    finally { btn.disabled = false; btn.textContent = 'Add'; }
+}
+
+async function removeManageStudent(studentId) {
+    if (!confirm('Remove this student from the classroom?')) return;
+    const res = await fetch(`/api/classroom/${manageClassroomId}/students/${studentId}`, { method: 'DELETE' });
+    if (res.ok) { await loadManagePeople(); await loadClassrooms(); }
+    else showToast('Failed to remove student.');
+}
+
+(async function init() {
+    await loadTeachers();
+    await loadClassrooms();
+})();
+</script>
+
+<script>loadSidebar('admin', 'classrooms'); loadTopbar('admin');</script>
+</body>
+</html>

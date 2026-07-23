@@ -1,0 +1,413 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>MyTadika - Teacher Profile</title>
+    <script>
+        const _token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        if (!_token) window.location.replace('/login.html');
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#fcf6e3",
+                        "on-tertiary": "#d1ffc8",
+                        "inverse-surface": "#100e05",
+                        "surface-container-high": "#e9e3cc",
+                        "primary-dim": "#5e4e00",
+                        "tertiary-container": "#91f78e",
+                        "inverse-primary": "#ffd709",
+                        "surface-variant": "#e3ddc5",
+                        "secondary-fixed": "#ffc69a",
+                        "surface-dim": "#dbd5bc",
+                        "on-primary-fixed-variant": "#665500",
+                        "secondary-dim": "#7b4000",
+                        "tertiary-fixed-dim": "#83e881",
+                        "surface-container-lowest": "#ffffff",
+                        "error-dim": "#b92902",
+                        "on-secondary-fixed-variant": "#7c4100",
+                        "tertiary-fixed": "#91f78e",
+                        "tertiary-dim": "#005d16",
+                        "error-container": "#f95630",
+                        "tertiary": "#006b1b",
+                        "outline": "#7a7768",
+                        "surface-container-highest": "#e3ddc5",
+                        "surface-container-low": "#f7f1dc",
+                        "on-secondary-container": "#6f3a00",
+                        "secondary": "#8c4a00",
+                        "primary-fixed-dim": "#efc900",
+                        "secondary-fixed-dim": "#ffb375",
+                        "on-primary-container": "#5b4b00",
+                        "on-secondary": "#fff0e7",
+                        "inverse-on-surface": "#a19d8c",
+                        "secondary-container": "#ffc69a",
+                        "error": "#b02500",
+                        "on-error": "#ffefec",
+                        "surface-tint": "#6c5a00",
+                        "primary-container": "#ffd709",
+                        "outline-variant": "#b2ad9c",
+                        "on-surface": "#312f23",
+                        "surface": "#fcf6e3",
+                        "on-primary": "#fff2cd",
+                        "on-error-container": "#520c00",
+                        "primary-fixed": "#ffd709",
+                        "on-tertiary-fixed-variant": "#00691a",
+                        "on-primary-fixed": "#453900",
+                        "on-surface-variant": "#5f5c4d",
+                        "primary": "#6c5a00",
+                        "on-tertiary-container": "#005e17",
+                        "on-secondary-fixed": "#532a00",
+                        "surface-container": "#eee8d3",
+                        "on-tertiary-fixed": "#00480f",
+                        "on-background": "#312f23",
+                        "background": "#fcf6e3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "label": ["Be Vietnam Pro"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #fcf6e3;
+            background-image: radial-gradient(circle at 2px 2px, rgba(178, 173, 156, 0.1) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        .organic-blob {
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+
+<body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
+    <div class="relative flex h-screen overflow-hidden">
+        <!-- Abstract Background Blobs -->
+        <div
+            class="absolute -top-24 -right-24 w-96 h-96 bg-secondary-container opacity-20 organic-blob blur-3xl pointer-events-none">
+        </div>
+        <div
+            class="absolute bottom-40 -left-20 w-80 h-80 bg-tertiary-container opacity-10 organic-blob blur-3xl pointer-events-none">
+        </div>
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto px-8 pb-8 md:px-12 md:pb-12 pt-24 z-10 ml-64">
+            <!-- Header Section -->
+            <header class="mb-12">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-4xl font-black text-primary font-headline tracking-tight mb-2">My Profile
+                        </h2>
+                        <p class="text-on-surface-variant font-medium">Manage your teaching profile</p>
+                    </div>
+                </div>
+            </header>
+            <!-- Parent Profile Card -->
+            <section class="mb-14">
+                <div
+                    class="bg-surface-container-lowest rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 shadow-[0_12px_32px_-4px_rgba(49,47,35,0.08)] relative overflow-hidden">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-primary-container/20 organic-blob -mr-12 -mt-12 pointer-events-none">
+                    </div>
+                    <div class="relative">
+                        <div
+                            class="w-32 h-32 rounded-full border-4 border-primary-container overflow-hidden p-1 shadow-inner bg-primary-container flex items-center justify-center">
+                            <img id="profile-avatar" alt="Profile" class="w-full h-full object-cover rounded-full hidden cursor-zoom-in hover:opacity-90 transition-opacity" onclick="if(this.src) openImageLightbox(this.src)">
+                            <span id="profile-avatar-icon" class="material-symbols-outlined text-primary text-6xl"
+                                style="font-variation-settings: 'FILL' 1;">account_circle</span>
+                        </div>
+                        <a href="teachereditprofile.html"
+                            class="absolute bottom-0 right-0 bg-secondary text-on-secondary w-10 h-10 rounded-full flex items-center justify-center shadow-lg border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-sm">edit</span>
+                        </a>
+                    </div>
+                    <div class="flex-1 text-center md:text-left">
+                        <h3 class="text-2xl font-bold text-on-surface font-headline mb-1" id="profile-name">—</h3>
+                        <div class="flex flex-col gap-1 text-on-surface-variant font-medium">
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">mail</span>
+                                <span id="profile-email">Not provided</span>
+                            </span>
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">phone</span>
+                                <span id="profile-phone">Not set</span>
+                            </span>
+                            <span class="flex items-center justify-center md:justify-start gap-2">
+                                <span class="material-symbols-outlined text-secondary text-lg">home_pin</span>
+                                <span id="profile-address">Not set</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="teachereditprofile.html"
+                            class="px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold shadow-sm hover:bg-primary-fixed-dim transition-colors active:scale-95 duration-150">
+                            Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- Teaching Details Section -->
+            <section class="mb-14">
+                <h3 class="text-xl font-bold text-primary font-headline mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined" data-icon="school">school</span>
+                    Teaching Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-surface-container-low rounded-lg p-6 flex flex-col gap-2">
+                        <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings:'FILL' 1;">school</span>
+                        <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Qualification</p>
+                        <p class="font-bold text-on-surface" id="teacher-qualification">—</p>
+                    </div>
+                    <div class="bg-surface-container-low rounded-lg p-6 flex flex-col gap-2">
+                        <span class="material-symbols-outlined text-secondary text-2xl" style="font-variation-settings:'FILL' 1;">history_edu</span>
+                        <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Experience</p>
+                        <p class="font-bold text-on-surface" id="teacher-experience">—</p>
+                    </div>
+                    <div class="bg-surface-container-low rounded-lg p-6 flex flex-col gap-2">
+                        <span class="material-symbols-outlined text-tertiary text-2xl" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+                        <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Focus Area</p>
+                        <p class="font-bold text-on-surface" id="teacher-focus">—</p>
+                    </div>
+                </div>
+                <div class="bg-surface-container-low rounded-lg p-6">
+                    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">About Me</p>
+                    <p class="text-on-surface font-medium leading-relaxed" id="teacher-description">No description yet.</p>
+                </div>
+            </section>
+            <!-- Account Settings Grid (Bento Style) -->
+            <section class="mb-14">
+                <h3 class="text-xl font-bold text-primary font-headline mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined" data-icon="tune">tune</span>
+                    Account Preferences
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <button onclick="openPasswordModal()"
+                        class="bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-4 text-left">
+                        <div
+                            class="w-12 h-12 rounded-full bg-secondary-container/30 flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined" data-icon="security">security</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface">Privacy &amp; Security</h4>
+                            <p class="text-sm text-on-surface-variant">Update password and safety</p>
+                        </div>
+                    </button>
+                </div>
+            </section>
+            <!-- Sign Out Section -->
+            <footer class="mt-20 pt-8 border-t border-outline-variant/10 flex justify-center">
+                <button id="logout-btn"
+                    class="flex items-center gap-3 px-10 py-4 bg-error-container/10 text-error-dim rounded-full font-bold hover:bg-error-container/20 transition-colors active:scale-95 duration-150">
+                    <span class="material-symbols-outlined">logout</span>
+                    Logout from Portal
+                </button>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="password-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-black text-on-surface mb-5 font-headline">Change Password</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Current Password</label>
+                    <div class="relative">
+                        <input id="pw-current" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-current', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">New Password</label>
+                    <div class="relative">
+                        <input id="pw-new" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-new', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-on-surface-variant mb-1">Confirm New Password</label>
+                    <div class="relative">
+                        <input id="pw-confirm" type="password"
+                            class="w-full border border-outline-variant/30 rounded-xl px-4 py-2.5 pr-11 text-sm bg-surface focus:outline-none focus:ring-2 focus:ring-primary-container">
+                        <button type="button" onclick="toggleProfilePasswordVisibility('pw-confirm', this)"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p id="pw-error" class="hidden text-xs text-error mt-3"></p>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closePasswordModal()" class="flex-1 py-2.5 rounded-xl border border-outline-variant/30 text-sm font-semibold text-on-surface-variant hover:bg-surface">Cancel</button>
+                <button id="pw-submit-btn" onclick="submitPasswordChange()" class="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-bold text-sm hover:bg-primary-fixed-dim disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-on-surface text-surface text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+    <script>
+        const accountId = sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
+
+        // Populate profile by fetching from API
+        (async () => {
+            try {
+                const res = await fetch(`/api/profile/${accountId}`);
+                if (!res.ok) return;
+                const p = await res.json();
+
+                document.getElementById('profile-name').textContent = p.fullName || 'Teacher';
+                document.getElementById('profile-email').textContent = p.email || 'Not provided';
+                document.getElementById('profile-phone').textContent = p.phoneNumber || 'Not set';
+                document.getElementById('profile-address').textContent = p.address || 'Not set';
+                document.getElementById('teacher-qualification').textContent = p.qualification || '—';
+                document.getElementById('teacher-experience').textContent = p.experience || '—';
+                document.getElementById('teacher-focus').textContent = p.focusArea || '—';
+                document.getElementById('teacher-description').textContent = p.description || 'No description yet.';
+
+                if (p.profileImageUrl) {
+                    const img = document.getElementById('profile-avatar');
+                    img.src = p.profileImageUrl;
+                    img.classList.remove('hidden');
+                    document.getElementById('profile-avatar-icon').classList.add('hidden');
+                }
+            } catch (_) {
+                // Fallback to storage values
+                document.getElementById('profile-name').textContent =
+                    sessionStorage.getItem('fullName') || localStorage.getItem('fullName') || 'Teacher';
+                document.getElementById('profile-email').textContent =
+                    sessionStorage.getItem('email') || localStorage.getItem('email') || 'Not provided';
+            }
+        })();
+
+        // Change Password modal
+        function showToast(msg, ms = 2500) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), ms);
+        }
+
+        function openPasswordModal() {
+            document.getElementById('pw-current').value = '';
+            document.getElementById('pw-new').value = '';
+            document.getElementById('pw-confirm').value = '';
+            document.getElementById('pw-error').classList.add('hidden');
+            document.getElementById('password-modal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function toggleProfilePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('.material-symbols-outlined');
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            icon.textContent = isHidden ? 'visibility_off' : 'visibility';
+        }
+
+        let submittingPassword = false;
+        async function submitPasswordChange() {
+            if (submittingPassword) return;
+            const currentPassword = document.getElementById('pw-current').value;
+            const newPassword = document.getElementById('pw-new').value;
+            const confirmPassword = document.getElementById('pw-confirm').value;
+            const errEl = document.getElementById('pw-error');
+
+            if (!currentPassword || !newPassword) {
+                errEl.textContent = 'Please fill in all fields.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (newPassword.length < 6) {
+                errEl.textContent = 'New password must be at least 6 characters.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errEl.textContent = 'New passwords do not match.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            submittingPassword = true;
+            const btn = document.getElementById('pw-submit-btn');
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/auth/change-password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accountId, currentPassword, newPassword })
+                });
+                if (res.ok) {
+                    closePasswordModal();
+                    showToast('Password changed successfully.');
+                } else {
+                    const err = await res.json();
+                    errEl.textContent = err.error || 'Failed to change password.';
+                    errEl.classList.remove('hidden');
+                }
+            } catch (_) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.classList.remove('hidden');
+            } finally { submittingPassword = false; btn.disabled = false; }
+        }
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            sessionStorage.clear();
+            localStorage.clear();
+            window.location.href = '/login.html';
+        });
+    </script>
+    <script>loadSidebar('teacher', 'profile'); loadTopbar('teacher');</script>
+</body>
+
+</html>
+
+
+
+
+

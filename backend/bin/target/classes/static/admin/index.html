@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Admin Dashboard</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Dashboard</h1>
+            <p class="text-stone-500 text-sm mt-1">Manage accounts and monitor your kindergarten.</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10" id="stats-row">
+            <a href="/admin/adminaccounts.html" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-[#ffd709]/30" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">groups</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Total Accounts</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-accounts">–</p>
+            </a>
+            <a href="/admin/adminaccounts.html?role=TEACHER" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-emerald-400/20" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">school</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Teachers</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-teachers">–</p>
+            </a>
+            <a href="/admin/adminaccounts.html?role=PARENT" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-sky-400/20" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">family_restroom</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Parents</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-parents">–</p>
+            </a>
+            <a href="/admin/adminaccounts.html?role=ADMIN" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-[#ffd709]/30" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">admin_panel_settings</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Admins</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-admins">–</p>
+            </a>
+            <a href="/admin/adminstudents.html" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-violet-400/20" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">child_care</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Students</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-students">–</p>
+            </a>
+            <a href="/admin/adminclassrooms.html" class="stat-card bg-white rounded-2xl shadow-sm border border-stone-100 p-5 flex flex-col gap-1 relative overflow-hidden transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <span class="material-symbols-outlined absolute -right-2 -bottom-2 text-6xl text-orange-400/20" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">class</span>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest">Classrooms</p>
+                <p class="text-3xl font-black text-[#312f23]" id="stat-classrooms">–</p>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Recently Joined Accounts -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#6c5a00]">history</span>
+                        <h2 class="font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Recently Joined</h2>
+                    </div>
+                    <a href="/admin/adminaccounts.html" class="text-xs font-bold text-[#6c5a00] hover:underline">View all accounts →</a>
+                </div>
+                <div id="recent-loading" class="py-12 flex justify-center">
+                    <span class="material-symbols-outlined text-3xl text-stone-300 spin">progress_activity</span>
+                </div>
+                <div id="recent-list" class="divide-y divide-stone-50"></div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 flex flex-col gap-3">
+                <h2 class="font-black text-[#312f23] mb-1" style="font-family:'Plus Jakarta Sans',sans-serif">Quick Actions</h2>
+                <a href="/admin/adminaccounts.html"
+                    class="flex items-center gap-2 px-4 py-3 bg-[#ffd709]/10 hover:bg-[#ffd709]/20 text-[#6c5a00] font-bold rounded-xl transition-colors text-sm">
+                    <span class="material-symbols-outlined text-lg">person_add</span>
+                    Manage Accounts
+                </a>
+                <a href="/admin/adminstudents.html"
+                    class="flex items-center gap-2 px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-600 font-bold rounded-xl transition-colors text-sm">
+                    <span class="material-symbols-outlined text-lg">child_care</span>
+                    Manage Students
+                </a>
+                <a href="/admin/adminmessages.html"
+                    class="flex items-center gap-2 px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-600 font-bold rounded-xl transition-colors text-sm">
+                    <span class="material-symbols-outlined text-lg">forum</span>
+                    Parent Messages
+                </a>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+
+const ROLE_STYLE = {
+    ADMIN:   { bg: 'bg-[#ffd709]/30', text: 'text-[#6c5a00]',   icon: 'admin_panel_settings', label: 'Admin' },
+    TEACHER: { bg: 'bg-emerald-100',  text: 'text-emerald-700',  icon: 'school',               label: 'Teacher' },
+    PARENT:  { bg: 'bg-sky-100',      text: 'text-sky-700',       icon: 'family_restroom',      label: 'Parent' },
+};
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('stat-accounts').textContent   = s.totalAccounts ?? '–';
+        document.getElementById('stat-teachers').textContent   = s.teachers ?? '–';
+        document.getElementById('stat-parents').textContent    = s.parents ?? '–';
+        document.getElementById('stat-admins').textContent     = s.admins ?? '–';
+        document.getElementById('stat-students').textContent   = s.students ?? '–';
+        document.getElementById('stat-classrooms').textContent = s.classrooms ?? '–';
+    } catch(e) {}
+}
+
+async function loadRecent() {
+    try {
+        const res = await fetch('/api/admin/accounts');
+        const accounts = res.ok ? await res.json() : [];
+        const recent = [...accounts]
+            .sort((a, b) => String(b.createdAt||'').localeCompare(String(a.createdAt||'')))
+            .slice(0, 6);
+        renderRecent(recent);
+    } catch(e) {
+        document.getElementById('recent-loading').classList.add('hidden');
+    }
+}
+
+function renderRecent(list) {
+    document.getElementById('recent-loading').classList.add('hidden');
+    const el = document.getElementById('recent-list');
+    if (!list.length) {
+        el.innerHTML = '<p class="text-sm text-stone-400 text-center py-8">No accounts yet.</p>';
+        return;
+    }
+    el.innerHTML = list.map(a => {
+        const r = ROLE_STYLE[a.roleType] || ROLE_STYLE.ADMIN;
+        const av = a.profileImageUrl
+            ? `<img src="${esc(a.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
+            : `<span class="text-xs font-bold text-white">${esc(initials(a.fullName))}</span>`;
+        const avBg = a.roleType === 'TEACHER' ? 'bg-emerald-600' : a.roleType === 'ADMIN' ? 'bg-[#6c5a00]' : 'bg-sky-500';
+        return `<div class="flex items-center gap-3 px-6 py-3.5">
+            <div class="w-9 h-9 rounded-full ${avBg} flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm text-stone-800 truncate">${esc(a.fullName)}</p>
+                <p class="text-xs text-stone-400 truncate">${esc(a.email)}</p>
+            </div>
+            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${r.bg} ${r.text} flex-shrink-0">
+                ${r.label}
+            </span>
+            <span class="text-xs text-stone-400 flex-shrink-0 w-20 text-right">${esc(a.createdAt || '—')}</span>
+        </div>`;
+    }).join('');
+}
+
+loadStats();
+loadRecent();
+</script>
+
+<script>loadSidebar('admin', 'home'); loadTopbar('admin');</script>
+</body>
+</html>

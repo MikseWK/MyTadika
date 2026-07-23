@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Health &amp; Nutrition – MyTadika Admin</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        #modal-overlay { backdrop-filter: blur(4px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<!-- Log Measurement Modal -->
+<div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-black/30 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100 flex-shrink-0">
+            <div>
+                <h3 id="modal-heading" class="text-lg font-black text-[#312f23] font-headline">Log Measurement</h3>
+                <p id="modal-student-name" class="text-sm font-bold text-[#6c5a00] mt-0.5"></p>
+            </div>
+            <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-500">
+                <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+        </div>
+        <div class="px-6 py-5 space-y-4 overflow-y-auto">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Weight (kg) * <span class="font-normal text-stone-400">(2.5–30)</span></label>
+                    <input id="log-weight" type="number" step="0.1" min="2.5" max="30" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Height (cm) * <span class="font-normal text-stone-400">(45–130)</span></label>
+                    <input id="log-height" type="number" step="0.1" min="45" max="130" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">MUAC (cm, optional)</label>
+                <input id="log-muac" type="number" step="0.1" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Activity Level *</label>
+                <select id="log-activity" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <option value="0">Sedentary</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="2">Highly Active</option>
+                </select>
+            </div>
+            <div id="modal-error" class="hidden text-red-500 text-sm py-1"></div>
+        </div>
+        <div class="flex gap-3 px-6 py-4 bg-stone-50 border-t border-stone-100 flex-shrink-0">
+            <button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-100 transition-colors">Cancel</button>
+            <button id="measurement-submit-btn" onclick="submitMeasurement()" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+        </div>
+    </div>
+</div>
+
+<main class="ml-64 pt-20 p-8 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button onclick="history.back()" title="Back"
+                    class="w-11 h-11 flex items-center justify-center rounded-full bg-white border border-stone-200 text-stone-600 hover:bg-stone-50 transition-all shadow-sm flex-shrink-0">
+                    <span class="material-symbols-outlined text-xl">arrow_back</span>
+                </button>
+                <div>
+                    <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Health &amp; Nutrition</h1>
+                    <p class="text-stone-500 text-sm mt-1">Growth tracking &amp; AI wellness advice</p>
+                </div>
+            </div>
+            <button onclick="openModal()" id="log-btn" class="hidden flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add</span> Log Measurement
+            </button>
+        </div>
+
+        <div id="no-student" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">person_search</span>
+            <p class="mt-3 text-sm">No student selected. Open <b>Students</b> and pick a student to view their health record.</p>
+        </div>
+
+        <div id="health-wrap" class="hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 mb-6 flex items-center gap-4">
+                <div id="student-avatar" class="w-14 h-14 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-xl font-black text-[#6c5a00] overflow-hidden flex-shrink-0"></div>
+                <div>
+                    <h2 id="student-name" class="text-lg font-black text-[#312f23] font-headline"></h2>
+                    <p id="student-meta" class="text-xs text-stone-400"></p>
+                </div>
+                <span id="nutrition-badge" class="ml-auto hidden text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide"></span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <!-- Allergy editor -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                    <h3 class="text-sm font-bold text-[#312f23] font-headline mb-3">Allergy Profile</h3>
+                    <div id="allergy-tags" class="flex flex-wrap gap-2 mb-3"></div>
+                    <div class="flex gap-2">
+                        <input id="allergy-input" type="text" placeholder="Add an allergy (e.g. peanut, milk)…"
+                            onkeydown="if(event.key==='Enter') addAllergyTag()"
+                            class="flex-1 px-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                        <button id="allergy-add-btn" onclick="addAllergyTag()" class="px-4 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Add</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 flex flex-col justify-center">
+                    <label class="block text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-1.5">Advice Activity Level</label>
+                    <select id="advice-activity" class="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50 mb-2">
+                        <option value="0">Sedentary</option>
+                        <option value="1" selected>Normal</option>
+                        <option value="2">Highly Active</option>
+                    </select>
+                    <button onclick="loadAdvice()" class="w-full py-2.5 rounded-xl bg-stone-100 text-stone-600 font-bold text-sm hover:bg-stone-200 transition-colors">Regenerate Advice</button>
+                </div>
+            </div>
+
+            <div id="record-loading" class="py-24 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+
+            <div id="no-records" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+                <span class="material-symbols-outlined text-5xl opacity-30">monitor_weight</span>
+                <p class="mt-3 text-sm">No health measurements logged yet. Tap <b>Log Measurement</b> to add one.</p>
+            </div>
+
+            <div id="record-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">BMI</p>
+                            <p id="stat-bmi" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Weight</p>
+                            <p id="stat-weight" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Height</p>
+                            <p id="stat-height" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                        <h3 class="text-sm font-bold text-[#312f23] font-headline mb-4">Growth Over Time</h3>
+                        <canvas id="growth-chart" height="220"></canvas>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                        <h3 class="text-sm font-bold text-[#312f23] font-headline mb-3">Measurement History</h3>
+                        <div id="history-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 h-fit">
+                    <h3 class="text-sm font-bold text-[#312f23] font-headline mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#ffd709]" style="font-variation-settings:'FILL' 1;">auto_awesome</span>
+                        AI Wellness Advice
+                    </h3>
+                    <div id="advice-panel"><p class="text-xs text-stone-400">Loading…</p></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    const params = new URLSearchParams(location.search);
+    const selectedStudentId = params.get('studentId');
+    const studentName = params.get('studentName') || 'Student';
+    const className = params.get('className') || '';
+    const studentDob = params.get('dob') || '';
+    const studentGender = params.get('gender') || '';
+
+    let growthChart = null;
+    let allergyTags = [];
+    let historyRecords = [];
+    let editingMeasurementId = null;
+
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    const STATUS_STYLE = {
+        normal:   'bg-emerald-100 text-emerald-700',
+        moderate: 'bg-amber-100 text-amber-700',
+        severe:   'bg-red-100 text-red-700'
+    };
+
+    function ageMonthsFromDob(dob) {
+        if (!dob) return 24; // sensible fallback for a kindergarten-age child
+        const birth = new Date(dob);
+        const now = new Date();
+        return Math.max(0, (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth()));
+    }
+
+    async function init() {
+        if (!selectedStudentId) {
+            document.getElementById('no-student').classList.remove('hidden');
+            return;
+        }
+        document.getElementById('health-wrap').classList.remove('hidden');
+        document.getElementById('log-btn').classList.remove('hidden');
+        document.getElementById('student-name').textContent = studentName;
+        document.getElementById('student-meta').textContent = className || 'No classroom yet';
+        document.getElementById('student-avatar').textContent = studentName.charAt(0).toUpperCase();
+
+        await Promise.all([loadHistory(), loadAllergies(), loadAdvice()]);
+    }
+
+    async function loadHistory() {
+        let history = [];
+        try {
+            const res = await fetch(`/api/health/history/${selectedStudentId}`);
+            history = res.ok ? await res.json() : [];
+        } catch (e) { history = []; }
+        historyRecords = history;
+
+        document.getElementById('record-loading').classList.add('hidden');
+        if (!history.length) {
+            document.getElementById('no-records').classList.remove('hidden');
+            document.getElementById('record-content').classList.add('hidden');
+            document.getElementById('nutrition-badge').classList.add('hidden');
+            return;
+        }
+        document.getElementById('no-records').classList.add('hidden');
+        document.getElementById('record-content').classList.remove('hidden');
+
+        const latest = history[0];
+        document.getElementById('stat-bmi').textContent = latest.bmi.toFixed(1);
+        document.getElementById('stat-weight').textContent = latest.weightKg + ' kg';
+        document.getElementById('stat-height').textContent = latest.heightCm + ' cm';
+
+        const badge = document.getElementById('nutrition-badge');
+        badge.classList.remove('hidden');
+        badge.textContent = latest.nutritionStatus;
+        badge.className = `ml-auto text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide ${STATUS_STYLE[latest.nutritionStatus] || 'bg-stone-100 text-stone-500'}`;
+
+        document.getElementById('history-list').innerHTML = history.map(h => `
+            <div class="flex items-center justify-between text-sm border-b border-stone-50 last:border-0 py-2">
+                <span class="text-stone-500">${new Date(h.recordedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}</span>
+                <span class="text-stone-600">BMI ${h.bmi.toFixed(1)} · ${h.weightKg}kg · ${h.heightCm}cm</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full uppercase ${STATUS_STYLE[h.nutritionStatus] || 'bg-stone-100 text-stone-500'}">${esc(h.nutritionStatus)}</span>
+                <span class="flex items-center gap-1 ml-2">
+                    <button onclick="openEditMeasurementModal(${h.id})" class="w-7 h-7 flex items-center justify-center rounded-full text-[#6c5a00] hover:bg-[#ffd709]/20 transition-colors">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="deleteMeasurement(${h.id})" class="w-7 h-7 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition-colors">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </span>
+            </div>`).join('');
+
+        const chronological = [...history].reverse();
+        const ctx = document.getElementById('growth-chart').getContext('2d');
+        if (growthChart) growthChart.destroy();
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chronological.map(h => new Date(h.recordedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short' })),
+                datasets: [
+                    { label: 'BMI', data: chronological.map(h => h.bmi), borderColor: '#eeab00', backgroundColor: '#eeab00', tension: 0.4, yAxisID: 'y' },
+                    { label: 'Weight (kg)', data: chronological.map(h => h.weightKg), borderColor: '#FF6B6B', backgroundColor: '#FF6B6B', tension: 0.4, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                scales: {
+                    y:  { type: 'linear', position: 'left', title: { display: true, text: 'BMI' } },
+                    y1: { type: 'linear', position: 'right', title: { display: true, text: 'Weight (kg)' }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+
+    async function loadAllergies() {
+        try {
+            const res = await fetch(`/api/health/allergies/${selectedStudentId}`);
+            allergyTags = res.ok ? await res.json() : [];
+        } catch (e) { allergyTags = []; }
+        renderAllergyTags();
+    }
+
+    function renderAllergyTags() {
+        const wrap = document.getElementById('allergy-tags');
+        wrap.innerHTML = allergyTags.length
+            ? allergyTags.map(a => `
+                <span class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-xs font-bold">
+                    ${esc(a)}
+                    <span class="material-symbols-outlined text-sm cursor-pointer" onclick="removeAllergyTag('${esc(a)}')">close</span>
+                </span>`).join('')
+            : '<p class="text-xs text-stone-400">No allergies recorded.</p>';
+    }
+
+    async function addAllergyTag() {
+        const input = document.getElementById('allergy-input');
+        const val = input.value.trim().toLowerCase();
+        if (!val) return;
+        input.value = '';
+        if (allergyTags.includes(val)) return;
+        allergyTags.push(val);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function removeAllergyTag(tag) {
+        allergyTags = allergyTags.filter(a => a !== tag);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function saveAllergies() {
+        const btn = document.getElementById('allergy-add-btn');
+        if (btn) btn.disabled = true;
+        try {
+            await fetch(`/api/health/allergies/${selectedStudentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allergies: allergyTags })
+            });
+            await loadAdvice();
+        } catch (e) { alert('Failed to save allergies.'); }
+        finally { if (btn) btn.disabled = false; }
+    }
+
+    async function loadAdvice() {
+        const panel = document.getElementById('advice-panel');
+        panel.innerHTML = '<p class="text-xs text-stone-400">Loading…</p>';
+        const activityLevel = document.getElementById('advice-activity').value;
+        try {
+            const res = await fetch(`/api/health/advice/${selectedStudentId}?activityLevel=${activityLevel}`);
+            if (!res.ok) {
+                panel.innerHTML = '<p class="text-xs text-stone-400">No advice available yet — log a measurement first.</p>';
+                return;
+            }
+            renderAdvice(await res.json());
+        } catch (e) {
+            panel.innerHTML = '<p class="text-xs text-red-400">Failed to load advice.</p>';
+        }
+    }
+
+    function renderAdvice(advice) {
+        const panel = document.getElementById('advice-panel');
+        let html = '';
+
+        if (advice.requiresUrgentReferral) {
+            html += `<div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-red-700 text-xs font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">emergency</span> Please consult a healthcare professional as soon as possible.
+            </div>`;
+        }
+        (advice.allergyWarnings || []).forEach(w => {
+            html += `<div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
+                <p class="text-xs font-bold text-amber-700 uppercase mb-1">⚠ ${esc(w.allergen)} allergy</p>
+                <p class="text-xs text-amber-700">${esc(w.description || '')}</p>
+            </div>`;
+        });
+        if ((advice.dietaryAdvice || []).length) {
+            html += `<p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-2 mt-3">Dietary Advice</p>`;
+            advice.dietaryAdvice.forEach(c => {
+                html += `<div class="bg-stone-50 rounded-xl px-4 py-3 mb-2">
+                    <p class="text-sm font-bold text-[#312f23]">${esc(c.title)}</p>
+                    <p class="text-xs text-stone-500 mt-1">${esc(c.body)}</p>
+                </div>`;
+            });
+        }
+        if ((advice.activityAdvice || []).length) {
+            html += `<p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-2 mt-3">Activity Advice</p>`;
+            advice.activityAdvice.forEach(c => {
+                html += `<div class="bg-stone-50 rounded-xl px-4 py-3 mb-2">
+                    <p class="text-sm font-bold text-[#312f23]">${esc(c.title)}</p>
+                    <p class="text-xs text-stone-500 mt-1">${esc(c.body)}</p>
+                </div>`;
+            });
+        }
+        if (advice.confidenceCaveat) html += `<p class="text-xs text-stone-400 italic mt-3">${esc(advice.confidenceCaveat)}</p>`;
+        if (advice.disclaimer) html += `<p class="text-[10px] text-stone-300 mt-4 leading-relaxed">${esc(advice.disclaimer)}</p>`;
+
+        panel.innerHTML = html || '<p class="text-xs text-stone-400">No advice available.</p>';
+    }
+
+    // ── Log measurement modal ───────────────────────────────────────────────────
+    function openModal() {
+        editingMeasurementId = null;
+        document.getElementById('modal-heading').textContent = 'Log Measurement';
+        document.getElementById('log-weight').value = '';
+        document.getElementById('log-height').value = '';
+        document.getElementById('log-muac').value = '';
+        document.getElementById('log-activity').value = '1';
+        document.getElementById('modal-error').classList.add('hidden');
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
+        document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function openEditMeasurementModal(id) {
+        const record = historyRecords.find(h => h.id === id);
+        if (!record) return;
+        editingMeasurementId = id;
+        document.getElementById('modal-heading').textContent = 'Edit Measurement';
+        document.getElementById('log-weight').value = record.weightKg;
+        document.getElementById('log-height').value = record.heightCm;
+        document.getElementById('log-muac').value = record.muacCm || '';
+        document.getElementById('log-activity').value = '1';
+        document.getElementById('modal-error').classList.add('hidden');
+        document.getElementById('modal-student-name').textContent = `For: ${studentName}${className ? ' · ' + className : ''}`;
+        document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    async function deleteMeasurement(id) {
+        if (!confirm('Delete this measurement record? This cannot be undone.')) return;
+        try {
+            await fetch(`/api/health/records/${id}`, { method: 'DELETE' });
+            await Promise.all([loadHistory(), loadAdvice()]);
+        } catch (e) { alert('Failed to delete measurement.'); }
+    }
+
+    function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+    document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+    let submittingMeasurement = false;
+    async function submitMeasurement() {
+        if (submittingMeasurement) return;
+        const errEl = document.getElementById('modal-error');
+        const weightKg = parseFloat(document.getElementById('log-weight').value);
+        const heightCm = parseFloat(document.getElementById('log-height').value);
+        const muacCm = document.getElementById('log-muac').value ? parseFloat(document.getElementById('log-muac').value) : null;
+        const activityLevel = Number(document.getElementById('log-activity').value);
+
+        if (!weightKg || !heightCm) {
+            errEl.textContent = 'Please enter weight and height.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (weightKg < 2.5 || weightKg > 30) {
+            errEl.textContent = 'Weight must be between 2.5 and 30 kg.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (heightCm < 45 || heightCm > 130) {
+            errEl.textContent = 'Height must be between 45 and 130 cm.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+
+        submittingMeasurement = true;
+        const btn = document.getElementById('measurement-submit-btn');
+        btn.disabled = true;
+        try {
+            const isEdit = editingMeasurementId !== null;
+            const url = isEdit ? `/api/health/records/${editingMeasurementId}` : '/api/health/record';
+            const method = isEdit ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    childId: selectedStudentId,
+                    ageMonths: ageMonthsFromDob(studentDob),
+                    weightKg, heightCm, muacCm,
+                    gender: studentGender,
+                    activityLevel,
+                    allergies: allergyTags,
+                    recordedBy: null
+                })
+            });
+            if (!res.ok) {
+                let msg = 'Failed to save measurement.';
+                try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+                errEl.textContent = msg;
+                errEl.classList.remove('hidden');
+                return;
+            }
+            closeModal();
+            await Promise.all([loadHistory(), loadAdvice()]);
+        } catch (e) {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.classList.remove('hidden');
+        } finally { submittingMeasurement = false; btn.disabled = false; }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadSidebar('admin', 'health');
+        loadTopbar('admin');
+        await init();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Help – MyTadika</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<main class="ml-64 pt-20 p-8 h-screen flex flex-col">
+    <div class="max-w-3xl w-full mx-auto flex flex-col flex-1 min-h-0">
+
+        <div class="mb-4 flex-shrink-0">
+            <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Help</h1>
+            <p class="text-stone-500 text-sm mt-1">Ask the MyTadika Assistant anything about the app.</p>
+        </div>
+
+        <div id="chatbot-fullpage-container" class="flex-1 min-h-0"></div>
+
+    </div>
+</main>
+
+<script>loadSidebar('parent', 'help'); loadTopbar('parent');</script>
+</body>
+</html>

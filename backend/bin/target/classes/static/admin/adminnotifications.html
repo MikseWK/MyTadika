@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Notifications – MyTadika</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<!-- Main content -->
+<main class="ml-64 pt-20 p-8 min-h-screen">
+    <div class="max-w-2xl mx-auto">
+
+        <!-- Page header -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Notifications</h1>
+                <p class="text-stone-500 text-sm mt-1">New registrations, unread messages &amp; overdue fee alerts</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="notif-page-mark-all" class="px-4 py-2 rounded-full text-xs font-bold bg-white border border-stone-200 text-[#6c5a00] hover:bg-[#ffd709]/10 transition-colors">
+                    Mark all read
+                </button>
+                <button id="notif-page-delete-all" class="px-4 py-2 rounded-full text-xs font-bold bg-white border border-stone-200 text-red-500 hover:bg-red-50 transition-colors">
+                    Delete all
+                </button>
+            </div>
+        </div>
+
+        <div id="notif-page-list"></div>
+
+    </div>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadSidebar('admin', 'notifications');
+    loadTopbar('admin');
+
+    const accountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    if (accountId) initNotificationsPage('admin', accountId);
+});
+</script>
+</body>
+</html>

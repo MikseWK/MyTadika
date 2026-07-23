@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Home</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <!-- Welcome -->
+        <div class="relative overflow-hidden bg-[#ffd709]/15 rounded-2xl p-8 border border-[#ffd709]/20">
+            <div class="absolute -right-16 -top-16 w-56 h-56 bg-[#ffc69a]/30 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h1 id="greeting" class="text-3xl md:text-4xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Welcome!</h1>
+                <p class="text-stone-600 mt-2">Here's what's happening with your family today.</p>
+            </div>
+        </div>
+
+        <div id="page-loading" class="py-16 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+
+        <div id="empty-state" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">family_restroom</span>
+            <p class="mt-3 text-sm">No children linked to your account yet. Please contact the school.</p>
+        </div>
+
+        <div id="content-wrap" class="hidden space-y-8">
+
+            <!-- Child switcher + classroom card -->
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                    <p id="child-switcher-label" class="hidden text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">My Children</p>
+                    <div id="child-switcher" class="hidden flex gap-2 mb-4 flex-wrap"></div>
+                    <div id="classroom-info"></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 flex flex-col items-center justify-center text-center gap-3">
+                    <div id="teacher-avatar" class="w-20 h-20 rounded-full bg-[#ffd709]/20 flex items-center justify-center overflow-hidden"></div>
+                    <div>
+                        <h3 id="teacher-name" class="text-lg font-bold text-stone-800">—</h3>
+                        <p class="text-xs text-stone-400">Class Teacher</p>
+                    </div>
+                    <a href="parentchatwithtecher.html" id="msg-teacher-link-1" class="w-full py-2.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] font-bold text-sm hover:bg-[#ffd709]/30 transition-colors">Message Teacher</a>
+                </div>
+            </section>
+
+            <!-- Upcoming classwork & Memory Box -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Upcoming Classwork</h3>
+                        <a href="parentclassroom.html" id="view-classroom-link-1" class="text-sm font-bold text-stone-500 hover:underline">View Classroom</a>
+                    </div>
+                    <div id="classwork-list" class="space-y-3"></div>
+                    <div id="classwork-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">Nothing due right now — all caught up!</div>
+                </div>
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Memory Box</h3>
+                        <a href="parentmemory.html" class="text-sm font-bold text-stone-500 hover:underline">View All</a>
+                    </div>
+                    <div id="memory-grid" class="grid grid-cols-2 gap-3"></div>
+                    <div id="memory-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">No photos or videos shared yet.</div>
+                </div>
+            </section>
+
+            <!-- Upcoming reminders & quick actions -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Upcoming Reminders</h3>
+                        <a href="parentevents.html" class="text-sm font-bold text-stone-500 hover:underline">View All</a>
+                    </div>
+                    <div id="events-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <div id="events-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">No upcoming events or holidays.</div>
+                </div>
+                <div class="lg:col-span-4 space-y-4">
+                    <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <a href="parentfees.html" id="pending-fee-card"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors group shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <span id="pending-fee-icon" class="material-symbols-outlined spin">progress_activity</span>
+                                </div>
+                                <div>
+                                    <span id="pending-fee-title" class="font-bold text-stone-800 block text-sm">Checking fees…</span>
+                                    <span id="pending-fee-subtitle" class="text-xs text-stone-400"></span>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="parentchatwithtecher.html" id="msg-teacher-link-2"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors group shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-[#ffc69a]/30 flex items-center justify-center text-[#8c4a00]">
+                                    <span class="material-symbols-outlined">chat</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Message Teacher</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="parentclassroom.html" id="view-classroom-link-2"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors group shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <span class="material-symbols-outlined">school</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">View Classroom</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+let children = [];
+let selectedChildId = null;
+
+function setGreeting() {
+    const name = localStorage.getItem('fullName') || sessionStorage.getItem('fullName') || '';
+    const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = name ? `${part}, ${name}!` : `${part}!`;
+}
+
+async function loadChildren() {
+    try {
+        const res = await fetch(`/api/student/by-parent/${myAccountId}`);
+        children = res.ok ? await res.json() : [];
+    } catch (e) { children = []; }
+
+    document.getElementById('page-loading').classList.add('hidden');
+    if (!children.length) { document.getElementById('empty-state').classList.remove('hidden'); return; }
+
+    document.getElementById('content-wrap').classList.remove('hidden');
+    renderChildSwitcher();
+    selectChild(children[0].id);
+}
+
+function renderChildSwitcher() {
+    const wrap = document.getElementById('child-switcher');
+    const label = document.getElementById('child-switcher-label');
+    if (children.length <= 1) { wrap.classList.add('hidden'); label.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    label.classList.remove('hidden');
+    wrap.innerHTML = children.map(c => `
+        <button onclick="selectChild(${c.id})" data-child-id="${c.id}"
+            class="child-tab px-4 py-2 rounded-full text-sm font-bold transition-colors ${c.id === selectedChildId ? 'bg-[#ffd709] text-[#6c5a00]' : 'bg-stone-50 border border-stone-200 text-stone-500 hover:bg-stone-100'}">
+            ${esc(c.fullName)}
+        </button>`).join('');
+}
+
+function selectChild(childId) {
+    selectedChildId = childId;
+    renderChildSwitcher();
+    const child = children.find(c => c.id === childId);
+    renderClassroomInfo(child);
+}
+
+function renderClassroomInfo(child) {
+    const el = document.getElementById('classroom-info');
+    const classrooms = child.classrooms || [];
+    if (!classrooms.length) {
+        el.innerHTML = `<h2 class="text-xl font-black text-stone-800">${esc(child.fullName)}</h2><p class="text-sm text-stone-400 mt-1">Not enrolled in a classroom yet.</p>`;
+        document.getElementById('teacher-name').textContent = '—';
+        document.getElementById('teacher-avatar').innerHTML = '<span class="material-symbols-outlined text-3xl text-[#6c5a00]/40">person</span>';
+        setQuickLinks(null, null, null);
+        return;
+    }
+    const c = classrooms[0];
+    const classroomLinks = classrooms.map(cl =>
+        `<a href="parentclassroom.html?childId=${child.id}&classroomId=${cl.id}" class="font-bold text-[#6c5a00] hover:underline">${esc(cl.name)}</a>`
+    ).join(', ');
+    el.innerHTML = `
+        <h2 class="text-xl font-black text-stone-800">${esc(child.fullName)}</h2>
+        <p class="text-sm text-stone-500 mt-1">${classroomLinks}</p>
+        ${classrooms.length > 1 ? `<p class="text-xs text-stone-400 mt-1">Enrolled in ${classrooms.length} classes</p>` : `<p class="text-xs text-stone-400 mt-1">${esc(c.section || '')}</p>`}`;
+
+    document.getElementById('teacher-name').textContent = c.teacherName || '—';
+    document.getElementById('teacher-avatar').innerHTML = c.teacherImage
+        ? `<img src="${esc(c.teacherImage)}" class="w-full h-full object-cover" alt="">`
+        : '<span class="material-symbols-outlined text-3xl text-[#6c5a00]/40">person</span>';
+
+    setQuickLinks(child.id, c.id, c.teacherAccountId);
+}
+
+// Points "Message Teacher" at the child's actual class teacher, and "View Classroom" at the
+// actual child+classroom, instead of landing on a generic page the parent has to navigate from.
+function setQuickLinks(childId, classroomId, teacherAccountId) {
+    const msgHref = teacherAccountId ? `parentchatwithtecher.html?teacherId=${encodeURIComponent(teacherAccountId)}` : 'parentchatwithtecher.html';
+    const classroomHref = (childId && classroomId) ? `parentclassroom.html?childId=${childId}&classroomId=${classroomId}` : 'parentclassroom.html';
+    ['msg-teacher-link-1', 'msg-teacher-link-2'].forEach(id => { const el = document.getElementById(id); if (el) el.href = msgHref; });
+    // Next to "Upcoming Classwork" it's useful to jump straight into that child's classroom;
+    // the Quick Actions one (bottom right) always goes to the classroom overview, no auto-entry.
+    const link1 = document.getElementById('view-classroom-link-1');
+    if (link1) link1.href = classroomHref;
+}
+
+// Combines every linked child's upcoming work into one list — if two children share the
+// same class and assignment, their names are merged onto a single card instead of duplicating it.
+function renderClasswork() {
+    const list = document.getElementById('classwork-list');
+    const empty = document.getElementById('classwork-empty');
+
+    const items = [];
+    children.forEach(child => {
+        (child.classrooms || []).forEach(c => {
+            (c.upcomingWork || []).forEach(w => {
+                items.push({ id: w.id, title: w.title, dueDate: w.dueDate, classroomId: c.id, className: c.name, childId: child.id, childName: child.fullName });
+            });
+        });
+    });
+    items.sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
+    if (!items.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = items.slice(0, 5).map(w => `
+        <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex items-center gap-4">
+            <div class="bg-stone-50 rounded-lg p-2.5 text-center min-w-[56px]">
+                <span class="block text-[10px] font-bold text-stone-400 uppercase">Due</span>
+                <span class="block text-sm font-black text-[#6c5a00]">${fmtDate(w.dueDate)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-sm text-stone-800 truncate">${esc(w.title)}</h4>
+                <p class="text-xs text-stone-400">${esc(w.className)} · ${esc(w.childName)}</p>
+            </div>
+            <a href="parentclassroom.html?childId=${w.childId}&classroomId=${w.classroomId}&tab=classwork&postId=${w.id}"
+                class="flex-shrink-0 px-4 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] font-bold text-xs hover:bg-[#ffd709]/30 transition-colors">View</a>
+        </div>`).join('');
+}
+
+async function loadMemoryHighlights() {
+    const grid = document.getElementById('memory-grid');
+    const empty = document.getElementById('memory-empty');
+    try {
+        const res = await fetch(`/api/memory/parent/${myAccountId}`);
+        const posts = res.ok ? await res.json() : [];
+        if (!posts.length) { empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        grid.innerHTML = posts.slice(0, 4).map(p => {
+            const first = p.media && p.media[0];
+            if (!first) return '';
+            const isVideo = first.type === 'VIDEO';
+            return `
+            <a href="parentmemory.html?postId=${p.id}" class="relative group aspect-square rounded-lg overflow-hidden bg-stone-100 shadow-sm block">
+                ${isVideo
+                    ? `<video src="${esc(first.url)}" class="w-full h-full object-cover" preload="metadata" muted></video>
+                       <span class="absolute inset-0 flex items-center justify-center"><span class="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"><span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">play_arrow</span></span></span>`
+                    : `<img src="${esc(first.url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="">`}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                    <p class="text-white text-[10px] font-medium truncate">${esc(p.classroomName)}</p>
+                </div>
+            </a>`;
+        }).join('');
+    } catch (e) { empty.classList.remove('hidden'); }
+}
+
+async function loadEvents() {
+    const list = document.getElementById('events-list');
+    const empty = document.getElementById('events-empty');
+    const today = new Date().toISOString().slice(0, 10);
+    let items = [];
+    try {
+        const [hRes, eRes] = await Promise.all([fetch('/api/events/holidays'), fetch('/api/events/school')]);
+        if (hRes.ok) (await hRes.json()).forEach(h => items.push({ date: h.holidayDate, title: h.name, desc: h.description || 'Public Holiday', kind: 'holiday' }));
+        if (eRes.ok) (await eRes.json()).forEach(e => items.push({ date: e.eventDate, title: e.title, desc: e.description || '', kind: 'event' }));
+    } catch (e) { }
+
+    items = items.filter(i => i.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+    if (!items.length) { empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = items.slice(0, 4).map(i => {
+        const [y, m, d] = i.date.split('-');
+        const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m) - 1];
+        const borderColor = i.kind === 'holiday' ? 'border-emerald-400' : 'border-amber-400';
+        return `
+        <div class="p-5 bg-white rounded-xl flex gap-4 items-start border-l-4 ${borderColor} shadow-sm">
+            <div class="bg-stone-50 p-2.5 rounded-md text-center min-w-[56px]">
+                <span class="block text-[10px] font-bold text-stone-400 uppercase">${mo}</span>
+                <span class="block text-xl font-black text-[#6c5a00]">${parseInt(d)}</span>
+            </div>
+            <div class="min-w-0">
+                <h4 class="font-bold text-sm text-stone-800 truncate">${esc(i.title)}</h4>
+                <p class="text-xs text-stone-400 mt-1">${esc(i.desc)}</p>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function loadPendingFee() {
+    const titleEl = document.getElementById('pending-fee-title');
+    const subEl = document.getElementById('pending-fee-subtitle');
+    const iconEl = document.getElementById('pending-fee-icon');
+    try {
+        if (!children.length) { titleEl.textContent = 'No fees to show'; return; }
+        // Check every child's fees, not just the first — a parent with multiple
+        // children needs pending fees from any of them to surface here.
+        const feesByChild = await Promise.all(children.map(async c => {
+            const res = await fetch(`/api/fees/students/${c.id}`);
+            const fees = res.ok ? await res.json() : [];
+            return fees.map(f => ({ ...f, childName: c.fullName }));
+        }));
+        const fees = feesByChild.flat();
+        const today = new Date().toISOString().slice(0, 10);
+        const pending = fees.filter(f => f.status === 'PENDING').sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+        if (!pending.length) { titleEl.textContent = 'All fees paid'; subEl.textContent = 'Nothing pending'; return; }
+
+        const next = pending[0];
+        const overdue = next.dueDate < today;
+        const total = next.totalAmount != null ? next.totalAmount : next.amount;
+        const childPrefix = children.length > 1 ? `${next.childName} · ` : '';
+        const extra = pending.length > 1 ? ` (+${pending.length - 1} more)` : '';
+        titleEl.textContent = `RM ${Number(total).toFixed(2)} ${overdue ? 'overdue' : 'due'}`;
+        subEl.textContent = next.lateFeeAmount
+            ? `${childPrefix}${next.description} · incl. RM ${Number(next.lateFeeAmount).toFixed(2)} late fee${extra}`
+            : `${childPrefix}${next.description} · Due ${next.dueDate}${extra}`;
+        if (overdue) titleEl.classList.add('text-red-600');
+    } catch (e) {
+        titleEl.textContent = 'Fees';
+        subEl.textContent = 'View details';
+    } finally {
+        if (iconEl) { iconEl.textContent = 'payments'; iconEl.classList.remove('spin'); }
+    }
+}
+
+(async function init() {
+    setGreeting();
+    await loadChildren();
+    renderClasswork();
+    await Promise.all([loadMemoryHighlights(), loadEvents(), loadPendingFee()]);
+})();
+</script>
+
+<script>loadSidebar('parent', 'home'); loadTopbar('parent', { dateOnly: true });</script>
+</body>
+</html>

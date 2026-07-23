@@ -1,0 +1,484 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="en">
+
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Login | MyTadika Premium Journal</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet">
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#FFD700", // KinderJoy Sun Yellow
+            "primary-dim": "#E6C200",
+            "secondary": "#FF8C42", // Playful Orange
+            "secondary-container": "#FFF4E1",
+            "tertiary": "#6BCB77", // Garden Green
+            "background": "#FFFDF5", // Soft Cream
+            "surface": "#FFFFFF",
+            "on-surface": "#4A3F35", // Warm Charcoal
+            "on-surface-variant": "#857668",
+            "outline": "#E8E2D9",
+            "surface-container-low": "#FFF9EB",
+            "surface-container-lowest": "#FFFFFF",
+            "surface-container-high": "#F7F2E9",
+            "surface-container-highest": "#EFE9DD"
+          },
+          fontFamily: {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Plus Jakarta Sans"],
+            "label": ["Plus Jakarta Sans"]
+          },
+          borderRadius: {
+            "DEFAULT": "2rem",
+            "lg": "2.5rem",
+            "xl": "3rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .bg-gradient-playful {
+      background: linear-gradient(135deg, #FFD700 0%, #FF8C42 100%);
+    }
+
+    .scribble-border {
+      border: 2px solid #E8E2D9;
+      border-radius: 47% 53% 61% 39% / 45% 51% 49% 55%;
+    }
+
+    .asymmetric-blob {
+      border-radius: 47% 53% 61% 39% / 45% 51% 49% 55%;
+    }
+
+    .role-btn:not(.selected):hover {
+      background-color: rgba(255, 215, 0, 0.15);
+      color: #4A3F35;
+    }
+
+    /* SELECTED = NO HOVER AT ALL */
+    .role-btn.selected:hover {
+      background-color: #FFD700 !important;
+      color: #4A3F35 !important;
+      cursor: default;
+    }
+  </style>
+</head>
+
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center px-4 md:px-8 py-6 overflow-x-hidden">
+  <!-- Background Decorative Elements -->
+  <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-primary opacity-20 asymmetric-blob -z-10"></div>
+  <div
+    class="fixed bottom-[-5%] right-[-5%] w-[30rem] h-[30rem] bg-secondary-container opacity-50 asymmetric-blob -z-10">
+  </div>
+  <main
+    class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-0 bg-surface-container-lowest rounded-xl shadow-[0_20px_50px_rgba(255,215,0,0.1)] overflow-hidden">
+    <!-- Illustration Side (Left) -->
+    <section
+      class="hidden md:flex md:col-span-6 lg:col-span-7 bg-surface-container-low p-12 flex-col justify-between relative overflow-hidden">
+      <div class="z-10">
+        <div class="flex items-center gap-4 mb-10">
+          <div class="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-md">
+            <span class="material-symbols-outlined text-on-surface text-3xl"
+              style="font-variation-settings: &quot;FILL&quot; 1;">wb_sunny</span>
+          </div>
+          <div>
+            <h1 class="text-2xl font-extrabold text-on-surface tracking-tight">MyTadika</h1>
+            <p class="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Nurturing Growth</p>
+          </div>
+        </div>
+        <div class="max-w-md">
+          <h2 class="text-4xl lg:text-5xl font-extrabold text-on-surface leading-tight mb-6">
+            Nurturing <span class="text-secondary italic">Brilliance</span> with Every Smile.
+          </h2>
+          <p class="text-lg text-on-surface-variant leading-relaxed">
+            The sunniest corner for educators and parents to celebrate every magical milestone in your child's early
+            adventure.
+          </p>
+        </div>
+      </div>
+      <!-- Overlapping Editorial Cards -->
+      <div class="relative h-64 lg:h-80 mt-12">
+        <div
+          class="absolute top-0 left-0 w-64 h-80 bg-white rounded-xl shadow-xl p-4 rotate-[-4deg] z-20 border-4 border-white">
+          <img class="w-full h-48 object-cover rounded-lg mb-4"
+            data-alt="Close-up of a happy toddler girl focused on drawing with bright crayons in a sunlit modern classroom"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOIjs5_mer7QyykEMe7h18yZKMYFyr64OjjU3hT2wdU4rEYwCgpCIOF8eq8iuRbGaz4ANXGcTq3BSfIA2WWdYOYOKc1SVvQg5CvFzx52HzETx1pTuXcptOeSrG2VZGF7Nghn8skE3wjZF3Dabtg-30xb4ba5VqvTXt1fc-XDF2KpHvtgnMj-Vo3sUJ_UIq4VC5ZcoCcgCyJvmVNY48_MyPGQeHs-_KTzL188bWf46VN2XuKAgiY4IBfxlsqRUOTppzj68ehUmm53Q">
+          <div class="space-y-2">
+            <div class="h-4 w-3/4 bg-primary/20 rounded-full"></div>
+            <div class="h-3 w-1/2 bg-secondary/10 rounded-full"></div>
+          </div>
+        </div>
+        <div
+          class="absolute top-10 left-48 w-56 h-72 bg-white rounded-xl shadow-lg p-4 rotate-[6deg] z-10 border-4 border-white">
+          <img class="w-full h-40 object-cover rounded-lg mb-4"
+            data-alt="A kind teacher sitting on a small chair reading a colorful storybook to a group of diverse attentive children"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0uQ0Cv5zrT2EDjvTprvm9dGegc7DynKk_EjIRyqEDf5a0J3gECOWFzanWIOmfozI1KCFAOL-2CkdqHdJTH0mUffQfag0wk2z2hCuBhUGwTamZ4yprY4h673fKrv11vHBTJIamQaneFEEpyN_sTmF-LZVJDWrbzNJ-tdKIvSDr246Ac_z7C7Q8t9yp3FlAnokKAj2oAPfaO_5rX21paH19uqyCN4__5vafgIYF1bRZedb3b4XgfB4RDhmdtSRz9U-BQVHin9EI7aE">
+          <div class="space-y-2">
+            <div class="h-4 w-2/3 bg-primary/20 rounded-full"></div>
+            <div class="h-3 w-full bg-secondary/10 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Decorative Organic Shapes -->
+      <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-primary/20 rounded-full blur-3xl"></div>
+    </section>
+    <!-- Login Form Side (Right) -->
+    <section
+      class="col-span-1 md:col-span-6 lg:col-span-5 p-8 md:p-10 flex flex-col justify-center bg-surface-container-lowest">
+      <div class="mb-4 text-center md:text-left">
+        <div class="md:hidden flex justify-center mb-6">
+          <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg">
+            <span class="material-symbols-outlined text-on-surface text-4xl"
+              style="font-variation-settings: &quot;FILL&quot; 1;">wb_sunny</span>
+          </div>
+        </div>
+        <h2 class="text-3xl font-extrabold text-on-surface mb-2">Welcome Back!</h2>
+        <p class="text-on-surface-variant font-medium">Step inside the garden of learning.</p>
+      </div>
+      <!-- Role Selection -->
+      <div class="mb-5">
+        <label class="block text-sm font-bold text-on-surface-variant mb-4 px-1">
+          I am a...
+        </label>
+
+        <div class="grid grid-cols-3 gap-4">
+
+          <!-- Parent -->
+          <button type="button"
+            class="role-btn group flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary/10 hover:text-on-surface transition-all border border-transparent"
+            data-role="parent">
+            <span class="material-symbols-outlined mb-2 text-3xl">family_restroom</span>
+            <span class="text-xs font-bold">Parent</span>
+          </button>
+
+          <!-- Teacher -->
+          <button type="button"
+            class="role-btn group flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high text-on-surface-variant border border-transparent transition-all"
+            data-role="teacher">
+
+            <span class="material-symbols-outlined mb-2 text-3xl">
+              co_present
+            </span>
+
+            <span class="text-xs font-bold">
+              Teacher
+            </span>
+
+          </button>
+
+          <!-- Admin -->
+          <button type="button"
+            class="role-btn group flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-high text-on-surface-variant hover:bg-primary/10 hover:text-on-surface transition-all border border-transparent"
+            data-role="admin">
+            <span class="material-symbols-outlined mb-2 text-3xl">school</span>
+            <span class="text-xs font-bold">Admin</span>
+          </button>
+
+        </div>
+      </div>
+      <form class="space-y-6" id="login-form">
+        <!-- Email Field -->
+        <div class="space-y-2">
+          <label class="block text-sm font-bold text-on-surface-variant px-2" for="email">Email Address</label>
+          <div class="relative">
+            <span
+              class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant">mail</span>
+            <input
+              class="w-full pl-14 pr-6 py-4 bg-surface-container-high border-2 border-transparent rounded-full focus:bg-surface-container-lowest focus:border-primary focus:ring-0 text-on-surface transition-all placeholder:text-on-surface-variant/50 font-medium"
+              id="email" placeholder="hello@example.com" type="email">
+          </div>
+        </div>
+        <!-- Password Field -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center px-2">
+            <label class="block text-sm font-bold text-on-surface-variant" for="password">Password</label>
+            <a class="text-xs font-bold text-secondary hover:underline underline-offset-4 transition-all"
+              href="forgotpassword.html">Forgot?</a>
+          </div>
+          <div class="relative">
+            <span
+              class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant">key</span>
+            <input
+              class="w-full pl-14 pr-14 py-4 bg-surface-container-high border-2 border-transparent rounded-full focus:bg-surface-container-lowest focus:border-primary focus:ring-0 text-on-surface transition-all placeholder:text-on-surface-variant/50 font-medium"
+              id="password" placeholder="Your secret code" type="password">
+            <button
+              class="absolute right-5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
+              id="toggle-password"
+              type="button">
+              <span class="material-symbols-outlined" id="toggle-icon">visibility</span>
+            </button>
+          </div>
+        </div>
+        <!-- Remember Me -->
+        <div class="flex items-center px-2">
+          <input
+            class="w-6 h-6 rounded-full text-primary focus:ring-primary/20 bg-surface-container-high border-none cursor-pointer"
+            id="remember" type="checkbox">
+          <label class="ml-3 text-sm font-bold text-on-surface-variant cursor-pointer" for="remember">Keep me logged
+            in</label>
+        </div>
+        <!-- Sign In Button -->
+        <button id="login-submit-btn"
+          class="w-full bg-gradient-playful text-on-surface font-extrabold py-5 rounded-full shadow-lg shadow-primary/30 hover:shadow-xl hover:translate-y-[-2px] active:translate-y-0 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          type="submit">
+          <span class="">Sign In to MyTadika</span>
+          <span class="material-symbols-outlined text-2xl font-bold">celebration</span>
+        </button>
+      </form>
+      <!-- Alert Message -->
+      <div id="alert-msg" class="hidden rounded-full px-6 py-3 text-sm font-bold text-center mt-3"></div>
+      <!-- Social/Register Footer -->
+      <div id="register-footer" class="mt-4 text-center">
+        <p class="text-on-surface-variant font-medium">
+          New to MyTadika?
+          <a href="createparentaccount.html" class="text-secondary font-bold hover:underline underline-offset-4 transition-all ml-1">Create
+            Account</a>
+        </p>
+      </div>
+    </section>
+  </main>
+  <!-- Support Floating Action -->
+  <div class="fixed bottom-6 left-6 z-50">
+    <button id="support-btn" onclick="toggleSupportInfo()"
+      class="flex items-center gap-2 px-5 py-3 bg-white border border-outline rounded-full shadow-lg hover:shadow-xl transition-all text-sm font-bold text-on-surface-variant hover:text-on-surface">
+      <span class="material-symbols-outlined text-lg">help</span>
+      Having trouble logging in?
+    </button>
+    <div id="support-popup"
+      class="hidden absolute bottom-16 left-0 w-72 bg-white rounded-2xl shadow-2xl border border-outline p-5">
+      <p class="text-sm font-bold text-on-surface mb-2">Need help?</p>
+      <p class="text-xs text-on-surface-variant leading-relaxed mb-3">If you're having trouble logging in, contact
+        the school admin:</p>
+      <button id="support-email-row" type="button" onclick="copySupportEmail()"
+        class="w-full flex items-center gap-2 bg-surface-container-high rounded-xl px-4 py-3 hover:bg-primary/10 transition-colors text-left">
+        <span class="material-symbols-outlined text-lg text-secondary" id="support-email-icon">mail</span>
+        <span id="support-email-text" class="text-sm font-semibold text-on-surface truncate flex-1">Loading…</span>
+      </button>
+      <p class="text-[11px] text-on-surface-variant/70 mt-2 px-1">Click to copy the email address.</p>
+    </div>
+  </div>
+
+  <script>
+    let supportInfoLoaded = false;
+    let supportEmail = null;
+    async function toggleSupportInfo() {
+      const popup = document.getElementById('support-popup');
+      const opening = popup.classList.contains('hidden');
+      popup.classList.toggle('hidden');
+      if (opening && !supportInfoLoaded) {
+        const emailEl = document.getElementById('support-email-text');
+        try {
+          const res = await fetch('/api/chat/admin-inbox/identity');
+          const data = res.ok ? await res.json() : null;
+          if (data && data.email) {
+            supportEmail = data.email;
+            emailEl.textContent = data.email;
+          } else {
+            emailEl.textContent = 'Not available — please check with your school.';
+          }
+          supportInfoLoaded = true;
+        } catch (e) {
+          emailEl.textContent = 'Unable to load contact info right now.';
+        }
+      }
+    }
+    async function copySupportEmail() {
+      if (!supportEmail) return;
+      const emailEl = document.getElementById('support-email-text');
+      const iconEl = document.getElementById('support-email-icon');
+      try {
+        await navigator.clipboard.writeText(supportEmail);
+      } catch (e) {
+        // Clipboard API unavailable (e.g. insecure context) — fall back to a manual selection trick.
+        const ta = document.createElement('textarea');
+        ta.value = supportEmail;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const original = emailEl.textContent;
+      const originalIcon = iconEl.textContent;
+      emailEl.textContent = 'Copied!';
+      iconEl.textContent = 'check';
+      setTimeout(() => {
+        emailEl.textContent = original;
+        iconEl.textContent = originalIcon;
+      }, 1500);
+    }
+    document.addEventListener('click', (e) => {
+      const popup = document.getElementById('support-popup');
+      const btn = document.getElementById('support-btn');
+      if (!popup || popup.classList.contains('hidden')) return;
+      if (!popup.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+        popup.classList.add('hidden');
+      }
+    });
+  </script>
+
+  <script>
+    const roleButtons = document.querySelectorAll(".role-btn");
+
+    function setSelected(selectedBtn) {
+
+      roleButtons.forEach(btn => {
+        btn.classList.remove("selected");
+
+        btn.classList.remove(
+          "bg-primary",
+          "text-on-surface",
+          "shadow-md",
+          "ring-4",
+          "ring-primary/20",
+          "scale-105"
+        );
+
+        btn.classList.add(
+          "bg-surface-container-high",
+          "text-on-surface-variant"
+        );
+      });
+
+      selectedBtn.classList.add("selected");
+
+      selectedBtn.classList.remove(
+        "bg-surface-container-high",
+        "text-on-surface-variant"
+      );
+
+      selectedBtn.classList.add(
+        "bg-primary",
+        "text-on-surface",
+        "shadow-md",
+        "ring-4",
+        "ring-primary/20",
+        "scale-105"
+      );
+
+      const hideRegister = selectedBtn.dataset.role === 'teacher' || selectedBtn.dataset.role === 'admin';
+      document.getElementById('register-footer').style.display = hideRegister ? 'none' : '';
+    }
+
+    roleButtons.forEach(btn => {
+      btn.addEventListener("click", () => setSelected(btn));
+    });
+
+    // default = Parent
+    setSelected(document.querySelector('[data-role="parent"]'));
+  </script>
+
+  <script>
+    // Password visibility toggle
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggle-icon');
+
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = passwordInput.type === 'password';
+      passwordInput.type = isHidden ? 'text' : 'password';
+      toggleIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
+    });
+
+    // Login form submission
+    const loginForm = document.getElementById('login-form');
+    const alertMsg = document.getElementById('alert-msg');
+
+    function showAlert(message, isSuccess) {
+      alertMsg.textContent = message;
+      alertMsg.className = isSuccess
+        ? 'rounded-full px-6 py-3 text-sm font-bold text-center mt-3 bg-green-100 text-green-700'
+        : 'rounded-full px-6 py-3 text-sm font-bold text-center mt-3 bg-red-100 text-red-700';
+    }
+
+    let submittingLogin = false;
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (submittingLogin) return;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const selectedRole = document.querySelector('.role-btn.selected')?.dataset.role || 'parent';
+
+      if (!email || !password) {
+        showAlert('Please enter your email and password.', false);
+        return;
+      }
+
+      submittingLogin = true;
+      const submitBtn = document.getElementById('login-submit-btn');
+      submitBtn.disabled = true;
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAlert(data.error || 'Login failed. Please try again.', false);
+          return;
+        }
+
+        // Role validation
+        const accountRole = data.roleType?.toUpperCase();
+        if (selectedRole === 'teacher' && accountRole !== 'TEACHER') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+        if (selectedRole === 'parent' && accountRole !== 'PARENT') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+        if (selectedRole === 'admin' && accountRole !== 'ADMIN') {
+          showAlert('Wrong email or password.', false);
+          return;
+        }
+
+        const rememberEl = document.getElementById('remember');
+        const store = (rememberEl && rememberEl.checked) ? localStorage : sessionStorage;
+        store.setItem('token', data.token);
+        store.setItem('accountId', data.accountId);
+        store.setItem('roleType', data.roleType);
+        store.setItem('fullName', data.fullName);
+        store.setItem('email', data.email || '');
+
+        if (accountRole === 'TEACHER') {
+          window.location.href = '/teacher/teacherhome.html';
+        } else if (accountRole === 'ADMIN') {
+          window.location.href = '/admin/index.html';
+        } else {
+          window.location.href = '/parent/parenthome.html';
+        }
+      } catch (err) {
+        showAlert('Unable to connect to the server. Please try again.', false);
+      } finally { submittingLogin = false; submitBtn.disabled = false; }
+    });
+  </script>
+
+</body>
+
+</html>
+

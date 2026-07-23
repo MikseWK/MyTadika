@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Memory Box</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Memory Box</h1>
+            <p class="text-stone-500 text-sm mt-1">Photos, videos, and moments from your child's classroom.</p>
+        </div>
+
+        <div class="flex items-center justify-between mb-5">
+            <select id="class-filter" onchange="renderGrid()"
+                class="min-w-[160px] px-3 py-2 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                <option value="ALL">All Classes</option>
+            </select>
+            <span class="text-xs text-stone-400" id="grid-count"></span>
+        </div>
+
+        <div id="grid-loading" class="py-24 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+        <div id="grid-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-16 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">auto_stories</span>
+            <p class="mt-3 text-sm">No photos yet — check back after your child's teacher shares some!</p>
+        </div>
+        <div id="memory-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </div>
+</main>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onclick="if(event.target===this) closeLightbox()">
+    <button onclick="closeLightbox()" class="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined">close</span>
+    </button>
+    <button onclick="downloadLightboxMedia()" class="absolute top-5 right-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" title="Download">
+        <span class="material-symbols-outlined">download</span>
+    </button>
+    <button onclick="lightboxNav(-1)" class="absolute left-3 sm:left-6 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined text-2xl">chevron_left</span>
+    </button>
+    <div class="flex flex-col items-center gap-3 max-h-[90vh] max-w-[90vw]">
+        <div id="lightbox-media" class="max-h-[72vh] max-w-[90vw]"></div>
+        <div id="lightbox-thumbs" class="hidden gap-2 overflow-x-auto max-w-[90vw] px-1 pb-1"></div>
+    </div>
+    <button onclick="lightboxNav(1)" class="absolute right-3 sm:right-6 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined text-2xl">chevron_right</span>
+    </button>
+    <span id="lightbox-counter" class="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-xs font-bold"></span>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+let allPosts = [];
+let lightboxMedia = [];
+let lightboxIndex = 0;
+let loadedComments = {};
+let submittingComment = {};
+function isVideo(item) { return item && item.type === 'VIDEO'; }
+
+const deepLinkPostId = new URLSearchParams(location.search).get('postId');
+
+async function downloadLightboxMedia() {
+    const item = lightboxMedia[lightboxIndex];
+    if (!item) return;
+    try {
+        const res = await fetch(item.url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `memory-${Date.now()}.${isVideo(item) ? 'mp4' : 'jpg'}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+    } catch (e) { showToast('Failed to download.'); }
+}
+
+async function loadPosts() {
+    try {
+        const res = await fetch(`/api/memory/parent/${myAccountId}`);
+        allPosts = res.ok ? await res.json() : [];
+    } catch (e) { allPosts = []; }
+
+    const classNames = [...new Set(allPosts.map(p => p.classroomName).filter(Boolean))].sort();
+    const select = document.getElementById('class-filter');
+    select.innerHTML = '<option value="ALL">All Classes</option>' +
+        classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
+
+    if (deepLinkPostId) {
+        const target = allPosts.find(p => String(p.id) === String(deepLinkPostId));
+        if (target) select.value = target.classroomName;
+    }
+
+    document.getElementById('grid-loading').classList.add('hidden');
+    renderGrid();
+    if (deepLinkPostId) setTimeout(scrollToDeepLinkedPost, 100);
+}
+
+function scrollToDeepLinkedPost() {
+    const card = document.getElementById(`memory-post-${deepLinkPostId}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('ring-4', 'ring-[#ffd709]');
+    setTimeout(() => card.classList.remove('ring-4', 'ring-[#ffd709]'), 3000);
+}
+
+function renderGrid() {
+    const classFilter = document.getElementById('class-filter').value;
+    const list = classFilter === 'ALL' ? allPosts : allPosts.filter(p => p.classroomName === classFilter);
+
+    const grid = document.getElementById('memory-grid');
+    const empty = document.getElementById('grid-empty');
+    document.getElementById('grid-count').textContent = list.length ? `${list.length} post${list.length !== 1 ? 's' : ''}` : '';
+
+    if (!list.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); grid.classList.remove('hidden');
+
+    grid.innerHTML = list.map(p => `
+        <div id="memory-post-${p.id}" class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden transition-shadow">
+            <div class="relative aspect-square bg-stone-100 cursor-pointer" onclick='openLightbox(${JSON.stringify(p.media)}, 0)'>
+                ${isVideo(p.media[0])
+                    ? `<video src="${esc(p.media[0].url)}" class="w-full h-full object-cover" preload="metadata" muted></video>
+                       <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                           <span class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">
+                               <span class="material-symbols-outlined text-2xl text-white" style="font-variation-settings:'FILL' 1">play_arrow</span>
+                           </span>
+                       </span>`
+                    : `<img src="${esc(p.media[0].url)}" class="w-full h-full object-cover" alt="">`}
+                ${p.media.length > 1 ? `<span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">+${p.media.length - 1} more</span>` : ''}
+            </div>
+            <div class="p-4">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] uppercase tracking-wide">${esc(p.classroomName)}</span>
+                    <span class="text-[10px] text-stone-400">${fmtDate(p.createdAt)} · ${esc(p.authorName)}</span>
+                </div>
+                ${p.caption ? `<p class="text-sm text-stone-600 leading-snug">${esc(p.caption)}</p>` : ''}
+                ${reactionCommentFooter(p)}
+            </div>
+        </div>`).join('');
+}
+
+function reactionCommentFooter(p) {
+    return `
+        <div class="flex items-center gap-4 mt-3 pt-3 border-t border-stone-100">
+            <button id="reaction-btn-${p.id}" onclick="toggleReaction(${p.id}, event)"
+                class="flex items-center gap-1 text-xs font-semibold ${p.reactedByMe ? 'text-red-500' : 'text-stone-400'} hover:text-red-500 transition-colors">
+                <span id="reaction-icon-${p.id}" class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' ${p.reactedByMe ? 1 : 0},'wght' 500">favorite</span>
+                <span id="reaction-count-${p.id}">${p.reactionCount || ''}</span>
+            </button>
+            <button onclick="toggleComments(${p.id})" class="flex items-center gap-1 text-xs font-semibold text-stone-400 hover:text-[#6c5a00] transition-colors">
+                <span class="material-symbols-outlined text-lg">chat_bubble</span>
+                <span id="comment-count-${p.id}">${p.commentCount || 0} comment${p.commentCount === 1 ? '' : 's'}</span>
+            </button>
+        </div>
+        <div id="comments-${p.id}" class="hidden mt-3 pt-3 border-t border-stone-100 space-y-2">
+            <div id="comments-list-${p.id}" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            <div class="flex gap-2">
+                <input id="comment-input-${p.id}" type="text" placeholder="Write a comment…"
+                    class="flex-1 border border-stone-200 rounded-full px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();submitComment(${p.id});}">
+                <button onclick="submitComment(${p.id})" class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-[#ffd709] text-[#6c5a00] hover:bg-[#f5cc00]">
+                    <span class="material-symbols-outlined text-base">send</span>
+                </button>
+            </div>
+        </div>`;
+}
+
+const reactionsInFlight = new Set();
+async function toggleReaction(postId, evt) {
+    if (evt) evt.stopPropagation();
+    if (reactionsInFlight.has(postId)) return; // rapid double-tap would otherwise race and double-insert
+    reactionsInFlight.add(postId);
+    try {
+        const res = await fetch(`/api/memory/${postId}/reactions/toggle`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: myAccountId })
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const post = allPosts.find(x => x.id === postId);
+        if (post) { post.reactedByMe = data.reactedByMe; post.reactionCount = data.reactionCount; }
+        const btn = document.getElementById(`reaction-btn-${postId}`);
+        const icon = document.getElementById(`reaction-icon-${postId}`);
+        const count = document.getElementById(`reaction-count-${postId}`);
+        if (btn) btn.classList.toggle('text-red-500', data.reactedByMe);
+        if (icon) icon.style.fontVariationSettings = `'FILL' ${data.reactedByMe ? 1 : 0},'wght' 500`;
+        if (count) count.textContent = data.reactionCount || '';
+    } catch (e) {
+    } finally { reactionsInFlight.delete(postId); }
+}
+
+async function toggleComments(postId) {
+    const panel = document.getElementById(`comments-${postId}`);
+    if (!panel) return;
+    const opening = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (opening) await loadComments(postId);
+}
+
+async function loadComments(postId) {
+    const listEl = document.getElementById(`comments-list-${postId}`);
+    listEl.innerHTML = '<p class="text-xs text-stone-300 italic">Loading…</p>';
+    try {
+        const res = await fetch(`/api/memory/${postId}/comments`);
+        loadedComments[postId] = res.ok ? await res.json() : [];
+        renderComments(postId);
+    } catch (e) { listEl.innerHTML = '<p class="text-xs text-red-400">Failed to load comments.</p>'; }
+}
+
+function renderComments(postId) {
+    const listEl = document.getElementById(`comments-list-${postId}`);
+    const comments = loadedComments[postId] || [];
+    listEl.innerHTML = comments.length ? comments.map(c => `
+        <div class="flex items-start gap-2">
+            <div class="w-6 h-6 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-[10px] font-bold text-[#6c5a00] flex-shrink-0 overflow-hidden">
+                ${c.authorImage ? `<img src="${esc(c.authorImage)}" class="w-full h-full object-cover" alt="">` : esc((c.authorName || '?')[0])}
+            </div>
+            <div class="flex-1 bg-stone-50 rounded-xl px-3 py-1.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-stone-700">${esc(c.authorName)}</span>
+                    ${c.authorAccountId === myAccountId ? `<button onclick="deleteComment(${postId}, ${c.id})" class="text-stone-300 hover:text-red-400 ml-auto"><span class="material-symbols-outlined text-sm">close</span></button>` : ''}
+                </div>
+                <p class="text-xs text-stone-600 break-words">${esc(c.content)}</p>
+            </div>
+        </div>`).join('') : '<p class="text-xs text-stone-300 italic">No comments yet.</p>';
+}
+
+async function submitComment(postId) {
+    if (submittingComment[postId]) return;
+    const input = document.getElementById(`comment-input-${postId}`);
+    const content = input.value.trim();
+    if (!content) return;
+    submittingComment[postId] = true;
+    input.disabled = true;
+    try {
+        const res = await fetch(`/api/memory/${postId}/comments`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: myAccountId, content })
+        });
+        if (res.ok) {
+            input.value = '';
+            const post = allPosts.find(x => x.id === postId);
+            if (post) {
+                post.commentCount = (post.commentCount || 0) + 1;
+                const countEl = document.getElementById(`comment-count-${postId}`);
+                if (countEl) countEl.textContent = `${post.commentCount} comment${post.commentCount === 1 ? '' : 's'}`;
+            }
+            await loadComments(postId);
+        } else showToast('Failed to post comment.');
+    } finally {
+        submittingComment[postId] = false;
+        input.disabled = false;
+    }
+}
+
+async function deleteComment(postId, commentId) {
+    if (!confirm('Delete this comment?')) return;
+    const res = await fetch(`/api/memory/comments/${commentId}`, { method: 'DELETE' });
+    if (res.ok) {
+        const post = allPosts.find(x => x.id === postId);
+        if (post) {
+            post.commentCount = Math.max(0, (post.commentCount || 1) - 1);
+            const countEl = document.getElementById(`comment-count-${postId}`);
+            if (countEl) countEl.textContent = `${post.commentCount} comment${post.commentCount === 1 ? '' : 's'}`;
+        }
+        await loadComments(postId);
+    }
+}
+
+function openLightbox(media, index) {
+    lightboxMedia = media;
+    lightboxIndex = index;
+    renderLightboxThumbs();
+    renderLightbox();
+    document.getElementById('lightbox').classList.remove('hidden');
+}
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.getElementById('lightbox-media').innerHTML = '';
+    document.getElementById('lightbox-thumbs').innerHTML = '';
+}
+function lightboxNav(delta) {
+    lightboxIndex = (lightboxIndex + delta + lightboxMedia.length) % lightboxMedia.length;
+    renderLightbox();
+}
+function jumpToMedia(i) {
+    lightboxIndex = i;
+    renderLightbox();
+}
+function renderLightbox() {
+    lightboxZoomed = false;
+    const item = lightboxMedia[lightboxIndex];
+    const container = document.getElementById('lightbox-media');
+    container.innerHTML = isVideo(item)
+        ? `<video src="${esc(item.url)}" class="max-h-[72vh] max-w-[90vw] rounded-lg" controls autoplay></video>`
+        : `<img src="${esc(item.url)}" onclick="event.stopPropagation();toggleZoom(event)" class="max-h-[72vh] max-w-[90vw] rounded-lg object-contain cursor-zoom-in transition-transform duration-200" alt="">`;
+    document.getElementById('lightbox-counter').textContent = lightboxMedia.length > 1 ? `${lightboxIndex + 1} / ${lightboxMedia.length}` : '';
+    updateThumbHighlight();
+}
+
+// Thumbnail strip so you can jump straight to any photo/video instead of clicking through
+// each one sequentially. Videos use preload="metadata" (poster frame only, not the full file)
+// and images use loading="lazy" — both keep the strip fast regardless of post size.
+function renderLightboxThumbs() {
+    const wrap = document.getElementById('lightbox-thumbs');
+    if (lightboxMedia.length <= 1) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+    wrap.classList.remove('hidden');
+    wrap.classList.add('flex');
+    wrap.innerHTML = lightboxMedia.map((item, i) => `
+        <button onclick="event.stopPropagation();jumpToMedia(${i})" data-thumb-idx="${i}"
+            class="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === lightboxIndex ? 'border-[#ffd709]' : 'border-transparent opacity-60 hover:opacity-100'}">
+            ${isVideo(item)
+                ? `<video src="${esc(item.url)}" preload="metadata" muted class="w-full h-full object-cover"></video>
+                   <span class="absolute inset-0 flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm" style="font-variation-settings:'FILL' 1">play_arrow</span></span>`
+                : `<img src="${esc(item.url)}" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="">`}
+        </button>`).join('');
+}
+
+function updateThumbHighlight() {
+    document.querySelectorAll('#lightbox-thumbs button').forEach((btn, i) => {
+        btn.className = `relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === lightboxIndex ? 'border-[#ffd709]' : 'border-transparent opacity-60 hover:opacity-100'}`;
+    });
+}
+
+// Click-to-zoom: anchors the zoom on wherever you clicked, click again to zoom back out.
+let lightboxZoomed = false;
+function toggleZoom(evt) {
+    const img = evt.currentTarget;
+    if (!lightboxZoomed) {
+        const rect = img.getBoundingClientRect();
+        const originX = ((evt.clientX - rect.left) / rect.width) * 100;
+        const originY = ((evt.clientY - rect.top) / rect.height) * 100;
+        img.style.transformOrigin = `${originX}% ${originY}%`;
+        img.style.transform = 'scale(2.5)';
+        img.classList.replace('cursor-zoom-in', 'cursor-zoom-out');
+    } else {
+        img.style.transform = 'scale(1)';
+        img.classList.replace('cursor-zoom-out', 'cursor-zoom-in');
+    }
+    lightboxZoomed = !lightboxZoomed;
+}
+
+loadPosts();
+</script>
+
+<script>loadSidebar('parent', 'memory'); loadTopbar('parent');</script>
+</body>
+</html>

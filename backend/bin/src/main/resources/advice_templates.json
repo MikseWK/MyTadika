@@ -1,0 +1,567 @@
+{
+  "dietaryAdviceDatabase": {
+    "0": [
+      {
+        "id": "UW-01",
+        "title": "Provide small, frequent meals throughout the day",
+        "body": "Offer 3 main meals plus 1–2 nutritious snacks between meals. Small but frequent feedings help underweight children consume adequate calories without overwhelming their appetite.",
+        "source": "MDG Key Message 4, Recommendation 4.1"
+      },
+      {
+        "id": "UW-02",
+        "title": "Choose foods with higher calorie and protein content",
+        "body": "Prioritise calorie-dense and protein-rich foods such as eggs, chicken drumstick, fish (ikan kembung, tenggiri), tempeh, tau-kua, and legumes (dhal, chickpeas). One serving of fish/poultry provides ~14 g protein.",
+        "source": "MDG Key Message 4, Recommendation 4.2; MDG Table 3.3"
+      },
+      {
+        "id": "UW-03",
+        "title": "Include complete balanced nutritional supplements",
+        "body": "Provide complete balanced nutritional supplements and drinks to ensure additional calorie and nutrient intake, as recommended by a health care professional.",
+        "source": "MDG Key Message 4, Recommendation 4.3"
+      },
+      {
+        "id": "UW-04",
+        "title": "Consult a health care professional",
+        "body": "Consult with a health care professional (nutritionist, dietitian, doctor, or nurse) to ensure appropriate management of weight and other health problems for an underweight child.",
+        "source": "MDG Key Message 4, Recommendation 4.4"
+      },
+      {
+        "id": "UW-05",
+        "title": "Meet recommended caloric intake by age",
+        "body": "Ensure the child is meeting their age-appropriate calorie target: 3 years → 1,000 kcal; 4–6 years → 1,300 kcal. Eat a variety of foods from all five food groups based on the Malaysian Food Pyramid.",
+        "source": "MDG Key Message 3, Table 3.1; Key Message 4, Recommendation 2"
+      },
+      {
+        "id": "UW-06",
+        "title": "Serve nutrient-dense foods across all food groups",
+        "body": "Focus on whole, nutrient-dense foods such as protein foods, dairy, vegetables, fruits, healthy fats, and whole grains. Full-fat dairy products are important for young children to help meet energy needs and support brain development.",
+        "source": "USDA 2025–2030, Infancy & Early Childhood; Middle Childhood"
+      },
+      {
+        "id": "UW-07",
+        "title": "Consume 2–3 servings of milk and milk products daily",
+        "body": "Give the child milk (fresh, UHT, pasteurised, or from milk powder) every day. Add milk to cereal, offer yoghurt drinks and cultured milk as snacks. For underweight children, full-fat milk is recommended.",
+        "source": "MDG Key Message 9, Recommendations 1–3"
+      },
+      {
+        "id": "UW-08",
+        "title": "Include 2 servings of fruits and 2 servings of vegetables daily",
+        "body": "Children aged 3–6 years should eat at least 2 servings of fruit (e.g. 1 apple, 1 banana berangan, or 1 slice papaya per serving) and 2 servings of vegetables (½ cup cooked vegetables per serving) daily.",
+        "source": "MDG Key Message 3, Table 3.2a"
+      },
+      {
+        "id": "UW-09",
+        "title": "Monitor growth using WHO growth charts monthly",
+        "body": "Measure weight and height, calculate BMI, and plot on the WHO (2006) growth chart for children below 5. Track growth monthly and seek medical advice if there is any concern.",
+        "source": "MDG Key Message 4, Recommendation 1"
+      },
+      {
+        "id": "UW-10",
+        "title": "Offer favourite foods when appetite is poor",
+        "body": "When a child has reduced appetite (especially during illness), offer their favourite foods, encourage soft and appetising options, and give extra food during recovery to promote catch-up growth.",
+        "source": "MDG Key Message 2, Recommendation 7"
+      }
+    ],
+    "1": [
+      {
+        "id": "NW-01",
+        "title": "Eat a variety of foods from all five food groups daily",
+        "body": "Choose foods based on the Malaysian Food Pyramid — cereals/grains, fruits, vegetables, meat/fish/legumes, and milk/dairy — to obtain all nutrients needed. Vary food choices within each group.",
+        "source": "MDG Key Message 3, Recommendation 1"
+      },
+      {
+        "id": "NW-02",
+        "title": "Follow age-appropriate serving sizes",
+        "body": "For a 3-year-old (1,000 kcal): 2 servings cereals, 2 fruits, 2 vegetables, ½ meat/poultry, ½ fish, ½ legumes, 2 milk. For 4–6 years (1,300 kcal): 3 cereals, 2 fruits, 2 vegetables, ½ meat/poultry, 1 fish, ½ legumes, 2 milk.",
+        "source": "MDG Key Message 3, Table 3.2a"
+      },
+      {
+        "id": "NW-03",
+        "title": "Eat fruits and vegetables every day",
+        "body": "Eat at least 2 servings of fruits and 2 servings of vegetables daily. Include dark-green leafy vegetables and a variety of fruits such as papaya, banana, guava, and watermelon.",
+        "source": "MDG Key Message 6 & 7; MDG Table 3.3"
+      },
+      {
+        "id": "NW-04",
+        "title": "Choose lean meat and skinless poultry",
+        "body": "Choose lean cuts of meat and trim visible fat before cooking. Choose skinless chicken parts. Minimise processed meat (burgers, sausages, nuggets) to not more than once a week.",
+        "source": "MDG Key Message 8, Recommendation 4"
+      },
+      {
+        "id": "NW-05",
+        "title": "Include fish regularly for protein and healthy fats",
+        "body": "Consume fish 2–3 times per week. Choose local fish rich in PUFAs such as tenggiri, siakap, kembung, and selar kuning. Remove bones for young children; fillets and cutlets are suitable.",
+        "source": "MDG Key Message 8, Recommendations 3 & 6"
+      },
+      {
+        "id": "NW-06",
+        "title": "Consume legumes daily and nuts weekly",
+        "body": "Add legumes (peas, beans, dhal) to soups, porridge, and dishes. Include tempe, bean curds, and soy products. Add unsweetened, unsalted nuts and seeds (sunflower, pumpkin) as weekly snacks.",
+        "source": "MDG Key Message 8, Recommendations 5 & 6"
+      },
+      {
+        "id": "NW-07",
+        "title": "Consume 2–3 servings of milk and dairy daily",
+        "body": "Drink fresh/UHT/pasteurised milk every day. Add milk to cereal, choose yoghurt and cultured milk with lower sugar content. Milk should supplement meals, not replace them.",
+        "source": "MDG Key Message 9, Recommendation 1"
+      },
+      {
+        "id": "NW-08",
+        "title": "Limit fat intake to 25–30% of total energy",
+        "body": "Limit deep-fried foods to not more than once a day. Limit high-fat foods (fried noodles, fried rice) to 2–3 times per week. Use steaming, stewing, grilling, and baking instead of frying.",
+        "source": "MDG Key Message 10, Recommendation 1"
+      },
+      {
+        "id": "NW-09",
+        "title": "Limit free sugars to below 10% of total energy intake",
+        "body": "WHO strongly recommends reducing free sugar intake to less than 10% of total energy for both adults and children. Replace high-sugar cereals and snacks with fresh fruits, steamed corn, or chickpeas. Choose plain water or milk over sweetened beverages.",
+        "source": "WHO Sugar Guideline 2015, Strong Recommendation; MDG Key Message 12"
+      },
+      {
+        "id": "NW-10",
+        "title": "Drink adequate plain water daily",
+        "body": "Children aged 2–3 years: 1–2 glasses of water. Children aged 4–6 years: 6–8 glasses of water. Ensure water is available at all times. Choose plain water instead of sweetened beverages.",
+        "source": "MDG Key Message 13, Recommendation 1"
+      },
+      {
+        "id": "NW-11",
+        "title": "Avoid added sugars during infancy and early childhood",
+        "body": "No amount of added sugars is recommended for children under 5. Avoid introducing sugary foods and drinks to children below the age of 1. Refrain from giving sweets, candies, or ice cream as rewards.",
+        "source": "USDA 2025–2030, Infancy & Early Childhood; MDG Key Message 12, Rec 3"
+      },
+      {
+        "id": "NW-12",
+        "title": "Monitor growth monthly with WHO growth charts",
+        "body": "Measure weight and height, calculate BMI-for-Age monthly. Use the WHO (2006) chart for children under 5. Discuss growth with health care professionals and keep the child's growth chart updated.",
+        "source": "MDG Key Message 4, Recommendation 1"
+      }
+    ],
+    "2": [
+      {
+        "id": "OW-01",
+        "title": "Reduce weight gradually through healthy diet and increased activity",
+        "body": "For overweight children, reduce weight gradually by adopting a healthy diet and increasing physical activity. Do NOT use special diets, meal replacements, slimming tea, or pills — these can cause side effects.",
+        "source": "MDG Key Message 4, Recommendation 3"
+      },
+      {
+        "id": "OW-02",
+        "title": "Eat according to calorie recommendations — do not overeat",
+        "body": "Eat according to calorie recommendations by age and sex (3 yrs: 1,000 kcal; 4–6 yrs: 1,300 kcal). When hungry, eat only to satisfy needs. Eat 3 main meals plus 1–2 nutritious snacks. Avoid skipping meals as it leads to overeating later.",
+        "source": "MDG Key Message 4, Recommendation 3A.1–3"
+      },
+      {
+        "id": "OW-03",
+        "title": "Replace calorie-dense foods with healthier options",
+        "body": "Swap calorie-dense snacks for fresh fruits, steamed corn, or chickpeas. Eat smaller serving sizes of high-calorie foods. Replace sugar-sweetened beverages with plain water or low-fat milk.",
+        "source": "MDG Key Message 4, Recommendation 3A.4–6"
+      },
+      {
+        "id": "OW-04",
+        "title": "⚠️ STRICT: Limit free sugars to below 10% of total energy (WHO Strong Recommendation)",
+        "body": "WHO STRONGLY recommends reducing free sugar intake to less than 10% of total energy intake for children. Free sugars include all sugars added by manufacturers, cooks, or consumers, plus sugars in honey, syrups, fruit juices, and fruit juice concentrates. Higher intake threatens nutrient quality by providing energy without specific nutrients.",
+        "source": "WHO Sugar Guideline 2015, p. 16, Strong Recommendation"
+      },
+      {
+        "id": "OW-05",
+        "title": "⚠️ STRICT: Further reduce free sugars to below 5% of total energy (WHO Conditional Recommendation)",
+        "body": "WHO conditionally recommends further reducing free sugar intake to below 5% of total energy. This is based on evidence that dental caries effects are cumulative from childhood to adulthood. Even a small reduction in dental caries risk in childhood is significant in later life. No evidence of harm was identified from reducing sugars below 5%.",
+        "source": "WHO Sugar Guideline 2015, p. 16–17, Conditional Recommendation"
+      },
+      {
+        "id": "OW-06",
+        "title": "⚠️ STRICT: No added sugars recommended for children under 5 (USDA)",
+        "body": "The USDA Dietary Guidelines for Americans 2025–2030 state: 'No amount of added sugars is recommended' for infancy and early childhood. Avoid added sugars during infancy and early childhood. Significantly limit sugary drinks and energy drinks for older children.",
+        "source": "USDA Dietary Guidelines 2025–2030, pp. 6–7"
+      },
+      {
+        "id": "OW-07",
+        "title": "Choose lower-fat milk and milk products",
+        "body": "For overweight children, choose lower-fat milk and milk products instead of full-fat options. Continue consuming 2–3 servings of milk and dairy daily for essential nutrients.",
+        "source": "MDG Key Message 9, Recommendation 3.4"
+      },
+      {
+        "id": "OW-08",
+        "title": "Limit total daily fat intake to 25–30% of energy",
+        "body": "Limit deep-fried foods to not more than once a day. Limit high-fat foods (fried noodles, fried rice, nasi lemak) to 2–3 times per week. Use steaming, stewing, grilling, and baking instead of frying. Trim visible fat from meat before cooking.",
+        "source": "MDG Key Message 10, Recommendations 1–2"
+      },
+      {
+        "id": "OW-09",
+        "title": "Reduce sedentary activities and increase to 60 min daily physical activity",
+        "body": "Reduce sedentary activities such as watching TV, playing video games, and computer use. Perform at least 60 minutes of physical activity daily. Motivate the child to be active every day and inculcate interest in physical activity with peers.",
+        "source": "MDG Key Message 4, Recommendation 3B; MDG Key Message 5, Rec 2"
+      },
+      {
+        "id": "OW-10",
+        "title": "Choose plain water over all sweetened beverages",
+        "body": "Replace all sugar-sweetened beverages (carbonated drinks, packed drinks, cordials, juices with added sugar) with plain water. Plain water is the best thirst-quencher. Avoid sweetened beverages between meals and close to bedtime.",
+        "source": "MDG Key Message 12, Rec 2; MDG Key Message 13, Rec 1"
+      },
+      {
+        "id": "OW-11",
+        "title": "Limit intake of saturated fats and trans fatty acids",
+        "body": "Replace animal fats with vegetable oil. Remove skin from poultry. Limit coconut milk dishes (masak lemak, nasi lemak, curry) to 2–3 times per week. Avoid foods with 'partially hydrogenated fat' on the label.",
+        "source": "MDG Key Message 10, Recommendations 2 & 4"
+      },
+      {
+        "id": "OW-12",
+        "title": "Monitor weight and growth monthly with a health professional",
+        "body": "Measure weight and height, calculate BMI-for-Age monthly using WHO (2006) growth charts. Discuss the child's growth with a health care professional. Emphasise positive appearance and realistic goals — do not criticise appearance.",
+        "source": "MDG Key Message 4, Recommendations 1 & 5"
+      }
+    ]
+  },
+  "activityAdviceDatabase": {
+    "0": [
+      {
+        "id": "SED-01",
+        "title": "⚠️ Children 1–4 must accumulate at least 180 minutes of physical activity daily",
+        "body": "WHO strongly recommends that children aged 1–4 years spend at least 180 minutes in a variety of physical activities at any intensity, spread throughout the day. More is better. For children aged 3–4 years, at least 60 minutes of this should be moderate-to-vigorous-intensity activity.",
+        "source": "WHO Physical Activity Guidelines 2019, pp. 18–19, Strong Recommendation"
+      },
+      {
+        "id": "SED-02",
+        "title": "⚠️ Screen time must not exceed 1 hour per day",
+        "body": "For children aged 2–4 years, sedentary screen time (TV, videos, computer games) should be no more than 1 hour per day — less is better. For 1-year-olds, sedentary screen time is NOT recommended at all. When sedentary, engage in reading and storytelling with a caregiver instead.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 20, Strong Recommendation"
+      },
+      {
+        "id": "SED-03",
+        "title": "Do not restrain children for more than 1 hour at a time",
+        "body": "Children should not be restrained for more than 1 hour at a time (e.g. in prams, strollers, high chairs, or strapped on a caregiver's back). They should not sit for extended periods.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 20"
+      },
+      {
+        "id": "SED-04",
+        "title": "Encourage free, active play in a safe outdoor environment",
+        "body": "Allow young children to play as much as possible in a safe outdoor environment. Emphasise participation and enjoyment, rather than competition, when conducting activities for pre-schoolers.",
+        "source": "MDG Key Message 5, Recommendation 2; WHO 2019 Rationale p. 19"
+      },
+      {
+        "id": "SED-05",
+        "title": "Progressively increase activity to reach the 180-minute target",
+        "body": "For children who are currently inactive, progressively increase activity to reach the 180-minute target through additional time for free active play. Physical activity in young children will most likely take the form of energetic play rather than organised exercise.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 19, Rationale"
+      },
+      {
+        "id": "SED-06",
+        "title": "Replace screen time with interactive floor-based play",
+        "body": "Replace sedentary screen time with interactive floor-based play, energetic play, and caregiver-led activities such as reading, storytelling, singing, and puzzles.",
+        "source": "WHO Physical Activity Guidelines 2019, pp. 18 & 20"
+      },
+      {
+        "id": "SED-07",
+        "title": "Incorporate activity into daily routines",
+        "body": "Always incorporate more physical activities in daily life. Engage in activities during recess time. Help with age-appropriate household tasks. Choose active play over sedentary alternatives whenever possible.",
+        "source": "MDG Key Message 5, Recommendation 1"
+      },
+      {
+        "id": "SED-08",
+        "title": "Children should not be sedentary for more than 60 minutes at a time",
+        "body": "Children should be discouraged from extended periods of inactivity and should not be sedentary for more than 60 minutes at a time. Break up prolonged sitting with movement.",
+        "source": "MDG Key Message 5, Recommendation 4"
+      },
+      {
+        "id": "SED-09",
+        "title": "Engage in muscle- and bone-strengthening activities 3× weekly",
+        "body": "Children below 7 years should participate at least 3 times a week in activities that strengthen muscles and bones: playground play, supervised exercises (squats, jumping jacks), jumping, hopping, skipping, and running.",
+        "source": "MDG Key Message 5, Recommendation 3"
+      },
+      {
+        "id": "SED-10",
+        "title": "Screen time is associated with poorer health outcomes",
+        "body": "Evidence shows a predominantly unfavourable association between screen time and adiposity, cognitive/motor development, and psychosocial health in children under 5. Reducing screen time and increasing physical activity leads to better health outcomes.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 20, Summary of Evidence"
+      }
+    ],
+    "1": [
+      {
+        "id": "ACT-01",
+        "title": "Maintain at least 180 minutes of physical activity daily",
+        "body": "Continue spending at least 180 minutes in a variety of physical activities at any intensity, spread throughout the day. For children aged 3–4, at least 60 minutes should be moderate-to-vigorous-intensity activity. More is better.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 18, Strong Recommendation"
+      },
+      {
+        "id": "ACT-02",
+        "title": "Keep sedentary screen time to no more than 1 hour daily",
+        "body": "Sedentary screen time should remain at no more than 1 hour per day for children aged 2–4 years. Less is better. When sedentary, engage in reading and storytelling with a caregiver.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 20, Strong Recommendation"
+      },
+      {
+        "id": "ACT-03",
+        "title": "Include a variety of moderate-intensity activities",
+        "body": "Encourage children to engage in moderate-intensity activities such as riding a bicycle, playing badminton, brisk walking, and games of catch and throw throughout the day.",
+        "source": "MDG Key Message 5, Recommendation 2.3"
+      },
+      {
+        "id": "ACT-04",
+        "title": "Include vigorous-intensity activities appropriate for age",
+        "body": "Encourage age-appropriate vigorous-intensity activities such as running and chasing, jumping rope, swimming, vigorous dancing, and riding a bicycle fast.",
+        "source": "MDG Key Message 5, Recommendation 2.4"
+      },
+      {
+        "id": "ACT-05",
+        "title": "Participate in muscle- and bone-strengthening activities ≥3× per week",
+        "body": "Children below 7 years: playground play, adult-supervised exercises (squats, chin-ups, crab walk, jumping jacks). Bone-strengthening: jumping, hopping, skipping, and running.",
+        "source": "MDG Key Message 5, Recommendation 3"
+      },
+      {
+        "id": "ACT-06",
+        "title": "Avoid being sedentary for more than 60 minutes at a time",
+        "body": "Children should not be sedentary for more than 60 minutes at a time. Do not restrain children in strollers or high chairs for more than 1 hour continuously.",
+        "source": "MDG Key Message 5, Rec 4; WHO 2019, p. 20"
+      },
+      {
+        "id": "ACT-07",
+        "title": "Encourage outdoor family activities on weekends",
+        "body": "Accompany children for longer walks, visits to parks or swimming pools, and bike rides during weekends. Parents should be role models and not restrict children from being naturally active.",
+        "source": "MDG Key Message 5, Recommendation 2.5"
+      },
+      {
+        "id": "ACT-08",
+        "title": "Maintain good sleep habits alongside activity",
+        "body": "A 24-hour day for children aged 3–4 years should include 10–13 hours of good quality sleep (which may include a nap), at least 180 minutes of physical activity, and no more than 1 hour of sedentary screen time.",
+        "source": "WHO Physical Activity Guidelines 2019, 24-hour movement guidelines"
+      }
+    ],
+    "2": [
+      {
+        "id": "HA-01",
+        "title": "High activity levels are beneficial — more is better",
+        "body": "WHO states that 'more is better' for physical activity in children under 5. No evidence was found that physical activity is associated with serious risk of harm or injury in any age group. Higher levels of activity improve motor and cognitive development, fitness, and cardiometabolic health.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 19, Rationale"
+      },
+      {
+        "id": "HA-02",
+        "title": "Continue meeting the 180-minute daily minimum",
+        "body": "While your child exceeds the minimum, continue ensuring at least 180 minutes of varied physical activity daily. For children aged 3–4 years, maintain at least 60 minutes of moderate-to-vigorous activity within this total.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 18, Strong Recommendation"
+      },
+      {
+        "id": "HA-03",
+        "title": "Ensure adequate hydration for active children",
+        "body": "Encourage the child to drink more water when active. Children aged 2–3 years need at least 1–2 glasses, and 4–6 years need 6–8 glasses of plain water daily. Increase intake during and after physical activity.",
+        "source": "MDG Key Message 13, Recommendation 1.4"
+      },
+      {
+        "id": "HA-04",
+        "title": "Ensure adequate caloric intake to fuel high activity levels",
+        "body": "Highly active children may need additional calories. Ensure the child eats according to calorie recommendations by age, sex, and physical activity level. Provide 3 main meals plus 1–2 nutritious snacks between meals.",
+        "source": "MDG Key Message 4, Recommendation 2; MDG Table 3.1"
+      },
+      {
+        "id": "HA-05",
+        "title": "Include muscle- and bone-strengthening activities ≥3× per week",
+        "body": "Even for highly active children, ensure structured muscle- and bone-strengthening activities at least 3 times per week: playground play, supervised exercises, jumping, hopping, skipping.",
+        "source": "MDG Key Message 5, Recommendation 3"
+      },
+      {
+        "id": "HA-06",
+        "title": "Emphasise participation and enjoyment, not competition",
+        "body": "For pre-schoolers, emphasise participation and enjoyment rather than competition and winning when conducting structured sports programmes. Allow activity in short bursts accumulated over the day.",
+        "source": "MDG Key Message 5, Recommendation 2.2"
+      },
+      {
+        "id": "HA-07",
+        "title": "Screen time must still not exceed 1 hour daily",
+        "body": "Even for highly active children, the WHO screen time limit still applies: no more than 1 hour of sedentary screen time per day for ages 2–4. For 1-year-olds, no screen time is recommended. Less is always better.",
+        "source": "WHO Physical Activity Guidelines 2019, p. 20, Strong Recommendation"
+      },
+      {
+        "id": "HA-08",
+        "title": "Ensure good sleep quality to support recovery",
+        "body": "Children aged 3–4 years should get 10–13 hours of good quality sleep (which may include a nap). Adequate sleep supports physical recovery and cognitive development for active children.",
+        "source": "WHO Physical Activity Guidelines 2019, 24-hour movement guidelines"
+      }
+    ]
+  },
+  "allergyGuardrails": {
+    "peanut": {
+      "allergen": "Peanut",
+      "description": "Peanut allergy can cause anaphylaxis, a life-threatening reaction. Schools and ECE programs must identify children with peanut allergies and develop written Emergency Care Plans (ECPs) for daily management.",
+      "safeSubstitutions": [
+        {
+          "id": "PA-SUB-01",
+          "avoid": "Peanut butter",
+          "substitute": "Sunflower seed butter or soy nut butter",
+          "rationale": "Provides similar texture and protein content without peanut allergen. Sunflower seeds and pumpkin seeds are recommended as snacks in the Malaysian Dietary Guidelines.",
+          "source": "CDC Guidelines, Section 1, Recommendation 1b; MDG Key Message 8, Rec 6"
+        },
+        {
+          "id": "PA-SUB-02",
+          "avoid": "Peanuts as snack",
+          "substitute": "Unsalted sunflower seeds, pumpkin seeds, or roasted chickpeas",
+          "rationale": "MDG recommends unsweetened and unsalted seeds as snack alternatives. Chickpeas (legumes) provide comparable protein.",
+          "source": "MDG Key Message 8, Recommendation 6; CDC Guidelines, Table 1"
+        },
+        {
+          "id": "PA-SUB-03",
+          "avoid": "Foods containing peanut oil or peanut flour",
+          "substitute": "Foods prepared with vegetable oil (palm, soy, corn, or sunflower oil)",
+          "rationale": "Use blended vegetable oils high in PUFAs as recommended by MDG. Always check food labels for peanut-derived ingredients.",
+          "source": "MDG Key Message 10, Rec 3; CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "PA-SUB-04",
+          "avoid": "Nut-containing baked goods and desserts",
+          "substitute": "Seed-based or nut-free baked goods (oat cookies, fruit-based desserts)",
+          "rationale": "Substitute with fresh fruits or lower-sugar baked goods. Replace high-sugar snacks with fresh fruits as recommended by MDG.",
+          "source": "CDC Guidelines, Table 1 — Classroom; MDG Key Message 12, Rec 1"
+        }
+      ],
+      "crossContactPrevention": [
+        {
+          "id": "PA-CC-01",
+          "rule": "Designate an allergen-safe food preparation area",
+          "detail": "Designate a specific area in the kitchen for preparing meals for children with peanut allergies. This area must be free from any peanut or tree-nut products.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "PA-CC-02",
+          "rule": "Wash all surfaces and utensils with soap and water before meal preparation",
+          "detail": "Wash all tables, chairs, preparation surfaces, and utensils with soap and water or all-purpose cleaning agents before each meal period. Peanut proteins are not eliminated by water alone — soap or cleaning agents are required.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "PA-CC-03",
+          "rule": "Read all food labels and recheck with every purchase",
+          "detail": "Read all food labels for potential peanut allergens and recheck with each purchase. Manufacturers may change ingredients without notice. Keep food labels from all foods served for at least 24 hours after serving in case the child has a reaction.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "PA-CC-04",
+          "rule": "Encourage hand washing before and after handling food",
+          "detail": "Encourage all children, staff, and volunteers to wash hands with soap and clean water before and after handling or consuming food. This prevents transfer of peanut residue through touch.",
+          "source": "CDC Guidelines, Table 1 — Classroom, Cafeteria, Transportation"
+        },
+        {
+          "id": "PA-CC-05",
+          "rule": "Consider allergen-friendly seating arrangements",
+          "detail": "Consider designated allergy-friendly seating in the classroom and during meals, open to any child eating foods free of identified allergens.",
+          "source": "CDC Guidelines, Table 1 — Classroom & Cafeteria"
+        },
+        {
+          "id": "PA-CC-06",
+          "rule": "Avoid using peanut products in class projects and activities",
+          "detail": "Avoid the use of peanut or tree-nut allergens in class projects, parties, celebrations, arts, crafts, science experiments, cooking activities, snacks, or rewards. Use nonfood incentives instead.",
+          "source": "CDC Guidelines, Table 1 — Classroom"
+        },
+        {
+          "id": "PA-CC-07",
+          "rule": "Use assigned storage to prevent cross-contact of lunches and snacks",
+          "detail": "Use methods such as assigned cubicles to prevent cross-contact of food allergens from lunches and snacks stored in the classroom.",
+          "source": "CDC Guidelines, Table 1 — Classroom — Meals and Snacks"
+        },
+        {
+          "id": "PA-CC-08",
+          "rule": "Report cross-contact mistakes immediately",
+          "detail": "Report mistakes such as cross-contact with a peanut allergen or errors in the ingredient list or menu immediately to administrators and parents. Contact parents even if no reaction occurs.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks; Section 3 — School Administrator"
+        },
+        {
+          "id": "PA-CC-09",
+          "rule": "Ensure rapid access to epinephrine auto-injectors",
+          "detail": "Have rapid access to epinephrine auto-injectors in cases of food allergy emergency. Designated and trained staff must be able to reach them quickly and easily in all locations: classroom, cafeteria, transport, outdoor play, and field trips.",
+          "source": "CDC Guidelines, Table 1 — All settings; Section 1, Rec 2"
+        }
+      ]
+    },
+    "milk": {
+      "allergen": "Milk (Cow's milk protein)",
+      "description": "Milk allergy involves an immune reaction to cow's milk proteins (casein and/or whey). It is distinct from lactose intolerance. Schools and ECE programs must obtain a doctor's statement and develop written plans to manage the child's allergy daily.",
+      "safeSubstitutions": [
+        {
+          "id": "MA-SUB-01",
+          "avoid": "Cow's milk (fresh, UHT, pasteurised, powdered)",
+          "substitute": "Unsweetened soy milk or other doctor-approved milk alternative",
+          "rationale": "Soy bean milk is listed in the Malaysian Dietary Guidelines as a legume product (1½ glasses = one serving legumes, providing ~7 g protein). Any substitute must be confirmed safe by the child's doctor or allergist.",
+          "source": "MDG Table 3.3 — Legumes; CDC Guidelines, Section 1, Rec 1b"
+        },
+        {
+          "id": "MA-SUB-02",
+          "avoid": "Yoghurt and cultured milk drinks",
+          "substitute": "Soy-based yoghurt or coconut-based yoghurt (dairy-free, doctor-approved)",
+          "rationale": "Ensure the substitute is confirmed free of all cow's milk proteins. Choose varieties with lower sugar content as recommended by MDG.",
+          "source": "CDC Guidelines, Section 1, Rec 1b; MDG Key Message 9, Rec 1.4"
+        },
+        {
+          "id": "MA-SUB-03",
+          "avoid": "Cheese and butter",
+          "substitute": "Dairy-free cheese alternatives or plant-based spreads (without milk protein)",
+          "rationale": "All substitutes must be verified by reading labels for milk-derived ingredients (casein, whey, lactalbumin). USDA requires doctor's approval before making meal accommodations for allergies.",
+          "source": "CDC Guidelines, Section 1, Rec 1a; Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "MA-SUB-04",
+          "avoid": "Baked goods and desserts containing milk/butter/cream",
+          "substitute": "Milk-free baked goods prepared with vegetable oil and plant-based milk",
+          "rationale": "Prepare baked goods using non-dairy alternatives. Replace sweetened condensed milk and cream with plant-based substitutes. Always verify all ingredients are milk-protein-free.",
+          "source": "CDC Guidelines, Table 1; MDG Key Message 9, Rec 2.4"
+        },
+        {
+          "id": "MA-SUB-05",
+          "avoid": "Dishes prepared with coconut milk substituted for cow's milk",
+          "substitute": "Confirm coconut milk does not contain added milk proteins; use pure coconut milk",
+          "rationale": "Some commercial coconut milk products may contain added milk proteins (casein) as whiteners. Always read the ingredient list. Pure coconut milk is safe for cow's milk allergy.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        }
+      ],
+      "crossContactPrevention": [
+        {
+          "id": "MA-CC-01",
+          "rule": "Designate an allergen-safe food preparation area",
+          "detail": "Designate a specific food preparation area that is free from any milk or dairy products. Separate utensils, cutting boards, and cooking equipment must be used for preparing milk-free meals.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "MA-CC-02",
+          "rule": "Wash all surfaces with soap and water before each meal period",
+          "detail": "Wash all tables, chairs, preparation surfaces, and utensils with soap and water or all-purpose cleaning agents before each meal. Milk proteins can remain on surfaces and trigger allergic reactions.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "MA-CC-03",
+          "rule": "Read all food labels for hidden milk-derived ingredients",
+          "detail": "Check food labels for hidden milk-derived ingredients including: casein, caseinates, whey, lactalbumin, lactoglobulin, ghee, and 'natural flavouring' (which may contain dairy). Recheck with every purchase as formulations change.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "MA-CC-04",
+          "rule": "Encourage hand washing before and after handling food",
+          "detail": "All children, staff, and volunteers must wash hands with soap and clean water before and after handling or consuming food to prevent transfer of milk protein residue.",
+          "source": "CDC Guidelines, Table 1 — Classroom, Cafeteria, Transportation"
+        },
+        {
+          "id": "MA-CC-05",
+          "rule": "Consider allergen-friendly seating arrangements",
+          "detail": "Consider designated allergy-friendly seating in the classroom and cafeteria, open to any child eating foods free of milk allergens.",
+          "source": "CDC Guidelines, Table 1 — Classroom & Cafeteria"
+        },
+        {
+          "id": "MA-CC-06",
+          "rule": "Avoid using milk products in class projects and activities",
+          "detail": "Avoid the use of milk or dairy allergens in class projects, parties, celebrations, arts, crafts, science experiments, cooking activities, snacks, or rewards. Modify class materials as needed.",
+          "source": "CDC Guidelines, Table 1 — Classroom"
+        },
+        {
+          "id": "MA-CC-07",
+          "rule": "Keep food labels for 24 hours after serving",
+          "detail": "Keep food labels from all foods served to children with milk allergies for at least 24 hours after serving, in case the child has a delayed reaction.",
+          "source": "CDC Guidelines, Table 1 — Meals and Snacks"
+        },
+        {
+          "id": "MA-CC-08",
+          "rule": "Report cross-contact mistakes immediately to parents and administrators",
+          "detail": "Report mistakes such as cross-contact with a milk allergen or errors in the ingredient list immediately to administrators and parents. Contact parents even if no allergic reaction occurs, and recommend they notify the child's doctor.",
+          "source": "CDC Guidelines, Table 1; Section 3 — School Administrator, Rec 3"
+        },
+        {
+          "id": "MA-CC-09",
+          "rule": "Ensure rapid access to epinephrine auto-injectors",
+          "detail": "Have rapid access to epinephrine auto-injectors in all settings (classroom, cafeteria, transport, outdoor play, field trips). Designated and trained staff must know how to administer them. Notify local emergency responders that epinephrine may be needed.",
+          "source": "CDC Guidelines, Table 1 — All settings; Section 1, Rec 2"
+        }
+      ]
+    }
+  }
+}

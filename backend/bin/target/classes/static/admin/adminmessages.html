@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Admin Messages</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background-color:#fcf6e3; background-image:radial-gradient(circle at 2px 2px,rgba(178,173,156,0.1) 1px,transparent 0); background-size:24px 24px; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 pb-8 px-8 min-h-screen">
+    <div class="max-w-6xl mx-auto h-[calc(100vh-7rem)]">
+
+        <div class="mb-4">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Messages</h1>
+            <p class="text-stone-500 text-sm mt-1">Shared School Admin inbox — any admin can view and reply here.</p>
+        </div>
+
+        <div class="bg-[#f5edd8] rounded-2xl shadow-sm border border-[#e3ddc5] overflow-hidden h-[calc(100%-4.5rem)] flex">
+
+            <!-- Contacts list -->
+            <div class="w-72 border-r border-[#e3ddc5] flex flex-col">
+                <div class="px-4 py-3 border-b border-[#e3ddc5] flex items-center gap-2">
+                    <input id="search-input" name="q" type="search" placeholder="Search…" autocomplete="off"
+                        class="flex-1 min-w-0 px-3 py-2 bg-[#eee8d3] border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="filterContacts()">
+                    <button onclick="openNewMessageModal()" title="New message"
+                        class="w-9 h-9 flex items-center justify-center bg-[#ffd709] text-[#6c5a00] rounded-full hover:bg-[#f5cc00] transition-colors flex-shrink-0">
+                        <span class="material-symbols-outlined text-lg">add</span>
+                    </button>
+                </div>
+                <div id="contacts-list" class="flex-1 overflow-y-auto p-2">
+                    <div class="py-10 flex justify-center">
+                        <span class="material-symbols-outlined text-3xl text-stone-300 animate-spin">progress_activity</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversation -->
+            <div class="flex-1 flex flex-col">
+                <div id="view-empty" class="flex-1 flex flex-col items-center justify-center gap-3 text-stone-400">
+                    <span class="material-symbols-outlined text-5xl opacity-30">forum</span>
+                    <p class="text-sm">Select a parent to view the conversation.</p>
+                </div>
+
+                <div id="view-chat" class="hidden flex-1 flex flex-col min-h-0">
+                    <button onclick="showContactProfile()" class="px-5 py-3 border-b border-[#e3ddc5] bg-[#f5edd8] flex items-center gap-3 hover:bg-[#eee8d3] transition-colors text-left">
+                        <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center overflow-hidden flex-shrink-0" id="chat-avatar"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-sm text-[#312f23] flex items-center gap-1.5">
+                                <span id="chat-name" class="truncate"></span>
+                                <span id="chat-role-badge" class="hidden text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0"></span>
+                            </p>
+                            <p class="text-xs text-stone-400">Replying as School Admin · tap to view profile</p>
+                        </div>
+                        <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                    </button>
+                    <div id="messages-container" class="flex-1 overflow-y-auto px-5 py-4 space-y-3"
+                        style="background-color:#fcf6e3;background-image:radial-gradient(circle at 2px 2px,rgba(178,173,156,0.18) 1px,transparent 0);background-size:24px 24px;"></div>
+                    <div class="px-5 py-3 border-t border-[#e3ddc5] bg-[#f5edd8] flex-shrink-0">
+                        <div id="reply-preview-bar" class="hidden mb-2 flex items-center gap-2 px-3 py-2 bg-[#eee8d3] rounded-xl border-l-4 border-[#ffd709]">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-[#6c5a00]" id="reply-preview-label"></p>
+                                <p class="text-xs text-stone-500 truncate" id="reply-preview-text"></p>
+                            </div>
+                            <button onclick="cancelReply()" class="w-6 h-6 flex-shrink-0 bg-white/60 rounded-full flex items-center justify-center text-stone-500 hover:bg-red-100 hover:text-red-500 transition-all">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div id="image-preview-wrap" class="hidden mb-2 flex items-center gap-2">
+                            <img id="image-preview" class="h-16 rounded-xl object-cover border border-[#e3ddc5]" alt="preview">
+                            <button onclick="cancelImage()"
+                                class="w-6 h-6 bg-[#eee8d3] rounded-full flex items-center justify-center text-stone-500 hover:bg-red-100 hover:text-red-500 transition-all">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div class="relative flex items-center gap-2 bg-[#eee8d3] rounded-full p-1.5 pr-2 focus-within:ring-2 focus-within:ring-[#ffd709]">
+                            <input id="image-file-input" type="file" accept="image/*" class="hidden">
+                            <input id="file-file-input" type="file" accept="*/*" class="hidden">
+                            <div id="attach-popup" class="hidden absolute bottom-14 left-1 bg-[#f5edd8] border border-[#e3ddc5] rounded-2xl shadow-xl overflow-hidden z-20 min-w-[140px]">
+                                <button onclick="document.getElementById('image-file-input').click(); closeAttachPopup()" class="flex items-center gap-3 px-4 py-3 hover:bg-[#eee8d3] w-full text-left text-sm font-bold text-[#312f23] transition-colors">
+                                    <span class="material-symbols-outlined text-[#ffd709] text-lg" style="font-variation-settings:'FILL' 1">image</span>
+                                    Photo
+                                </button>
+                                <div class="h-px bg-[#e3ddc5] mx-3"></div>
+                                <button onclick="document.getElementById('file-file-input').click(); closeAttachPopup()" class="flex items-center gap-3 px-4 py-3 hover:bg-[#eee8d3] w-full text-left text-sm font-bold text-[#312f23] transition-colors">
+                                    <span class="material-symbols-outlined text-orange-400 text-lg" style="font-variation-settings:'FILL' 1">attach_file</span>
+                                    File
+                                </button>
+                            </div>
+                            <button id="attach-btn" onclick="toggleAttachPopup()" title="Attach"
+                                class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full text-[#6c5a00] hover:bg-[#ffd709]/20 transition-all">
+                                <span class="material-symbols-outlined text-xl">add</span>
+                            </button>
+                            <input id="message-input" type="text" placeholder="Type a reply…"
+                                class="flex-1 min-w-0 bg-transparent border-none focus:ring-0 text-sm placeholder:text-stone-400">
+                            <button id="send-btn" class="w-9 h-9 flex items-center justify-center bg-[#ffd709] text-[#6c5a00] rounded-full hover:bg-[#f5cc00] transition-colors flex-shrink-0">
+                                <span class="material-symbols-outlined text-lg">send</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-profile" class="hidden flex-1 flex flex-col overflow-y-auto">
+                    <div class="flex items-center px-5 py-3 border-b border-[#e3ddc5] bg-[#f5edd8] flex-shrink-0">
+                        <button onclick="showChatView()" class="flex items-center gap-1 text-stone-400 hover:text-[#312f23] text-sm font-medium transition-colors">
+                            <span class="material-symbols-outlined text-base">arrow_back</span> Back to Chat
+                        </button>
+                    </div>
+                    <div class="relative h-32 flex-shrink-0" style="background-color:#ffd709;background-image:radial-gradient(circle at 2px 2px,rgba(108,90,0,0.15) 1px,transparent 0);background-size:24px 24px;">
+                        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+                            <div id="pv-avatar-wrap" style="width:110px;height:110px;border-radius:50%;border:4px solid #f5edd8;box-shadow:0 8px 24px rgba(0,0,0,0.18);overflow:hidden;background:#ffd709;display:flex;align-items:center;justify-content:center;"></div>
+                        </div>
+                    </div>
+                    <div class="pt-16 pb-8 px-6 text-center flex flex-col gap-5">
+                        <div class="flex flex-col items-center gap-1">
+                            <h2 id="pv-name" class="text-2xl font-extrabold text-[#312f23]"></h2>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span id="pv-status-dot" class="w-2 h-2 rounded-full bg-stone-400"></span>
+                                <span id="pv-status" class="text-xs font-bold text-stone-400 uppercase tracking-wider">Offline</span>
+                            </div>
+                            <span id="pv-role" class="text-[10px] font-bold px-2.5 py-1 rounded-full mt-1 uppercase tracking-wide"></span>
+                        </div>
+                        <p id="pv-description" class="text-sm text-stone-500 leading-relaxed"></p>
+
+                        <div id="pv-info-rows" class="w-full space-y-2"></div>
+
+                        <div id="pv-children-wrap" class="hidden w-full">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-2 text-left">Children</p>
+                            <div id="pv-children" class="space-y-2"></div>
+                        </div>
+
+                        <div id="pv-stats" class="grid grid-cols-3 gap-4"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<!-- New Message Modal -->
+<div id="new-message-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">New Message</h2>
+            <button onclick="closeNewMessageModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+        <div class="flex items-center justify-between gap-2 mb-3">
+            <div class="flex gap-1 bg-stone-100 rounded-full p-1 w-fit">
+                <button onclick="setRecipientTypeFilter('ALL')" id="rt-ALL" class="recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]">All</button>
+                <button onclick="setRecipientTypeFilter('PARENT')" id="rt-PARENT" class="recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Parents</button>
+                <button onclick="setRecipientTypeFilter('TEACHER')" id="rt-TEACHER" class="recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Teachers</button>
+            </div>
+            <select id="recipient-class-filter" onchange="renderRecipientOptions()"
+                class="max-w-[130px] truncate pl-3 pr-7 py-1.5 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709] flex-shrink-0">
+                <option value="ALL">All Classes</option>
+            </select>
+        </div>
+        <input id="new-message-search" type="search" name="q" placeholder="Search by name or email…" autocomplete="off"
+            class="w-full px-4 py-2.5 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] mb-3"
+            oninput="renderRecipientOptions()">
+        <div id="new-message-list" class="flex-1 overflow-y-auto min-h-[100px]"></div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
+    <div class="bg-[#f5edd8] rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
+        <h3 class="font-bold text-lg mb-4">Edit Message</h3>
+        <textarea id="edit-input"
+            class="w-full border border-[#e3ddc5] bg-[#eee8d3] rounded-xl p-4 text-sm resize-none focus:ring-2 focus:ring-[#ffd709]/30 focus:outline-none text-[#312f23]"
+            rows="4"></textarea>
+        <div class="flex gap-3 mt-4 justify-end">
+            <button id="edit-cancel" class="px-6 py-2 rounded-full font-bold text-stone-500 hover:bg-stone-100 transition-colors">Cancel</button>
+            <button id="edit-save" class="px-6 py-2 rounded-full font-bold bg-[#ffd709] text-[#6c5a00] hover:bg-[#f5cc00] transition-colors">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+const ROLE_LABEL = { PARENT: 'Parent', TEACHER: 'Teacher' };
+const ROLE_BADGE_BG = { PARENT: 'bg-sky-100 text-sky-700', TEACHER: 'bg-emerald-100 text-emerald-700' };
+
+let adminInboxId = null;
+let allContacts = [];
+let allRecipients = [];
+let recipientTypeFilter = 'ALL';
+let selectedContactId = null;
+let selectedContactName = '';
+let pollInterval = null;
+let pendingImageUrl = null;
+let currentMessages = [];
+let replyingTo = null;
+let editingMessageId = null;
+
+async function init() {
+    try {
+        const res = await fetch('/api/chat/admin-inbox/identity');
+        if (!res.ok) {
+            document.getElementById('contacts-list').innerHTML =
+                '<p class="text-center text-red-400 text-xs py-8 px-2">No admin account exists yet.</p>';
+            return;
+        }
+        const identity = await res.json();
+        adminInboxId = identity.accountId;
+        await Promise.all([loadContacts(), loadRecipients()]);
+        renderContacts(allContacts); // re-render now that role info is available
+        setInterval(loadContacts, 10000);
+    } catch (e) {
+        document.getElementById('contacts-list').innerHTML =
+            '<p class="text-center text-red-400 text-xs py-8 px-2">Failed to load.</p>';
+    }
+}
+
+async function loadContacts() {
+    try {
+        const res = await fetch('/api/chat/admin-inbox/contacts');
+        allContacts = res.ok ? await res.json() : [];
+        renderContacts(allContacts);
+    } catch (e) {}
+}
+
+function filterContacts() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    renderContacts(allContacts.filter(c =>
+        (c.fullName||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q)));
+}
+
+function renderContacts(list) {
+    const el = document.getElementById('contacts-list');
+    if (!list.length) {
+        el.innerHTML = '<p class="text-center text-stone-400 text-xs py-8 px-2">No one has messaged the school admin yet. Tap + to start a new conversation.</p>';
+        return;
+    }
+    el.innerHTML = list.map(c => {
+        const hasUnread = c.unreadCount > 0;
+        const isSelected = c.accountId === selectedContactId;
+        const avatar = c.profileImageUrl
+            ? `<img src="${esc(c.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
+            : `<span class="text-xs font-bold text-white">${esc((c.fullName||'?').charAt(0).toUpperCase())}</span>`;
+        const badge = hasUnread
+            ? `<span class="ml-1 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFB800] text-[#4A3B00] text-[10px] font-black flex items-center justify-center flex-shrink-0">${c.unreadCount > 99 ? '99+' : c.unreadCount}</span>`
+            : '';
+        const roleType = getContactInfo(c.accountId).roleType;
+        const roleTag = roleType
+            ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase flex-shrink-0 ${ROLE_BADGE_BG[roleType] || 'bg-stone-100 text-stone-500'}">${ROLE_LABEL[roleType] || roleType}</span>`
+            : '';
+        const lastMsg = c.lastMessage
+            ? `<p class="text-xs truncate ${hasUnread ? 'font-semibold text-[#312f23]' : 'text-stone-400'}">${esc(c.lastMessage)}</p>`
+            : '<p class="text-xs text-stone-300 italic">No messages yet</p>';
+        return `
+        <div onclick="selectContact('${c.accountId}', '${escAttr(c.fullName)}')"
+            class="flex items-center gap-2.5 p-2.5 rounded-2xl cursor-pointer transition-colors mb-1 ${isSelected ? 'bg-[#ffd709]/30 border border-[#ffd709]/60' : 'hover:bg-[#ffd709]/15'}">
+            <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center overflow-hidden flex-shrink-0">${avatar}</div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1">
+                    <h4 class="font-bold text-sm truncate text-[#312f23] flex-1">${esc(c.fullName)}</h4>
+                    ${roleTag}
+                    ${badge}
+                </div>
+                ${lastMsg}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Merges whatever is known about a contact from the two data sources we have:
+// allContacts (people who've already messaged the inbox — has profileImageUrl,
+// no role) and allRecipients (every parent/teacher — has role + rich fields).
+function getContactInfo(accountId) {
+    const fromContacts = allContacts.find(c => c.accountId === accountId) || {};
+    const fromRecipients = allRecipients.find(r => r.accountId === accountId) || {};
+    return { ...fromContacts, ...fromRecipients };
+}
+
+function isOnline(lastActiveAt) {
+    if (!lastActiveAt) return false;
+    const last = new Date(lastActiveAt);
+    return (Date.now() - last.getTime()) < 5 * 60 * 1000;
+}
+
+function selectContact(accountId, fullName) {
+    selectedContactId = accountId;
+    selectedContactName = fullName;
+    cancelReply();
+    const info = getContactInfo(accountId);
+    document.getElementById('chat-name').textContent = fullName;
+    const chatRoleBadge = document.getElementById('chat-role-badge');
+    if (info.roleType) {
+        chatRoleBadge.textContent = ROLE_LABEL[info.roleType] || info.roleType;
+        chatRoleBadge.className = `text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0 ${ROLE_BADGE_BG[info.roleType] || 'bg-stone-100 text-stone-500'}`;
+    } else {
+        chatRoleBadge.classList.add('hidden');
+    }
+    document.getElementById('chat-avatar').innerHTML = info.profileImageUrl
+        ? `<img src="${esc(info.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
+        : `<span class="text-sm font-bold text-white">${esc((fullName||'?').charAt(0).toUpperCase())}</span>`;
+    document.getElementById('view-empty').classList.add('hidden');
+    document.getElementById('view-profile').classList.add('hidden');
+    document.getElementById('view-chat').classList.remove('hidden');
+    renderContacts(allContacts);
+    loadMessages();
+    fetch(`/api/chat/read/${adminInboxId}/${accountId}`, { method: 'PUT' }).catch(() => {});
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(loadMessages, 4000);
+}
+
+function showChatView() {
+    document.getElementById('view-profile').classList.add('hidden');
+    document.getElementById('view-chat').classList.remove('hidden');
+}
+
+function showContactProfile() {
+    if (!selectedContactId) return;
+    const info = getContactInfo(selectedContactId);
+
+    document.getElementById('pv-avatar-wrap').innerHTML = info.profileImageUrl
+        ? `<img src="${esc(info.profileImageUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;cursor:pointer" onclick="openImageLightbox('${escAttr(info.profileImageUrl)}', false)" alt="">`
+        : `<span style="font-size:2.25rem;font-weight:900;color:#6c5a00;">${esc((selectedContactName||'?').charAt(0).toUpperCase())}</span>`;
+    document.getElementById('pv-name').textContent = selectedContactName;
+
+    const online = isOnline(info.lastActiveAt);
+    const statusEl = document.getElementById('pv-status');
+    statusEl.textContent = online ? 'Available' : 'Offline';
+    statusEl.className = `text-xs font-bold uppercase tracking-wider ${online ? 'text-green-600' : 'text-stone-400'}`;
+    const statusDot = document.getElementById('pv-status-dot');
+    statusDot.className = `w-2 h-2 rounded-full ${online ? 'bg-green-500 animate-pulse' : 'bg-stone-400'}`;
+
+    const roleEl = document.getElementById('pv-role');
+    if (info.roleType) {
+        roleEl.textContent = ROLE_LABEL[info.roleType] || info.roleType;
+        roleEl.className = `text-[10px] font-bold px-2.5 py-1 rounded-full mt-1 uppercase tracking-wide ${ROLE_BADGE_BG[info.roleType] || 'bg-stone-100 text-stone-500'}`;
+    } else {
+        roleEl.textContent = '';
+    }
+    const infoRow = (icon, label, value) => `
+        <div class="flex items-center gap-3 bg-[#eee8d3] rounded-2xl px-4 py-3 text-left">
+            <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+            </div>
+        </div>`;
+
+    const statsEl = document.getElementById('pv-stats');
+    const descEl = document.getElementById('pv-description');
+    const rowsEl = document.getElementById('pv-info-rows');
+    if (info.roleType === 'TEACHER') {
+        // Mirror parent-chat's teacher profile: description with fallback,
+        // three icon stat cards, plus contact info rows.
+        descEl.textContent = info.description || 'No description yet.';
+        descEl.classList.remove('hidden');
+        const rows = [infoRow('mail', 'Email', info.email || 'Not available')];
+        rows.push(infoRow('call', 'Phone', info.phoneNumber || 'Not available'));
+        rowsEl.innerHTML = rows.join('');
+        statsEl.className = 'grid grid-cols-3 gap-4 w-full';
+        statsEl.innerHTML = `
+            <div class="bg-[#eee8d3] p-5 rounded-[2rem] border border-white flex flex-col items-center hover:scale-105 hover:shadow-md transition-all duration-200 cursor-default">
+                <span class="material-symbols-outlined text-[#ffd709] text-3xl mb-2 block" style="font-variation-settings:'FILL' 1;">school</span>
+                <p class="font-extrabold text-[#312f23] text-sm mb-1">${esc(info.qualification || '—')}</p>
+                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Qualification</p>
+            </div>
+            <div class="bg-[#eee8d3] p-5 rounded-[2rem] border border-white flex flex-col items-center hover:scale-105 hover:shadow-md transition-all duration-200 cursor-default">
+                <span class="material-symbols-outlined text-[#FF8A3D] text-3xl mb-2 block" style="font-variation-settings:'FILL' 1;">history_edu</span>
+                <p class="font-extrabold text-[#312f23] text-sm mb-1">${esc(info.experience || '—')}</p>
+                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Experience</p>
+            </div>
+            <div class="bg-[#eee8d3] p-5 rounded-[2rem] border border-white flex flex-col items-center hover:scale-105 hover:shadow-md transition-all duration-200 cursor-default">
+                <span class="material-symbols-outlined text-[#FF6B6B] text-3xl mb-2 block" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+                <p class="font-extrabold text-[#312f23] text-sm mb-1">${esc(info.focusArea || '—')}</p>
+                <p class="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Focus Area</p>
+            </div>`;
+    } else {
+        descEl.textContent = info.description || '';
+        descEl.classList.toggle('hidden', !info.description);
+        statsEl.innerHTML = '';
+        const rows = [infoRow('mail', 'Email', info.email || 'Not available')];
+        if (info.phoneNumber) rows.push(infoRow('call', 'Phone', info.phoneNumber));
+        if (info.address) rows.push(infoRow('home', 'Address', info.address));
+        rowsEl.innerHTML = rows.join('');
+    }
+
+    const childrenWrap = document.getElementById('pv-children-wrap');
+    const isParent = info.roleType === 'PARENT';
+    childrenWrap.classList.toggle('hidden', !isParent);
+    if (isParent) loadPvChildren(selectedContactId);
+
+    document.getElementById('view-chat').classList.add('hidden');
+    document.getElementById('view-profile').classList.remove('hidden');
+}
+
+async function loadPvChildren(parentAccountId) {
+    const el = document.getElementById('pv-children');
+    el.innerHTML = '<p class="text-xs text-stone-400">Loading…</p>';
+    try {
+        const res = await fetch(`/api/student/by-parent/${parentAccountId}`);
+        const children = res.ok ? await res.json() : [];
+        if (!children.length) {
+            el.innerHTML = '<p class="text-xs text-stone-400">No children linked yet.</p>';
+            return;
+        }
+        el.innerHTML = children.map(c => {
+            const classNames = (c.classrooms || []).map(cl => cl.name).join(', ') || 'No classroom yet';
+            return `<div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3 text-left">
+                <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">child_care</span>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-stone-700 truncate">${esc(c.fullName)}</p>
+                    <p class="text-[11px] text-stone-400 truncate">${esc(classNames)}</p>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        el.innerHTML = '<p class="text-xs text-red-400">Failed to load children.</p>';
+    }
+}
+
+async function loadMessages() {
+    if (!selectedContactId) return;
+    try {
+        const res = await fetch(`/api/chat/messages/${adminInboxId}/${selectedContactId}`);
+        const msgs = res.ok ? await res.json() : [];
+        renderMessages(msgs);
+    } catch (e) {}
+}
+
+// ── New Message ──────────────────────────────────────────────────────────────
+async function loadRecipients() {
+    try {
+        const [pRes, tRes, cRes] = await Promise.all([
+            fetch('/api/chat/parents'), fetch('/api/chat/teachers'), fetch('/api/classroom/all')
+        ]);
+        const parents = pRes.ok ? await pRes.json() : [];
+        const teachers = tRes.ok ? await tRes.json() : [];
+        const classrooms = cRes.ok ? await cRes.json() : [];
+        allRecipients = [
+            ...parents.map(p => ({ ...p, roleType: 'PARENT' })),
+            ...teachers.map(t => ({ ...t, roleType: 'TEACHER' })),
+        ];
+        const classSelect = document.getElementById('recipient-class-filter');
+        classSelect.innerHTML = '<option value="ALL">All Classes</option>' +
+            classrooms.map(c => `<option value="${escAttr(c.name)}">${esc(c.name)}</option>`).join('');
+    } catch (e) { allRecipients = []; }
+}
+
+function openNewMessageModal() {
+    document.getElementById('new-message-search').value = '';
+    document.getElementById('recipient-class-filter').value = 'ALL';
+    setRecipientTypeFilter('ALL');
+    document.getElementById('new-message-modal').classList.remove('hidden');
+}
+function closeNewMessageModal() { document.getElementById('new-message-modal').classList.add('hidden'); }
+
+function setRecipientTypeFilter(type) {
+    recipientTypeFilter = type;
+    document.querySelectorAll('.recipient-type-btn').forEach(b => {
+        b.className = 'recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white';
+    });
+    document.getElementById('rt-' + type).className = 'recipient-type-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]';
+    renderRecipientOptions();
+}
+
+const myClassroomNames = []; // admin has no "own" classes — plain alphabetical grouping
+
+function renderRecipientOptions() {
+    const q = document.getElementById('new-message-search').value.toLowerCase();
+    const classFilter = document.getElementById('recipient-class-filter').value;
+    let list = allRecipients;
+    if (recipientTypeFilter !== 'ALL') list = list.filter(r => r.roleType === recipientTypeFilter);
+    if (classFilter !== 'ALL') list = list.filter(r => (r.classroomNames||[]).includes(classFilter));
+    if (q) list = list.filter(r => (r.fullName||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q) || (r.childNames||'').toLowerCase().includes(q));
+
+    const el = document.getElementById('new-message-list');
+    if (!list.length) {
+        el.innerHTML = '<p class="text-center text-stone-400 text-sm py-8">No matches.</p>';
+        return;
+    }
+
+    const parents = list.filter(r => r.roleType === 'PARENT');
+    const teachers = list.filter(r => r.roleType === 'TEACHER');
+
+    // Group parents by classroom — a parent with kids in multiple classes appears in each,
+    // unless a specific class is selected, in which case everyone is shown under just that one.
+    const groups = {};
+    const noClass = [];
+    parents.forEach(p => {
+        if (classFilter !== 'ALL') {
+            (groups[classFilter] = groups[classFilter] || []).push(p);
+        } else if (p.classroomNames && p.classroomNames.length) {
+            p.classroomNames.forEach(cn => { (groups[cn] = groups[cn] || []).push(p); });
+        } else {
+            noClass.push(p);
+        }
+    });
+    const sortedClassNames = Object.keys(groups).sort((a, b) => {
+        const aOwn = myClassroomNames.includes(a) ? 0 : 1;
+        const bOwn = myClassroomNames.includes(b) ? 0 : 1;
+        return aOwn !== bOwn ? aOwn - bOwn : a.localeCompare(b);
+    });
+
+    let html = '';
+    sortedClassNames.forEach(cn => {
+        html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">${esc(cn)}</p>`;
+        html += groups[cn].map(p => renderRecipientRow(p, cn)).join('');
+    });
+    if (noClass.length) {
+        html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">No Class Linked</p>`;
+        html += noClass.map(p => renderRecipientRow(p, null)).join('');
+    }
+    if (teachers.length) {
+        html += `<p class="text-[10px] font-black text-stone-400 uppercase tracking-widest px-2 pt-3 pb-1">Teachers</p>`;
+        html += teachers.map(r => renderRecipientRow(r, null)).join('');
+    }
+    el.innerHTML = html || '<p class="text-center text-stone-400 text-sm py-8">No matches.</p>';
+}
+
+// groupClassName: which classroom section this row is being rendered under (null for
+// "No Class Linked" / Teachers) — used to show only the child(ren) relevant to that
+// section instead of a parent's full child list, which gets unwieldy for parents with
+// several kids across different classes. Hovering still reveals the full list.
+function renderRecipientRow(r, groupClassName) {
+    const avatar = r.profileImageUrl
+        ? `<img src="${esc(r.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
+        : `<span class="text-xs font-bold text-white">${esc((r.fullName||'?').charAt(0).toUpperCase())}</span>`;
+    let subtitle = r.email;
+    if (r.roleType === 'PARENT' && r.childNames) {
+        if (groupClassName && r.children) {
+            const namesInClass = r.children.filter(c => (c.classroomNames||[]).includes(groupClassName)).map(c => c.name);
+            subtitle = namesInClass.length ? namesInClass.join(', ') : r.childNames;
+        } else {
+            subtitle = r.childNames;
+        }
+    }
+    const titleAttr = r.roleType === 'PARENT' && r.childNames ? ` title="${escAttr(r.childNames)}"` : '';
+    return `
+    <div onclick="startConversation('${r.accountId}', '${escAttr(r.fullName)}')"
+        class="flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer hover:bg-stone-50 transition-colors mb-1">
+        <div class="w-9 h-9 rounded-full bg-sky-500 flex items-center justify-center overflow-hidden flex-shrink-0">${avatar}</div>
+        <div class="flex-1 min-w-0"${titleAttr}>
+            <p class="font-semibold text-sm text-stone-800 truncate">${esc(r.fullName)}</p>
+            <p class="text-xs text-stone-400 truncate">${esc(subtitle)}</p>
+        </div>
+        <span class="text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0 ${ROLE_BADGE_BG[r.roleType]}">${ROLE_LABEL[r.roleType]}</span>
+    </div>`;
+}
+
+function startConversation(accountId, fullName) {
+    closeNewMessageModal();
+    selectContact(accountId, fullName);
+}
+
+function getDateLabel(sentAt) {
+    const d = new Date(sentAt);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatTime(isoString) {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function renderBubbleContent(m, mine) {
+    if (m.messageType === 'image') {
+        return `<img src="${esc(m.content)}" class="max-w-[220px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" onclick="openImageLightbox('${escAttr(m.content)}')" alt="image">`;
+    }
+    if (m.messageType === 'file') {
+        let fileData;
+        try { fileData = JSON.parse(m.content); } catch (e) { fileData = { url: m.content, name: 'File' }; }
+        return `<a href="${esc(fileData.url)}" target="_blank" download="${esc(fileData.name)}"
+            class="flex items-center gap-3 px-4 py-3 rounded-2xl ${mine ? 'bg-[#f5cc00]/40' : 'bg-stone-200'} hover:opacity-80 transition-opacity min-w-[180px]">
+            <span class="material-symbols-outlined text-2xl text-[#6c5a00]" style="font-variation-settings:'FILL' 1">description</span>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-xs font-bold text-[#312f23] truncate max-w-[140px]">${esc(fileData.name)}</p>
+                <p class="text-[10px] text-stone-500 font-medium">${fileData.size ? formatFileSize(fileData.size) : 'File'}</p>
+            </div>
+            <span class="material-symbols-outlined text-base text-[#6c5a00]">download</span>
+        </a>`;
+    }
+    return esc(m.content);
+}
+
+function renderMessages(msgs) {
+    currentMessages = msgs;
+    const el = document.getElementById('messages-container');
+    if (!msgs.length) {
+        el.innerHTML = `<div class="flex items-center justify-center h-full">
+            <p class="text-stone-400 text-sm">No messages yet. Say hello!</p>
+        </div>`;
+        return;
+    }
+
+    let lastLabel = null;
+    const parts = [];
+
+    msgs.forEach(m => {
+        const label = getDateLabel(m.sentAt);
+        if (label !== lastLabel) {
+            parts.push(`<div class="flex justify-center my-2">
+                <span class="px-4 py-1 bg-stone-100 text-stone-500 text-[10px] font-black rounded-full uppercase tracking-widest">${label}</span>
+            </div>`);
+            lastLabel = label;
+        }
+
+        const mine = m.senderId === adminInboxId;
+        const time = formatTime(m.sentAt);
+        const readIcon = mine
+            ? (m.read
+                ? `<span class="material-symbols-outlined text-sm text-[#6c5a00]">done_all</span>`
+                : `<span class="material-symbols-outlined text-sm text-stone-400">done</span>`)
+            : '';
+        const editedTag = m.edited ? ' <span class="text-[10px] opacity-50 font-normal">(edited)</span>' : '';
+
+        const isMedia = m.messageType === 'image' || m.messageType === 'file';
+        const bubbleContent = renderBubbleContent(m, mine) + (isMedia ? '' : editedTag);
+
+        let replyQuoteHtml = '';
+        if (m.replyToId) {
+            const quoted = currentMessages.find(x => x.id === m.replyToId);
+            if (quoted) {
+                const quotedLabel = quoted.senderId === adminInboxId ? 'You' : selectedContactName;
+                const quotedRaw = quoted.messageType === 'image' ? '📷 Photo' : quoted.messageType === 'file' ? '📎 File' : quoted.content;
+                const quotedText = quotedRaw.length > 60 ? quotedRaw.slice(0, 60) + '…' : quotedRaw;
+                replyQuoteHtml = `<div onclick="scrollToMessage(${quoted.id})" class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 ${mine ? 'border-white/60 bg-black/10' : 'border-[#ffd709] bg-black/5'} text-xs cursor-pointer">
+                    <p class="font-bold opacity-80">${esc(quotedLabel)}</p>
+                    <p class="opacity-70 truncate max-w-[200px]">${esc(quotedText)}</p>
+                </div>`;
+            } else {
+                replyQuoteHtml = `<div class="reply-quote mb-1.5 px-3 py-1.5 rounded-xl border-l-4 border-stone-400 bg-black/5 text-xs italic opacity-60">Original message unavailable</div>`;
+            }
+        }
+
+        const replyBtn = `<button onclick="startReply(${m.id})" class="w-8 h-8 bg-white shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100" title="Reply">
+                <span class="material-symbols-outlined text-xs">reply</span>
+            </button>`;
+
+        if (mine) {
+            const actionBtns = `
+                <div class="absolute -left-20 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                    ${replyBtn}
+                    ${!isMedia ? `<button onclick="openEditModal(${m.id}, '${escAttr(m.content)}')" class="w-8 h-8 bg-white shadow-lg rounded-full text-[#6c5a00] hover:bg-[#ffd709] flex items-center justify-center transition-all scale-90 hover:scale-100">
+                        <span class="material-symbols-outlined text-xs">edit</span>
+                    </button>` : ''}
+                    <button onclick="deleteMessage(${m.id})" class="w-8 h-8 bg-white shadow-lg rounded-full text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all scale-90 hover:scale-100">
+                        <span class="material-symbols-outlined text-xs">delete</span>
+                    </button>
+                </div>`;
+            parts.push(`
+            <div class="flex flex-col items-end" data-msg-id="${m.id}">
+                <div class="relative group/msg max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#ffd709] text-[#6c5a00]'} text-sm">
+                    ${replyQuoteHtml}${bubbleContent}${actionBtns}
+                </div>
+                <div class="flex items-center gap-1 mt-1 mr-1">
+                    <p class="text-[10px] font-bold text-stone-400">${time}</p>
+                    ${readIcon}
+                </div>
+            </div>`);
+        } else {
+            parts.push(`
+            <div class="flex flex-col items-start" data-msg-id="${m.id}">
+                <div class="relative group/msg max-w-[70%] ${isMedia ? '' : 'px-4 py-2.5 rounded-2xl bg-[#eee8d3] text-[#312f23]'} text-sm">
+                    ${replyQuoteHtml}${bubbleContent}
+                    <div class="absolute -right-10 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        ${replyBtn}
+                    </div>
+                </div>
+                <p class="text-[10px] font-bold text-stone-400 mt-1 ml-1">${time}</p>
+            </div>`);
+        }
+    });
+
+    el.innerHTML = parts.join('');
+    el.scrollTop = el.scrollHeight;
+}
+
+// ── Attach popup ─────────────────────────────────────────────────────────────
+function toggleAttachPopup() { document.getElementById('attach-popup').classList.toggle('hidden'); }
+function closeAttachPopup() { document.getElementById('attach-popup').classList.add('hidden'); }
+document.addEventListener('click', (e) => {
+    const popup = document.getElementById('attach-popup');
+    const btn = document.getElementById('attach-btn');
+    if (!popup || popup.classList.contains('hidden')) return;
+    if (!popup.contains(e.target) && e.target !== btn) closeAttachPopup();
+});
+
+function cancelImage() {
+    pendingImageUrl = null;
+    document.getElementById('image-preview-wrap').classList.add('hidden');
+    document.getElementById('image-preview').src = '';
+}
+
+async function handleImageSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const btn = document.getElementById('attach-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-xl animate-spin">progress_activity</span>';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const r = await fetch('/api/chat/upload-image', { method: 'POST', body: formData });
+        const data = await r.json();
+        if (data.url) {
+            pendingImageUrl = data.url;
+            document.getElementById('image-preview').src = data.url;
+            document.getElementById('image-preview-wrap').classList.remove('hidden');
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('Image upload failed. Check your connection and try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-xl">add</span>';
+    }
+}
+
+async function handleFileSelected(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    if (!selectedContactId) return;
+
+    const btn = document.getElementById('attach-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined text-xl animate-spin">progress_activity</span>';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const r = await fetch('/api/chat/upload-image', { method: 'POST', body: formData });
+        const data = await r.json();
+        if (data.url) {
+            const content = JSON.stringify({ url: data.url, name: file.name, size: file.size });
+            await fetch('/api/chat/send', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'file', replyToId: replyingTo ? replyingTo.id : null })
+            });
+            cancelReply();
+            await loadMessages();
+            loadContacts();
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    } catch (err) {
+        alert('File upload failed. Check your connection and try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-xl">add</span>';
+    }
+}
+
+document.getElementById('image-file-input').addEventListener('change', handleImageSelected);
+document.getElementById('file-file-input').addEventListener('change', handleFileSelected);
+
+function startReply(id) {
+    const msg = currentMessages.find(x => x.id === id);
+    if (!msg) return;
+    replyingTo = msg;
+    const label = msg.senderId === adminInboxId ? 'You' : selectedContactName;
+    const raw = msg.messageType === 'image' ? '📷 Photo' : msg.messageType === 'file' ? '📎 File' : msg.content;
+    document.getElementById('reply-preview-label').textContent = label;
+    document.getElementById('reply-preview-text').textContent = raw.length > 80 ? raw.slice(0, 80) + '…' : raw;
+    document.getElementById('reply-preview-bar').classList.remove('hidden');
+    document.getElementById('message-input').focus();
+}
+
+function cancelReply() {
+    replyingTo = null;
+    document.getElementById('reply-preview-bar').classList.add('hidden');
+}
+
+function scrollToMessage(id) {
+    const target = document.querySelector(`[data-msg-id="${id}"]`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('ring-4', 'ring-[#ffd709]', 'rounded-2xl');
+    setTimeout(() => target.classList.remove('ring-4', 'ring-[#ffd709]', 'rounded-2xl'), 1200);
+}
+
+function openEditModal(messageId, currentContent) {
+    editingMessageId = messageId;
+    document.getElementById('edit-input').value = currentContent;
+    document.getElementById('edit-modal').classList.remove('hidden');
+    document.getElementById('edit-input').focus();
+}
+
+function closeEditModal() {
+    editingMessageId = null;
+    document.getElementById('edit-modal').classList.add('hidden');
+}
+
+async function saveEdit() {
+    const newContent = document.getElementById('edit-input').value.trim();
+    if (!newContent || !editingMessageId) return;
+    try {
+        await fetch(`/api/chat/messages/${editingMessageId}/edit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderId: adminInboxId, content: newContent })
+        });
+        closeEditModal();
+        await loadMessages();
+    } catch (e) { console.error('Failed to edit message', e); }
+}
+
+async function deleteMessage(messageId) {
+    if (!confirm('Delete this message?')) return;
+    try {
+        await fetch(`/api/chat/messages/${messageId}?senderId=${adminInboxId}`, { method: 'DELETE' });
+        await loadMessages();
+    } catch (e) { console.error('Failed to delete message', e); }
+}
+
+document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
+document.getElementById('edit-save').addEventListener('click', saveEdit);
+document.getElementById('edit-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeEditModal();
+});
+
+let sendingMessage = false;
+async function sendMessage() {
+    if (!selectedContactId || sendingMessage) return;
+    sendingMessage = true;
+    const sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    try {
+        if (pendingImageUrl) {
+            try {
+                const r = await fetch('/api/chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content: pendingImageUrl, messageType: 'image', replyToId: replyingTo ? replyingTo.id : null })
+                });
+                if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    alert('Failed to send image: ' + (err.error || r.status));
+                    return;
+                }
+            } catch (e) {
+                alert('Failed to send image. Check your connection.');
+                return;
+            }
+            cancelImage();
+        }
+
+        const input = document.getElementById('message-input');
+        const content = input.value.trim();
+        if (content) {
+            input.value = '';
+            try {
+                await fetch('/api/chat/send', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderId: adminInboxId, receiverId: selectedContactId, content, messageType: 'text', replyToId: replyingTo ? replyingTo.id : null })
+                });
+            } catch (e) {}
+        }
+
+        cancelReply();
+        loadMessages();
+        loadContacts();
+    } finally { sendingMessage = false; sendBtn.disabled = false; }
+}
+
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+document.getElementById('message-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+});
+
+init();
+</script>
+
+<script>loadSidebar('admin', 'messages'); loadTopbar('admin');</script>
+</body>
+</html>

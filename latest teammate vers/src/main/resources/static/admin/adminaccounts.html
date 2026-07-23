@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Admin Accounts</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Accounts</h1>
+            <p class="text-stone-500 text-sm mt-1">Manage teacher, parent, and admin accounts.</p>
+        </div>
+
+        <!-- Accounts Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <!-- Toolbar -->
+            <div class="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#6c5a00]">manage_accounts</span>
+                    <h2 class="font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">All Accounts</h2>
+                    <span class="text-xs text-stone-400 ml-1" id="accounts-count"></span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <!-- Role filter pills -->
+                    <div class="flex gap-1 bg-stone-100 rounded-full p-1">
+                        <button onclick="setFilter('ALL')" id="filter-ALL" class="filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]">All</button>
+                        <button onclick="setFilter('ADMIN')" id="filter-ADMIN" class="filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Admin</button>
+                        <button onclick="setFilter('TEACHER')" id="filter-TEACHER" class="filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Teacher</button>
+                        <button onclick="setFilter('PARENT')" id="filter-PARENT" class="filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Parent</button>
+                    </div>
+                    <button onclick="openCreateModal()"
+                        class="flex items-center gap-1.5 px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-xs font-bold rounded-full hover:bg-[#f5cc00] transition-colors">
+                        <span class="material-symbols-outlined text-sm">person_add</span>
+                        Add Account
+                    </button>
+                </div>
+            </div>
+            <!-- Search -->
+            <div class="px-6 py-3 border-b border-stone-50">
+                <div class="relative max-w-sm">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-stone-300 text-lg">search</span>
+                    </span>
+                    <input id="search-input" name="q" type="search" placeholder="Search accounts…" autocomplete="off"
+                        class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="applyFilter()">
+                </div>
+            </div>
+            <!-- Table -->
+            <div id="accounts-loading" class="py-16 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+            <div id="accounts-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
+                <span class="material-symbols-outlined text-4xl">manage_accounts</span>
+                <p class="text-sm">No accounts found.</p>
+            </div>
+            <div class="overflow-x-auto hidden" id="accounts-table-wrap">
+                <table class="w-full text-left">
+                    <thead class="bg-stone-50">
+                        <tr class="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                            <th class="px-6 py-3">Name</th>
+                            <th class="px-6 py-3">Email</th>
+                            <th class="px-6 py-3">Role</th>
+                            <th class="px-6 py-3">Joined</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accounts-tbody" class="divide-y divide-stone-50"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<!-- Create Account Modal -->
+<div id="create-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 class="text-xl font-black text-[#312f23] mb-5" style="font-family:'Plus Jakarta Sans',sans-serif">Add Account</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Full Name *</label>
+                <input id="ca-name" type="text" placeholder="e.g. Ahmad bin Ali" autocomplete="off"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Email *</label>
+                <input id="ca-email" type="email" placeholder="email@example.com" autocomplete="off" name="new-account-email"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Password *</label>
+                <div class="relative">
+                    <input id="ca-password" type="password" placeholder="Minimum 6 characters" autocomplete="new-password" name="new-account-password"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                    <button type="button" onclick="toggleAccountPasswordVisibility('ca-password', this)"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <span class="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Confirm Password *</label>
+                <div class="relative">
+                    <input id="ca-password-confirm" type="password" placeholder="Re-enter password" autocomplete="new-password" name="new-account-password-confirm"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                    <button type="button" onclick="toggleAccountPasswordVisibility('ca-password-confirm', this)"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600">
+                        <span class="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Role *</label>
+                <select id="ca-role" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="TEACHER">Teacher</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="PARENT">Parent</option>
+                </select>
+            </div>
+        </div>
+        <p id="ca-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeCreateModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="create-account-submit-btn" onclick="submitCreateAccount()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Account Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h2 class="text-lg font-black text-[#312f23] mb-5" style="font-family:'Plus Jakarta Sans',sans-serif">Edit Account</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Full Name</label>
+                <input id="ea-name" type="text" autocomplete="off"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Email</label>
+                <input id="ea-email" type="email" autocomplete="off" name="edit-account-email"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Phone Number</label>
+                <input id="ea-phone" type="text" autocomplete="off"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Role</label>
+                <select id="ea-role" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="ADMIN">Admin</option>
+                    <option value="TEACHER">Teacher</option>
+                    <option value="PARENT">Parent</option>
+                </select>
+            </div>
+        </div>
+        <p id="ea-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="edit-account-submit-btn" onclick="submitEditAccount()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toggleAccountPasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('.material-symbols-outlined');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.textContent = isHidden ? 'visibility_off' : 'visibility';
+}
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.remove('hidden'); }
+
+const ROLE_STYLE = {
+    ADMIN:   { bg: 'bg-[#ffd709]/30', text: 'text-[#6c5a00]',   icon: 'admin_panel_settings', label: 'Admin' },
+    TEACHER: { bg: 'bg-emerald-100',  text: 'text-emerald-700',  icon: 'school',               label: 'Teacher' },
+    PARENT:  { bg: 'bg-sky-100',      text: 'text-sky-700',       icon: 'family_restroom',      label: 'Parent' },
+};
+
+let allAccounts = [];
+let currentFilter = 'ALL';
+let editTargetId = null;
+
+// ── Accounts ─────────────────────────────────────────────────────────────────
+async function loadAccounts() {
+    try {
+        const res = await fetch('/api/admin/accounts');
+        allAccounts = res.ok ? await res.json() : [];
+        applyFilter();
+        document.getElementById('accounts-loading').classList.add('hidden');
+    } catch(e) {
+        document.getElementById('accounts-loading').classList.add('hidden');
+    }
+}
+
+function setFilter(role) {
+    currentFilter = role;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.className = 'filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white';
+    });
+    const active = document.getElementById('filter-' + role);
+    if (active) active.className = 'filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]';
+    applyFilter();
+}
+
+function applyFilter() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase();
+    let filtered = allAccounts;
+    if (currentFilter !== 'ALL') filtered = filtered.filter(a => a.roleType === currentFilter);
+    if (q) filtered = filtered.filter(a =>
+        (a.fullName||'').toLowerCase().includes(q) || (a.email||'').toLowerCase().includes(q));
+    renderAccounts(filtered);
+}
+
+function renderAccounts(list) {
+    const tbody = document.getElementById('accounts-tbody');
+    const wrap  = document.getElementById('accounts-table-wrap');
+    const empty = document.getElementById('accounts-empty');
+    document.getElementById('accounts-count').textContent = `(${list.length})`;
+
+    if (!list.length) {
+        wrap.classList.add('hidden'); empty.classList.remove('hidden'); return;
+    }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+    tbody.innerHTML = list.map(a => {
+        const r = ROLE_STYLE[a.roleType] || ROLE_STYLE.ADMIN;
+        const av = a.profileImageUrl
+            ? `<img src="${esc(a.profileImageUrl)}" class="w-full h-full object-cover" alt="">`
+            : `<span class="text-xs font-bold text-white">${esc(initials(a.fullName))}</span>`;
+        const avBg = a.roleType === 'TEACHER' ? 'bg-emerald-600' : a.roleType === 'ADMIN' ? 'bg-[#6c5a00]' : 'bg-sky-500';
+        return `<tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full ${avBg} flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+                    <span class="font-semibold text-sm text-stone-800">${esc(a.fullName)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-stone-500 text-sm">${esc(a.email)}</td>
+            <td class="px-6 py-4">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${r.bg} ${r.text}">
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20">${r.icon}</span>
+                    ${r.label}
+                </span>
+            </td>
+            <td class="px-6 py-4 text-stone-400 text-xs">${esc(a.createdAt || '—')}</td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                    <button onclick="openEditModal('${esc(a.accountId)}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-600 text-xs font-semibold rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-sm">edit</span> Edit
+                    </button>
+                    <button onclick="deleteAccount('${esc(a.accountId)}', '${esc(a.fullName)}')"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Delete">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Create Account Modal ──────────────────────────────────────────────────────
+function openCreateModal() {
+    ['ca-name','ca-email','ca-password','ca-password-confirm'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ca-role').value = 'TEACHER';
+    document.getElementById('ca-error').classList.add('hidden');
+    document.getElementById('create-modal').classList.remove('hidden');
+}
+function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+
+let submittingCreateAccount = false;
+async function submitCreateAccount() {
+    if (submittingCreateAccount) return;
+    const body = {
+        fullName: document.getElementById('ca-name').value.trim(),
+        email:    document.getElementById('ca-email').value.trim(),
+        password: document.getElementById('ca-password').value,
+        role:     document.getElementById('ca-role').value,
+    };
+    const confirmPassword = document.getElementById('ca-password-confirm').value;
+    if (!body.fullName || !body.email || !body.password || !confirmPassword) { showErr('ca-error', 'All fields are required.'); return; }
+    if (body.password !== confirmPassword) { showErr('ca-error', 'Passwords do not match.'); return; }
+    submittingCreateAccount = true;
+    const btn = document.getElementById('create-account-submit-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/admin/accounts', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            closeCreateModal(); showToast('Account created!');
+            await loadAccounts();
+        } else {
+            let msg = 'Failed to create account.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('ca-error', msg);
+        }
+    } catch(e) { showErr('ca-error', 'Network error.'); }
+    finally { submittingCreateAccount = false; btn.disabled = false; }
+}
+
+// ── Edit Account Modal ────────────────────────────────────────────────────────
+function openEditModal(accountId) {
+    const a = allAccounts.find(x => x.accountId === accountId);
+    if (!a) return;
+    editTargetId = accountId;
+    document.getElementById('ea-name').value = a.fullName || '';
+    document.getElementById('ea-email').value = a.email || '';
+    document.getElementById('ea-phone').value = a.phoneNumber || '';
+    document.getElementById('ea-role').value = a.roleType;
+    document.getElementById('ea-error').classList.add('hidden');
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); editTargetId = null; }
+
+let submittingEditAccount = false;
+async function submitEditAccount() {
+    if (submittingEditAccount) return;
+    const body = {
+        fullName: document.getElementById('ea-name').value.trim(),
+        email: document.getElementById('ea-email').value.trim(),
+        phoneNumber: document.getElementById('ea-phone').value.trim(),
+        role: document.getElementById('ea-role').value,
+    };
+    submittingEditAccount = true;
+    const btn = document.getElementById('edit-account-submit-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/admin/accounts/${editTargetId}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            closeEditModal(); showToast('Account updated!'); await loadAccounts();
+        } else {
+            let msg = 'Failed to update account.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('ea-error', msg);
+        }
+    } catch(e) { showErr('ea-error', 'Network error.'); }
+    finally { submittingEditAccount = false; btn.disabled = false; }
+}
+
+// ── Delete Account ────────────────────────────────────────────────────────────
+async function deleteAccount(accountId, name) {
+    if (!confirm(`Delete account "${name}"? This cannot be undone.`)) return;
+    try {
+        const res = await fetch(`/api/admin/accounts/${accountId}`, { method: 'DELETE' });
+        if (res.ok) {
+            showToast('Account deleted.'); await loadAccounts();
+        } else {
+            let msg = 'Failed to delete account.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showToast(msg, 4000);
+        }
+    } catch(e) { showToast('Network error.'); }
+}
+
+// ── Init (supports ?role=TEACHER|PARENT|ADMIN deep link from the dashboard) ───
+const initialRole = new URLSearchParams(location.search).get('role');
+if (initialRole) currentFilter = initialRole.toUpperCase();
+loadAccounts().then(() => { if (initialRole) setFilter(currentFilter); });
+</script>
+
+<script>loadSidebar('admin', 'accounts'); loadTopbar('admin');</script>
+</body>
+</html>

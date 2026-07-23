@@ -1,0 +1,4 @@
+com\mytadika\service\AcademicServiceTest.class
+com\mytadika\service\GradeCalculationServiceTest.class
+com\mytadika\service\StudentServiceTest.class
+com\mytadika\controller\HealthControllerTest.class

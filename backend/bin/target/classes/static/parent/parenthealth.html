@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Health &amp; Nutrition – MyTadika</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<main class="ml-64 pt-20 p-8 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-4">
+            <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Health &amp; Nutrition</h1>
+            <p class="text-stone-500 text-sm mt-1">Growth tracking &amp; AI wellness advice</p>
+        </div>
+
+        <div id="child-switcher" class="hidden flex gap-2 mb-4 flex-wrap"></div>
+
+        <div id="page-loading" class="py-24 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+
+        <div id="empty-state" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">favorite</span>
+            <p class="mt-3 text-sm">No children linked yet.</p>
+        </div>
+
+        <div id="health-wrap" class="hidden">
+            <!-- Student header -->
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 mb-6 flex items-center gap-4">
+                <div id="student-avatar" class="w-14 h-14 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-xl font-black text-[#6c5a00] overflow-hidden flex-shrink-0"></div>
+                <div>
+                    <h2 id="student-name" class="text-lg font-black text-[#312f23] font-headline"></h2>
+                    <p id="student-meta" class="text-xs text-stone-400"></p>
+                </div>
+                <span id="nutrition-badge" class="ml-auto hidden text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide"></span>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 mb-6">
+                <h3 class="text-sm font-bold text-[#312f23] font-headline mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-red-500 text-lg">warning</span>
+                    Allergy Profile
+                </h3>
+                <div id="allergy-tags" class="flex flex-wrap gap-2 mb-3"></div>
+                <div class="flex gap-2">
+                    <input id="allergy-input" type="text" placeholder="Add an allergy (e.g. peanut, milk)…"
+                        onkeydown="if(event.key==='Enter') addAllergyTag()"
+                        class="flex-1 px-4 py-2 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <button id="allergy-add-btn" onclick="addAllergyTag()" class="px-4 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Add</button>
+                </div>
+            </div>
+
+            <div id="no-records" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-12 text-center text-stone-400">
+                <span class="material-symbols-outlined text-5xl opacity-30">monitor_weight</span>
+                <p class="mt-3 text-sm">No health measurements logged yet.</p>
+            </div>
+
+            <div id="record-content" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 flex flex-col gap-6">
+                    <!-- Stat tiles -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">BMI</p>
+                            <p id="stat-bmi" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Weight</p>
+                            <p id="stat-weight" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-5 text-center">
+                            <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">Height</p>
+                            <p id="stat-height" class="text-2xl font-black text-[#6c5a00] font-headline mt-1">–</p>
+                        </div>
+                    </div>
+
+                    <!-- Growth chart -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                        <h3 class="text-sm font-bold text-[#312f23] font-headline mb-4">Growth Over Time</h3>
+                        <canvas id="growth-chart" height="220"></canvas>
+                    </div>
+
+                    <!-- History timeline -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+                        <h3 class="text-sm font-bold text-[#312f23] font-headline mb-3">Measurement History</h3>
+                        <div id="history-list" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- AI Advice panel -->
+                <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 h-fit">
+                    <h3 class="text-sm font-bold text-[#312f23] font-headline mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[#ffd709]" style="font-variation-settings:'FILL' 1;">auto_awesome</span>
+                        AI Wellness Advice
+                    </h3>
+                    <div id="advice-panel"><p class="text-xs text-stone-400">Loading…</p></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+    let myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    let children = [];
+    let selectedStudentId = null;
+    let growthChart = null;
+    let allergyTags = [];
+
+    function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    const STATUS_STYLE = {
+        normal:   'bg-emerald-100 text-emerald-700',
+        moderate: 'bg-amber-100 text-amber-700',
+        severe:   'bg-red-100 text-red-700'
+    };
+
+    async function loadChildren() {
+        try {
+            const res = await fetch(`/api/student/by-parent/${myAccountId}`);
+            children = res.ok ? await res.json() : [];
+        } catch (e) { children = []; }
+
+        document.getElementById('page-loading').classList.add('hidden');
+        if (!children.length) {
+            document.getElementById('empty-state').classList.remove('hidden');
+            return;
+        }
+        renderChildSwitcher();
+        const requestedId = Number(new URLSearchParams(location.search).get('studentId'));
+        const preselect = children.find(c => c.id === requestedId);
+        selectChild(preselect ? preselect.id : children[0].id);
+    }
+
+    function renderChildSwitcher() {
+        const wrap = document.getElementById('child-switcher');
+        if (children.length <= 1) { wrap.classList.add('hidden'); return; }
+        wrap.classList.remove('hidden');
+        wrap.innerHTML = children.map(c => `
+            <button onclick="selectChild(${c.id})"
+                class="px-4 py-2 rounded-full text-sm font-bold transition-colors ${c.id === selectedStudentId ? 'bg-[#ffd709] text-[#6c5a00]' : 'bg-white border border-stone-200 text-stone-500 hover:bg-stone-50'}">
+                ${esc(c.fullName)}
+            </button>`).join('');
+    }
+
+    async function selectChild(studentId) {
+        selectedStudentId = studentId;
+        renderChildSwitcher();
+
+        const child = children.find(c => c.id === studentId);
+        document.getElementById('student-name').textContent = child ? child.fullName : '';
+        document.getElementById('student-meta').textContent = child && child.classrooms && child.classrooms.length
+            ? child.classrooms.map(cl => cl.name).join(', ') : 'No classroom yet';
+        document.getElementById('student-avatar').textContent = child ? child.fullName.charAt(0).toUpperCase() : '?';
+
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('health-wrap').classList.remove('hidden');
+
+        await Promise.all([loadHistory(), loadAllergies(), loadAdvice()]);
+    }
+
+    async function loadHistory() {
+        let history = [];
+        try {
+            const res = await fetch(`/api/health/history/${selectedStudentId}`);
+            history = res.ok ? await res.json() : [];
+        } catch (e) { history = []; }
+
+        if (!history.length) {
+            document.getElementById('no-records').classList.remove('hidden');
+            document.getElementById('record-content').classList.add('hidden');
+            document.getElementById('nutrition-badge').classList.add('hidden');
+            return;
+        }
+        document.getElementById('no-records').classList.add('hidden');
+        document.getElementById('record-content').classList.remove('hidden');
+
+        const latest = history[0]; // API returns newest-first
+        document.getElementById('stat-bmi').textContent = latest.bmi.toFixed(1);
+        document.getElementById('stat-weight').textContent = latest.weightKg + ' kg';
+        document.getElementById('stat-height').textContent = latest.heightCm + ' cm';
+
+        const badge = document.getElementById('nutrition-badge');
+        badge.textContent = latest.nutritionStatus;
+        badge.className = `ml-auto text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide ${STATUS_STYLE[latest.nutritionStatus] || 'bg-stone-100 text-stone-500'}`;
+
+        document.getElementById('history-list').innerHTML = history.map(h => `
+            <div class="flex items-center justify-between text-sm border-b border-stone-50 last:border-0 py-2">
+                <span class="text-stone-500">${new Date(h.recordedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })}</span>
+                <span class="text-stone-600">BMI ${h.bmi.toFixed(1)} · ${h.weightKg}kg · ${h.heightCm}cm</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full uppercase ${STATUS_STYLE[h.nutritionStatus] || 'bg-stone-100 text-stone-500'}">${esc(h.nutritionStatus)}</span>
+            </div>`).join('');
+
+        const chronological = [...history].reverse();
+        const ctx = document.getElementById('growth-chart').getContext('2d');
+        if (growthChart) growthChart.destroy();
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chronological.map(h => new Date(h.recordedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short' })),
+                datasets: [
+                    { label: 'BMI', data: chronological.map(h => h.bmi), borderColor: '#eeab00', backgroundColor: '#eeab00', tension: 0.4, yAxisID: 'y' },
+                    { label: 'Weight (kg)', data: chronological.map(h => h.weightKg), borderColor: '#FF6B6B', backgroundColor: '#FF6B6B', tension: 0.4, yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                scales: {
+                    y:  { type: 'linear', position: 'left', title: { display: true, text: 'BMI' } },
+                    y1: { type: 'linear', position: 'right', title: { display: true, text: 'Weight (kg)' }, grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+
+    async function loadAllergies() {
+        try {
+            const res = await fetch(`/api/health/allergies/${selectedStudentId}`);
+            allergyTags = res.ok ? await res.json() : [];
+        } catch (e) { allergyTags = []; }
+        renderAllergyTags();
+    }
+
+    function renderAllergyTags() {
+        const wrap = document.getElementById('allergy-tags');
+        wrap.innerHTML = allergyTags.length
+            ? allergyTags.map(a => `
+                <span class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-700 text-xs font-bold">
+                    ${esc(a)}
+                    <span class="material-symbols-outlined text-sm cursor-pointer" onclick="removeAllergyTag('${esc(a)}')">close</span>
+                </span>`).join('')
+            : '<p class="text-xs text-stone-400">No allergies recorded.</p>';
+    }
+
+    async function addAllergyTag() {
+        const input = document.getElementById('allergy-input');
+        const val = input.value.trim().toLowerCase();
+        if (!val) return;
+        input.value = '';
+        if (allergyTags.includes(val)) return;
+        allergyTags.push(val);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function removeAllergyTag(tag) {
+        allergyTags = allergyTags.filter(a => a !== tag);
+        renderAllergyTags();
+        await saveAllergies();
+    }
+
+    async function saveAllergies() {
+        const btn = document.getElementById('allergy-add-btn');
+        if (btn) btn.disabled = true;
+        try {
+            await fetch(`/api/health/allergies/${selectedStudentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allergies: allergyTags })
+            });
+            await loadAdvice();
+        } catch (e) { alert('Failed to save allergies.'); }
+        finally { if (btn) btn.disabled = false; }
+    }
+
+    async function loadAdvice() {
+        const panel = document.getElementById('advice-panel');
+        panel.innerHTML = '<p class="text-xs text-stone-400">Loading…</p>';
+        try {
+            const res = await fetch(`/api/health/advice/${selectedStudentId}?activityLevel=1`);
+            if (!res.ok) {
+                panel.innerHTML = '<p class="text-xs text-stone-400">No advice available yet — log a measurement first.</p>';
+                return;
+            }
+            const advice = await res.json();
+            renderAdvice(advice);
+        } catch (e) {
+            panel.innerHTML = '<p class="text-xs text-red-400">Failed to load advice.</p>';
+        }
+    }
+
+    function renderAdvice(advice) {
+        const panel = document.getElementById('advice-panel');
+        let html = '';
+
+        if (advice.requiresUrgentReferral) {
+            html += `<div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3 text-red-700 text-xs font-bold flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">emergency</span> Please consult a healthcare professional as soon as possible.
+            </div>`;
+        }
+
+        (advice.allergyWarnings || []).forEach(w => {
+            html += `<div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
+                <p class="text-xs font-bold text-amber-700 uppercase mb-1">⚠ ${esc(w.allergen)} allergy</p>
+                <p class="text-xs text-amber-700">${esc(w.description || '')}</p>
+            </div>`;
+        });
+
+        if ((advice.dietaryAdvice || []).length) {
+            html += `<p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-2 mt-3">Dietary Advice</p>`;
+            advice.dietaryAdvice.forEach(c => {
+                html += `<div class="bg-stone-50 rounded-xl px-4 py-3 mb-2">
+                    <p class="text-sm font-bold text-[#312f23]">${esc(c.title)}</p>
+                    <p class="text-xs text-stone-500 mt-1">${esc(c.body)}</p>
+                </div>`;
+            });
+        }
+
+        if ((advice.activityAdvice || []).length) {
+            html += `<p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide mb-2 mt-3">Activity Advice</p>`;
+            advice.activityAdvice.forEach(c => {
+                html += `<div class="bg-stone-50 rounded-xl px-4 py-3 mb-2">
+                    <p class="text-sm font-bold text-[#312f23]">${esc(c.title)}</p>
+                    <p class="text-xs text-stone-500 mt-1">${esc(c.body)}</p>
+                </div>`;
+            });
+        }
+
+        if (advice.confidenceCaveat) {
+            html += `<p class="text-xs text-stone-400 italic mt-3">${esc(advice.confidenceCaveat)}</p>`;
+        }
+        if (advice.disclaimer) {
+            html += `<p class="text-[10px] text-stone-300 mt-4 leading-relaxed">${esc(advice.disclaimer)}</p>`;
+        }
+
+        panel.innerHTML = html || '<p class="text-xs text-stone-400">No advice available.</p>';
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadSidebar('parent', 'health');
+        loadTopbar('parent');
+        if (!myAccountId) { window.location.href = '/login.html'; return; }
+        await loadChildren();
+    });
+</script>
+</body>
+</html>

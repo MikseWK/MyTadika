@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Home</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto space-y-8">
+
+        <!-- Welcome -->
+        <div class="relative overflow-hidden bg-[#ffd709]/15 rounded-2xl p-8 border border-[#ffd709]/20">
+            <div class="absolute -right-16 -top-16 w-56 h-56 bg-[#ffc69a]/30 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <h1 id="greeting" class="text-3xl md:text-4xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Welcome!</h1>
+                <p class="text-stone-600 mt-2">Manage your classes, share memories, and track your students' progress.</p>
+            </div>
+        </div>
+
+        <div id="page-loading" class="py-16 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+
+        <div id="content-wrap" class="hidden space-y-8">
+
+            <!-- My Classrooms -->
+            <section class="space-y-4">
+                <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">My Classrooms</h3>
+                <div id="classroom-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- Upcoming Classwork -->
+            <section class="space-y-4">
+                <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Upcoming Classwork</h3>
+                <div id="classwork-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div id="classwork-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">Nothing due right now across your classes.</div>
+            </section>
+
+            <!-- Memory Box & Quick Actions -->
+            <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Recent Memory Box</h3>
+                        <a href="teachermemory.html" class="text-sm font-bold text-stone-500 hover:underline">View All</a>
+                    </div>
+                    <div id="memory-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                    <div id="memory-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-8 text-center text-stone-400 text-sm">No memories shared yet — head to Memory Box to post your first update.</div>
+                </div>
+                <div class="lg:col-span-4 space-y-4">
+                    <h3 class="text-xl font-bold text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <a href="teachermemory.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-[#ffd709]/20 flex items-center justify-center text-[#6c5a00]">
+                                    <span class="material-symbols-outlined">add_a_photo</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Add Memory</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="teacherchatwithparent.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-[#ffc69a]/30 flex items-center justify-center text-[#8c4a00]">
+                                    <span class="material-symbols-outlined">chat</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Message Parents</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                        <a href="teacherhealthlist.html"
+                            class="w-full flex items-center justify-between p-4 bg-white rounded-xl hover:bg-[#ffd709]/10 transition-colors shadow-sm border border-stone-100">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                    <span class="material-symbols-outlined">medical_services</span>
+                                </div>
+                                <span class="font-bold text-stone-800 text-sm">Health Records</span>
+                            </div>
+                            <span class="material-symbols-outlined text-stone-300">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+const COLOR_MAP = {
+    emerald: 'bg-emerald-100 text-emerald-700', indigo: 'bg-indigo-100 text-indigo-700',
+    rose: 'bg-rose-100 text-rose-700', amber: 'bg-amber-100 text-amber-700',
+    sky: 'bg-sky-100 text-sky-700', violet: 'bg-violet-100 text-violet-700'
+};
+
+function setGreeting() {
+    const name = localStorage.getItem('fullName') || sessionStorage.getItem('fullName') || '';
+    const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = name ? `${part}, ${name}!` : `${part}!`;
+}
+
+function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+
+let myClassrooms = [];
+async function loadClassrooms() {
+    let classrooms = [];
+    try {
+        const res = await fetch(`/api/classroom/my/${myAccountId}`);
+        classrooms = res.ok ? await res.json() : [];
+    } catch (e) { classrooms = []; }
+    myClassrooms = classrooms;
+
+    const grid = document.getElementById('classroom-grid');
+    grid.innerHTML = classrooms.map(c => `
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden hover:-translate-y-1 transition-transform duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="min-w-0">
+                        <h4 class="text-lg font-bold text-stone-800 truncate">${esc(c.name)}</h4>
+                        <p class="text-xs text-stone-400 mt-0.5">${esc(c.section || 'No section set')}</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${COLOR_MAP[c.color] || 'bg-stone-100 text-stone-500'}">
+                        <span class="material-symbols-outlined">groups</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 mb-5">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Students</span>
+                        <span class="text-sm font-bold text-stone-700">${c.studentCount || 0} enrolled</span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">Classwork due</span>
+                        <span class="text-sm font-bold text-stone-700">${c.totalUpcoming || 0} upcoming</span>
+                    </div>
+                </div>
+                <a href="teacherclassroom.html?classroomId=${c.id}" class="block w-full text-center bg-[#ffd709] text-[#6c5a00] py-2.5 rounded-full font-bold text-sm hover:bg-[#f5cc00] transition-colors">Manage Class</a>
+            </div>
+        </div>`).join('') + `
+        <a href="teacherclassroom.html?create=1" class="bg-stone-50 border-2 border-dashed border-stone-200 rounded-2xl flex flex-col items-center justify-center p-8 gap-3 hover:bg-[#ffd709]/5 hover:border-[#ffd709]/40 transition-all min-h-[220px]">
+            <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm">
+                <span class="material-symbols-outlined text-[#6c5a00] text-3xl">add</span>
+            </div>
+            <div class="text-center">
+                <h4 class="font-bold text-stone-700">Add Classroom</h4>
+                <p class="text-xs text-stone-400 mt-1">Set up a new class</p>
+            </div>
+        </a>`;
+}
+
+// One card per classroom + assignment, across every class the teacher teaches or co-teaches.
+function renderClasswork() {
+    const list = document.getElementById('classwork-list');
+    const empty = document.getElementById('classwork-empty');
+
+    const items = [];
+    myClassrooms.forEach(c => {
+        (c.upcomingWork || []).forEach(w => {
+            items.push({ id: w.id, title: w.title, dueDate: w.dueDate, classroomId: c.id, className: c.name });
+        });
+    });
+    items.sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
+    if (!items.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = items.slice(0, 6).map(w => `
+        <div class="bg-white rounded-xl shadow-sm border border-stone-100 p-4 flex items-center gap-4">
+            <div class="bg-stone-50 rounded-lg p-2.5 text-center min-w-[56px]">
+                <span class="block text-[10px] font-bold text-stone-400 uppercase">Due</span>
+                <span class="block text-sm font-black text-[#6c5a00]">${fmtDate(w.dueDate)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-sm text-stone-800 truncate">${esc(w.title)}</h4>
+                <p class="text-xs text-stone-400">${esc(w.className)}</p>
+            </div>
+            <a href="teacherclassroom.html?classroomId=${w.classroomId}&tab=classwork&assignmentId=${w.id}"
+                class="flex-shrink-0 px-4 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] font-bold text-xs hover:bg-[#ffd709]/30 transition-colors">View</a>
+        </div>`).join('');
+}
+
+async function loadMemoryHighlights() {
+    const grid = document.getElementById('memory-grid');
+    const empty = document.getElementById('memory-empty');
+    try {
+        const res = await fetch(`/api/memory/teacher/${myAccountId}`);
+        const posts = res.ok ? await res.json() : [];
+        if (!posts.length) { empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        grid.innerHTML = posts.slice(0, 4).map(p => {
+            const first = p.media && p.media[0];
+            if (!first) return '';
+            const isVideo = first.type === 'VIDEO';
+            return `
+            <a href="teachermemory.html" title="${esc(p.caption || p.classroomName)}" class="relative group aspect-square rounded-lg overflow-hidden bg-stone-100 shadow-sm block">
+                ${isVideo
+                    ? `<video src="${esc(first.url)}" class="w-full h-full object-cover" preload="metadata" muted></video>
+                       <span class="absolute inset-0 flex items-center justify-center"><span class="w-9 h-9 rounded-full bg-black/50 flex items-center justify-center"><span class="material-symbols-outlined text-white text-lg" style="font-variation-settings:'FILL' 1">play_arrow</span></span></span>`
+                    : `<img src="${esc(first.url)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="">`}
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2">
+                    <p class="text-white text-[10px] font-bold truncate">${esc(p.classroomName)}</p>
+                    <p class="text-white/90 text-[10px] truncate">${esc(p.caption || 'No caption')}</p>
+                </div>
+            </a>`;
+        }).join('');
+    } catch (e) { empty.classList.remove('hidden'); }
+}
+
+(async function init() {
+    setGreeting();
+    await loadClassrooms();
+    renderClasswork();
+    document.getElementById('page-loading').classList.add('hidden');
+    document.getElementById('content-wrap').classList.remove('hidden');
+    await loadMemoryHighlights();
+})();
+</script>
+
+<script>loadSidebar('teacher', 'home'); loadTopbar('teacher', { dateOnly: true });</script>
+</body>
+</html>

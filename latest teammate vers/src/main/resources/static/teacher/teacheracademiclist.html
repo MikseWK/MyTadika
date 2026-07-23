@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Academic Reports</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Academic Reports</h1>
+            <p class="text-stone-500 text-sm mt-1">Every student across your classes — pick one to view or submit term scores.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <div class="relative max-w-sm flex-1 w-full">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-stone-300 text-lg">search</span>
+                    </span>
+                    <input id="search-input" type="search" placeholder="Search by student name…" autocomplete="off"
+                        class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="filterStudents()">
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="class-filter" onchange="filterStudents()"
+                        class="min-w-[140px] px-3 py-2 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                        <option value="ALL">All Classes</option>
+                    </select>
+                    <span class="text-xs text-stone-400" id="list-count"></span>
+                </div>
+            </div>
+
+            <div id="list-loading" class="py-16 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+            <div id="list-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
+                <span class="material-symbols-outlined text-4xl">bar_chart</span>
+                <p class="text-sm">No students found.</p>
+            </div>
+
+            <div class="overflow-x-auto hidden" id="table-wrap">
+                <table class="w-full text-left">
+                    <thead class="bg-stone-50">
+                        <tr class="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                            <th class="px-6 py-3">Student</th>
+                            <th class="px-6 py-3">Class</th>
+                            <th class="px-6 py-3">Gender</th>
+                            <th class="px-6 py-3">DOB</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-tbody" class="divide-y divide-stone-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function fmtDob(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+
+let allStudents = [];
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+const FILTER_KEY = 'teacheracademiclist_filters';
+
+function restoreFilterState() {
+    // Only restore the previous search/class filter when arriving via the browser's Back/Forward
+    // button — a fresh visit (e.g. clicking "Academic" in the sidebar) should always start at the
+    // "All Classes" default rather than whatever was selected last time.
+    const navEntries = performance.getEntriesByType('navigation');
+    const isBackForward = navEntries.length > 0 && navEntries[0].type === 'back_forward';
+    if (!isBackForward) return;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(FILTER_KEY) || '{}');
+        if (saved.search) document.getElementById('search-input').value = saved.search;
+        if (saved.classFilter) document.getElementById('class-filter').value = saved.classFilter;
+    } catch (e) { /* ignore malformed state */ }
+}
+
+async function loadStudents() {
+    try {
+        const [studentsRes, classroomsRes] = await Promise.all([
+            fetch(`/api/classroom/my-students/${myAccountId}`),
+            fetch(`/api/classroom/my/${myAccountId}`)
+        ]);
+        allStudents = studentsRes.ok ? await studentsRes.json() : [];
+        const myClassrooms = classroomsRes.ok ? await classroomsRes.json() : [];
+
+        // Show every class the teacher teaches, even ones with no students enrolled yet —
+        // not just the classes that happen to already have a student in them.
+        const classNames = [...new Set(myClassrooms.map(c => c.name).filter(Boolean))].sort();
+        const select = document.getElementById('class-filter');
+        select.innerHTML = '<option value="ALL">All Classes</option>' +
+            classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
+
+        restoreFilterState();
+        filterStudents();
+    } catch (e) {
+        allStudents = [];
+    }
+    document.getElementById('list-loading').classList.add('hidden');
+}
+
+function filterStudents() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase();
+    const classFilter = document.getElementById('class-filter').value;
+    sessionStorage.setItem(FILTER_KEY, JSON.stringify({ search: document.getElementById('search-input').value, classFilter }));
+    let list = allStudents;
+    if (q) list = list.filter(s => (s.studentName||'').toLowerCase().includes(q));
+    if (classFilter !== 'ALL') list = list.filter(s => s.classroomName === classFilter);
+    list = [...list].sort((a,b) => (a.classroomName||'zzz').localeCompare(b.classroomName||'zzz') || a.studentName.localeCompare(b.studentName));
+    renderStudents(list);
+    document.getElementById('list-count').textContent = `${list.length} student${list.length !== 1 ? 's' : ''}`;
+}
+
+function renderStudents(list) {
+    const tbody = document.getElementById('students-tbody');
+    const wrap = document.getElementById('table-wrap');
+    const empty = document.getElementById('list-empty');
+    if (!list.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+
+    const genderColor = g => g === 'FEMALE' ? 'bg-rose-400' : g === 'MALE' ? 'bg-sky-500' : 'bg-stone-400';
+
+    tbody.innerHTML = list.map(s => `
+        <tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full ${genderColor(s.gender)} flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs font-bold text-white">${esc(initials(s.studentName))}</span>
+                    </div>
+                    <span class="font-semibold text-sm text-stone-800">${esc(s.studentName)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-stone-500">${s.classroomName ? esc(s.classroomName) : '<span class="text-stone-300">—</span>'}</td>
+            <td class="px-6 py-4 text-xs font-medium ${s.gender === 'FEMALE' ? 'text-rose-500' : s.gender === 'MALE' ? 'text-sky-500' : 'text-stone-400'}">${esc(s.gender||'—')}</td>
+            <td class="px-6 py-4 text-sm text-stone-400">${fmtDob(s.dateOfBirth)}</td>
+            <td class="px-6 py-4 text-right">
+                <a href="/teacher/teacheracademic.html?studentId=${s.studentId}&studentName=${encodeURIComponent(s.studentName||'')}&className=${encodeURIComponent(s.classroomName||'')}"
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] hover:bg-[#ffd709]/40 text-xs font-bold transition-colors">
+                    <span class="material-symbols-outlined text-sm">bar_chart</span>
+                    View
+                </a>
+            </td>
+        </tr>`).join('');
+}
+
+loadStudents();
+</script>
+
+<script>loadSidebar('teacher', 'report'); loadTopbar('teacher');</script>
+</body>
+</html>

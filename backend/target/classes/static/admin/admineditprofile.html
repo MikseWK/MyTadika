@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Edit Profile</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-2xl mx-auto">
+
+        <button onclick="window.location.href='adminprofile.html'"
+            class="flex items-center gap-1 text-stone-400 hover:text-[#312f23] text-sm font-medium transition-colors mb-6">
+            <span class="material-symbols-outlined text-base">arrow_back</span>
+            My Profile
+        </button>
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Edit Profile</h1>
+            <p class="text-stone-500 text-sm mt-1">Update your name, phone number, and photo.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-8">
+            <div class="flex flex-col items-center mb-8">
+                <div id="avatar-wrap" class="relative w-28 h-28 rounded-full border-4 border-[#ffd709]/30 overflow-hidden bg-[#ffd709]/20 flex items-center justify-center cursor-pointer">
+                    <img id="avatar-preview" alt="Profile" class="w-full h-full object-cover hidden">
+                    <span id="avatar-icon" class="material-symbols-outlined text-[#6c5a00] text-6xl" style="font-variation-settings:'FILL' 1">admin_panel_settings</span>
+                    <div class="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white">photo_camera</span>
+                    </div>
+                </div>
+                <input id="avatar-input" type="file" accept="image/*" class="hidden">
+                <p class="text-xs text-stone-400 mt-2">Click the photo to change it</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Full Name</label>
+                    <input id="input-fullname" type="text"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Email</label>
+                    <input id="input-email" type="email" disabled
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm bg-stone-50 text-stone-400 cursor-not-allowed">
+                    <p class="text-xs text-stone-400 mt-1">Ask another admin to update your email from the Accounts page.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Phone Number</label>
+                    <input id="input-phone" type="text" placeholder="e.g. +60 12-345 6789"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+            </div>
+
+            <p id="save-error" class="hidden text-xs text-red-500 mt-4"></p>
+            <div class="flex gap-3 mt-6">
+                <button onclick="window.location.href='adminprofile.html'"
+                    class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+                <button onclick="saveProfile()" id="save-btn"
+                    class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00]">Save Changes</button>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script>
+const accountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+let pendingImageFile = null;
+
+async function loadProfile() {
+    if (!accountId) return;
+    try {
+        const res = await fetch(`/api/profile/${accountId}`);
+        if (!res.ok) return;
+        const p = await res.json();
+        document.getElementById('input-fullname').value = p.fullName || '';
+        document.getElementById('input-email').value = p.email || '';
+        document.getElementById('input-phone').value = p.phoneNumber || '';
+        if (p.profileImageUrl) {
+            document.getElementById('avatar-preview').src = p.profileImageUrl;
+            document.getElementById('avatar-preview').classList.remove('hidden');
+            document.getElementById('avatar-icon').classList.add('hidden');
+        }
+    } catch (e) {}
+}
+
+document.getElementById('avatar-wrap').addEventListener('click', () => document.getElementById('avatar-input').click());
+document.getElementById('avatar-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    pendingImageFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        document.getElementById('avatar-preview').src = ev.target.result;
+        document.getElementById('avatar-preview').classList.remove('hidden');
+        document.getElementById('avatar-icon').classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+});
+
+function showErr(msg) {
+    const el = document.getElementById('save-error');
+    el.textContent = msg; el.classList.remove('hidden');
+}
+
+async function saveProfile() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    document.getElementById('save-error').classList.add('hidden');
+    try {
+        if (pendingImageFile) {
+            const formData = new FormData();
+            formData.append('file', pendingImageFile);
+            const imgRes = await fetch(`/api/profile/${accountId}/image`, { method: 'POST', body: formData });
+            if (!imgRes.ok) throw new Error('Failed to upload photo.');
+        }
+        const res = await fetch(`/api/profile/${accountId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fullName: document.getElementById('input-fullname').value.trim(),
+                phoneNumber: document.getElementById('input-phone').value.trim(),
+            })
+        });
+        if (!res.ok) throw new Error('Failed to save profile.');
+        localStorage.setItem('fullName', document.getElementById('input-fullname').value.trim());
+        sessionStorage.setItem('fullName', document.getElementById('input-fullname').value.trim());
+        window.location.href = 'adminprofile.html';
+    } catch (e) {
+        showErr(e.message || 'Something went wrong.');
+        btn.disabled = false; btn.textContent = 'Save Changes';
+    }
+}
+
+loadProfile();
+</script>
+
+<script>loadSidebar('admin', 'profile'); loadTopbar('admin');</script>
+</body>
+</html>

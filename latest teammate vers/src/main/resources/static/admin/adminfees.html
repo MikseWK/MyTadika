@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Fees</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Fees</h1>
+                <p class="text-stone-500 text-sm mt-1">Charge and track student tuition fees.</p>
+            </div>
+            <button onclick="openCreateModal()"
+                class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add_card</span>
+                Add Fee
+            </button>
+        </div>
+
+        <!-- Stats strip (click to filter by status) -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+            <button onclick="setStatusFilter('ALL')" id="sf-ALL"
+                class="status-filter-card bg-white rounded-2xl shadow-sm border-2 border-[#ffd709] p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-[#312f23]" id="stat-total">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Total</p>
+            </button>
+            <button onclick="setStatusFilter('PENDING')" id="sf-PENDING"
+                class="status-filter-card bg-white rounded-2xl shadow-sm border-2 border-transparent p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-amber-500" id="stat-pending">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Pending</p>
+            </button>
+            <button onclick="setStatusFilter('OVERDUE')" id="sf-OVERDUE"
+                class="status-filter-card bg-white rounded-2xl shadow-sm border-2 border-transparent p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-red-500" id="stat-overdue">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Overdue</p>
+            </button>
+            <button onclick="setStatusFilter('PAID')" id="sf-PAID"
+                class="status-filter-card bg-white rounded-2xl shadow-sm border-2 border-transparent p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-emerald-600" id="stat-paid">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Paid (RM <span id="stat-paid-sum">0</span>)</p>
+            </button>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <!-- Search + filters -->
+            <div class="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <div class="relative max-w-sm flex-1 w-full">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-stone-300 text-lg">search</span>
+                    </span>
+                    <input id="search-input" name="q" type="search" placeholder="Search by student name…" autocomplete="off"
+                        class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="filterFees()">
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <select id="class-filter" onchange="onClassFilterChange()"
+                        class="min-w-[140px] px-3 py-2 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                        <option value="ALL">All Classes</option>
+                    </select>
+                    <select id="sort-by" onchange="filterFees()"
+                        class="min-w-[140px] px-3 py-2 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                        <option value="DUE_DATE">Sort: Due Date</option>
+                        <option value="CLASS">Sort: Class</option>
+                    </select>
+                    <button id="bulk-edit-btn" onclick="openBulkEditModal()" disabled
+                        class="flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors">
+                        <span class="material-symbols-outlined text-base">edit_note</span>
+                        Bulk Edit Class
+                    </button>
+                    <button id="bulk-delete-btn" onclick="submitBulkDelete()" disabled
+                        class="flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors">
+                        <span class="material-symbols-outlined text-base">delete_sweep</span>
+                        Bulk Delete Class
+                    </button>
+                    <span class="text-xs text-stone-400" id="list-count"></span>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="fees-loading" class="py-16 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+            <!-- Empty -->
+            <div id="fees-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
+                <span class="material-symbols-outlined text-4xl">payments</span>
+                <p class="text-sm">No fee records found.</p>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto hidden" id="fees-table-wrap">
+                <table class="w-full text-left">
+                    <thead class="bg-stone-50">
+                        <tr class="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                            <th class="px-6 py-3">Student</th>
+                            <th class="px-6 py-3">Class</th>
+                            <th class="px-6 py-3">Description</th>
+                            <th class="px-6 py-3">Amount</th>
+                            <th class="px-6 py-3">Due Date</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Method</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fees-tbody" class="divide-y divide-stone-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Add/Edit Fee Modal -->
+<div id="fee-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <h2 id="fee-modal-title" class="text-xl font-black text-[#312f23] mb-5" style="font-family:'Plus Jakarta Sans',sans-serif">Add Fee</h2>
+        <div class="space-y-4">
+            <div id="fm-target-toggle" class="flex gap-1 bg-stone-100 rounded-full p-1">
+                <button type="button" onclick="setTargetMode('STUDENT')" id="fm-mode-student" class="flex-1 py-2 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]">Single Student</button>
+                <button type="button" onclick="setTargetMode('CLASSROOM')" id="fm-mode-classroom" class="flex-1 py-2 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Whole Class</button>
+            </div>
+            <div id="fm-student-field">
+                <label class="block text-xs font-bold text-stone-500 mb-1">Student *</label>
+                <select id="fm-student" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white disabled:bg-stone-100 disabled:text-stone-400">
+                    <option value="">— Select student —</option>
+                </select>
+            </div>
+            <div id="fm-classroom-field" class="hidden">
+                <label class="block text-xs font-bold text-stone-500 mb-1">Classroom *</label>
+                <select id="fm-classroom" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="">— Select classroom —</option>
+                </select>
+                <p class="text-xs text-stone-400 mt-1">Charges every student currently enrolled in this class.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Description *</label>
+                <input id="fm-description" type="text" placeholder="e.g. Term 1 Tuition Fee"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Amount (RM) *</label>
+                    <input id="fm-amount" type="number" min="0" step="0.01" placeholder="0.00"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Due Date *</label>
+                    <input id="fm-due-date" type="date"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+            </div>
+            <p class="text-[10px] text-stone-400 leading-relaxed">A 5% late fee is automatically added if a fee is left unpaid past its due date, and parents are notified when that happens.</p>
+        </div>
+        <p id="fm-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeFeeModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="fee-submit-btn" onclick="submitFee()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Edit Modal -->
+<div id="bulk-edit-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <h2 class="text-xl font-black text-[#312f23] mb-1" style="font-family:'Plus Jakarta Sans',sans-serif">Bulk Edit Class Fees</h2>
+        <p id="bulk-edit-summary" class="text-sm text-stone-500 mb-5"></p>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Description *</label>
+                <input id="bulk-description" type="text" placeholder="e.g. Term 1 Tuition Fee"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Amount (RM) *</label>
+                    <input id="bulk-amount" type="number" min="0" step="0.01" placeholder="0.00"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Due Date *</label>
+                    <input id="bulk-due-date" type="date"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+            </div>
+            <p class="text-[10px] text-stone-400 leading-relaxed">This overwrites the description, amount, and due date for every fee record currently shown in the filtered table below — double-check your search/status filters first.</p>
+        </div>
+        <p id="bulk-edit-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeBulkEditModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="bulk-edit-submit-btn" onclick="submitBulkEdit()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save All</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.remove('hidden'); }
+function fmtMoney(n) { return Number(n||0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtDate(d) { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; }
+function isOverdue(fee) { return fee.status === 'PENDING' && fee.dueDate && fee.dueDate < new Date().toISOString().slice(0,10); }
+function paymentMethodLabel(pm) {
+    return { STRIPE: 'Card (Stripe)', TOYYIBPAY: 'FPX/Card (ToyyibPay)', MANUAL: 'Manual/Cash' }[pm] || null;
+}
+
+function downloadReceipt(feeId) {
+    const fee = allFees.find(f => f.id === feeId);
+    if (!fee) return;
+    const studentName = (studentsById[fee.studentId] || {}).fullName || 'Unknown Student';
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(108, 90, 0);
+    doc.text('MyTadika', 40, 55);
+    doc.setFontSize(12);
+    doc.setTextColor(120, 113, 108);
+    doc.text('Payment Receipt', 40, 75);
+
+    doc.setDrawColor(230, 226, 210);
+    doc.line(40, 90, 555, 90);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(90, 90, 90);
+    let y = 120;
+    const row = (label, value) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, 40, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(value), 200, y);
+        y += 24;
+    };
+
+    row('Receipt No.', 'MTD-' + String(fee.id).padStart(6, '0'));
+    row('Student', studentName);
+    row('Description', fee.description);
+    row('Amount', 'RM ' + fmtMoney(fee.amount));
+    if (fee.lateFeeAmount) row('Late Fee', 'RM ' + fmtMoney(fee.lateFeeAmount));
+    row('Total Paid', 'RM ' + fmtMoney(totalOf(fee)));
+    row('Payment Method', paymentMethodLabel(fee.paymentMethod) || 'Manual/Cash');
+    row('Date Paid', fee.paidAt ? fee.paidAt.slice(0,10) : '-');
+    row('Status', 'PAID');
+
+    doc.setDrawColor(230, 226, 210);
+    doc.line(40, y + 10, 555, y + 10);
+    doc.setFontSize(9);
+    doc.setTextColor(150, 145, 130);
+    doc.text('This is a system-generated receipt from MyTadika.', 40, y + 35);
+
+    doc.save(`MyTadika-Receipt-${fee.id}.pdf`);
+}
+
+let allFees = [];
+let allStudents = [];
+let studentsById = {};
+let allClassrooms = [];
+let statusFilter = 'ALL';
+let classFilter = 'ALL';
+let editingId = null;
+let targetMode = 'STUDENT';
+let currentFilteredFees = [];
+
+async function loadStudents() {
+    try {
+        const res = await fetch('/api/admin/students');
+        allStudents = res.ok ? await res.json() : [];
+        studentsById = {};
+        allStudents.forEach(s => studentsById[s.id] = s);
+        const select = document.getElementById('fm-student');
+        select.innerHTML = '<option value="">— Select student —</option>' +
+            allStudents.map(s => `<option value="${s.id}">${esc(s.fullName)}${s.studentCode ? ' (' + esc(s.studentCode) + ')' : ''}</option>`).join('');
+    } catch(e) { allStudents = []; }
+}
+
+async function loadClassrooms() {
+    try {
+        const res = await fetch('/api/classroom/all');
+        allClassrooms = res.ok ? await res.json() : [];
+        const select = document.getElementById('fm-classroom');
+        select.innerHTML = '<option value="">— Select classroom —</option>' +
+            allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)}${c.section ? ' ' + esc(c.section) : ''} (${c.studentCount || 0} students)</option>`).join('');
+
+        const classFilterSelect = document.getElementById('class-filter');
+        classFilterSelect.innerHTML = '<option value="ALL">All Classes</option>' +
+            allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    } catch(e) { allClassrooms = []; }
+}
+
+function classNameOf(f) {
+    const student = studentsById[f.studentId] || {};
+    return student.classroomName || null;
+}
+
+function onClassFilterChange() {
+    classFilter = document.getElementById('class-filter').value;
+    const btn = document.getElementById('bulk-edit-btn');
+    const delBtn = document.getElementById('bulk-delete-btn');
+    if (classFilter === 'ALL') {
+        btn.disabled = true;
+        btn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors';
+        delBtn.disabled = true;
+        delBtn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-stone-100 text-stone-400 text-xs font-bold cursor-not-allowed transition-colors';
+    } else {
+        btn.disabled = false;
+        btn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-[#ffd709] text-[#6c5a00] text-xs font-bold hover:bg-[#f5cc00] transition-colors';
+        delBtn.disabled = false;
+        delBtn.className = 'flex items-center gap-1 px-3 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors';
+    }
+    filterFees();
+}
+
+async function loadFees() {
+    try {
+        const res = await fetch('/api/fees');
+        allFees = res.ok ? await res.json() : [];
+        updateStats();
+        filterFees();
+        document.getElementById('fees-loading').classList.add('hidden');
+    } catch(e) {
+        document.getElementById('fees-loading').classList.add('hidden');
+    }
+}
+
+function totalOf(f) { return f.totalAmount != null ? f.totalAmount : f.amount; }
+
+function updateStats() {
+    const pending = allFees.filter(f => f.status === 'PENDING');
+    const paid = allFees.filter(f => f.status === 'PAID');
+    const overdue = allFees.filter(isOverdue);
+    document.getElementById('stat-total').textContent = allFees.length;
+    document.getElementById('stat-pending').textContent = pending.length;
+    document.getElementById('stat-overdue').textContent = overdue.length;
+    document.getElementById('stat-paid').textContent = paid.length;
+    document.getElementById('stat-paid-sum').textContent = fmtMoney(paid.reduce((s,f) => s + totalOf(f), 0));
+}
+
+function setStatusFilter(status) {
+    statusFilter = status;
+    document.querySelectorAll('.status-filter-card').forEach(b => {
+        b.classList.remove('border-[#ffd709]'); b.classList.add('border-transparent');
+    });
+    document.getElementById('sf-' + status).classList.remove('border-transparent');
+    document.getElementById('sf-' + status).classList.add('border-[#ffd709]');
+    filterFees();
+}
+
+function filterFees() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase();
+    const sortBy = document.getElementById('sort-by').value;
+    let list = allFees.map(f => ({
+        ...f,
+        studentName: (studentsById[f.studentId]||{}).fullName || 'Unknown Student',
+        className: classNameOf(f)
+    }));
+    if (q) list = list.filter(f => f.studentName.toLowerCase().includes(q));
+    if (statusFilter === 'PENDING') list = list.filter(f => f.status === 'PENDING' && !isOverdue(f));
+    else if (statusFilter === 'PAID') list = list.filter(f => f.status === 'PAID');
+    else if (statusFilter === 'OVERDUE') list = list.filter(isOverdue);
+    if (classFilter !== 'ALL') list = list.filter(f => (((studentsById[f.studentId]||{}).classroomIds)||[]).some(id => String(id) === String(classFilter)));
+
+    if (sortBy === 'CLASS') {
+        list.sort((a,b) => (a.className||'zzz').localeCompare(b.className||'zzz') || a.dueDate.localeCompare(b.dueDate));
+    } else {
+        list.sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+    }
+
+    currentFilteredFees = list;
+    renderFees(list);
+    document.getElementById('list-count').textContent = `${list.length} record${list.length !== 1 ? 's' : ''}`;
+}
+
+function renderFees(list) {
+    const tbody = document.getElementById('fees-tbody');
+    const wrap  = document.getElementById('fees-table-wrap');
+    const empty = document.getElementById('fees-empty');
+    if (!list.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+
+    tbody.innerHTML = list.map(f => {
+        const overdue = isOverdue(f);
+        let badge;
+        if (f.status === 'PAID') badge = '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Paid</span>';
+        else if (overdue) badge = '<span class="text-xs font-bold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">Overdue</span>';
+        else badge = '<span class="text-xs font-bold text-amber-500 bg-amber-50 px-2.5 py-1 rounded-full">Pending</span>';
+
+        return `
+        <tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-[#ffd709] flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs font-bold text-[#6c5a00]">${esc(initials(f.studentName))}</span>
+                    </div>
+                    <span class="font-semibold text-sm text-stone-800">${esc(f.studentName)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-stone-500">${f.className ? esc(f.className) : '<span class="text-stone-300">—</span>'}</td>
+            <td class="px-6 py-4 text-sm text-stone-600">${esc(f.description)}</td>
+            <td class="px-6 py-4 text-sm">
+                <span class="font-bold text-stone-800">RM ${fmtMoney(totalOf(f))}</span>
+                ${f.lateFeeAmount ? `<span class="block text-[10px] text-red-500 font-semibold">RM ${fmtMoney(f.amount)} + RM ${fmtMoney(f.lateFeeAmount)} late fee</span>` : ''}
+            </td>
+            <td class="px-6 py-4 text-sm text-stone-400">${fmtDate(f.dueDate)}</td>
+            <td class="px-6 py-4">${badge}</td>
+            <td class="px-6 py-4 text-sm text-stone-500">${paymentMethodLabel(f.paymentMethod) || '<span class="text-stone-300">—</span>'}</td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                    ${f.status === 'PENDING' ? `
+                    <button onclick="markPaid(${f.id})"
+                        class="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold transition-colors" title="Mark Paid">
+                        Mark Paid
+                    </button>` : ''}
+                    ${f.status === 'PAID' ? `
+                    <button onclick="downloadReceipt(${f.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Download Receipt">
+                        <span class="material-symbols-outlined text-base">download</span>
+                    </button>` : ''}
+                    <button onclick="openEditModal(${f.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="deleteFee(${f.id},'${esc(f.studentName)}')"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Delete">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function setTargetMode(mode) {
+    targetMode = mode;
+    const isStudent = mode === 'STUDENT';
+    document.getElementById('fm-mode-student').className = `flex-1 py-2 rounded-full text-xs font-bold transition-colors ${isStudent ? 'bg-[#ffd709] text-[#6c5a00]' : 'text-stone-500 hover:bg-white'}`;
+    document.getElementById('fm-mode-classroom').className = `flex-1 py-2 rounded-full text-xs font-bold transition-colors ${!isStudent ? 'bg-[#ffd709] text-[#6c5a00]' : 'text-stone-500 hover:bg-white'}`;
+    document.getElementById('fm-student-field').classList.toggle('hidden', !isStudent);
+    document.getElementById('fm-classroom-field').classList.toggle('hidden', isStudent);
+}
+
+function openCreateModal() {
+    editingId = null;
+    document.getElementById('fee-modal-title').textContent = 'Add Fee';
+    document.getElementById('fm-target-toggle').classList.remove('hidden');
+    setTargetMode('STUDENT');
+    document.getElementById('fm-student').disabled = false;
+    document.getElementById('fm-student').value = '';
+    document.getElementById('fm-classroom').value = '';
+    document.getElementById('fm-description').value = '';
+    document.getElementById('fm-amount').value = '';
+    document.getElementById('fm-due-date').value = '';
+    document.getElementById('fm-error').classList.add('hidden');
+    document.getElementById('fee-modal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+    const fee = allFees.find(f => f.id === id);
+    if (!fee) return;
+    editingId = id;
+    document.getElementById('fee-modal-title').textContent = 'Edit Fee';
+    document.getElementById('fm-target-toggle').classList.add('hidden');
+    setTargetMode('STUDENT');
+    document.getElementById('fm-student').value = fee.studentId;
+    document.getElementById('fm-student').disabled = true;
+    document.getElementById('fm-description').value = fee.description;
+    document.getElementById('fm-amount').value = fee.amount;
+    document.getElementById('fm-due-date').value = fee.dueDate;
+    document.getElementById('fm-error').classList.add('hidden');
+    document.getElementById('fee-modal').classList.remove('hidden');
+}
+
+function closeFeeModal() { document.getElementById('fee-modal').classList.add('hidden'); }
+
+let submittingFee = false;
+async function submitFee() {
+    if (submittingFee) return;
+    const body = {
+        description: document.getElementById('fm-description').value.trim(),
+        amount: parseFloat(document.getElementById('fm-amount').value),
+        dueDate: document.getElementById('fm-due-date').value,
+    };
+    if (!body.description) { showErr('fm-error', 'Description is required.'); return; }
+    if (!body.amount || body.amount <= 0) { showErr('fm-error', 'Enter a valid amount.'); return; }
+    if (!body.dueDate) { showErr('fm-error', 'Due date is required.'); return; }
+
+    let url, method;
+    if (editingId) {
+        url = `/api/fees/${editingId}`; method = 'PUT';
+    } else if (targetMode === 'CLASSROOM') {
+        const classroomId = document.getElementById('fm-classroom').value;
+        if (!classroomId) { showErr('fm-error', 'Please select a classroom.'); return; }
+        url = `/api/fees/classroom/${classroomId}`; method = 'POST';
+    } else {
+        const studentId = document.getElementById('fm-student').value;
+        if (!studentId) { showErr('fm-error', 'Please select a student.'); return; }
+        url = `/api/fees/students/${studentId}`; method = 'POST';
+    }
+
+    submittingFee = true;
+    const btn = document.getElementById('fee-submit-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch(url, {
+            method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            closeFeeModal();
+            if (editingId) showToast('Fee updated!');
+            else if (targetMode === 'CLASSROOM') showToast(`Fee assigned to ${Array.isArray(data) ? data.length : 0} students!`);
+            else showToast('Fee added!');
+            await loadFees();
+        } else {
+            let msg = 'Failed to save.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('fm-error', msg);
+        }
+    } catch(e) { showErr('fm-error', 'Network error.'); }
+    finally { submittingFee = false; btn.disabled = false; }
+}
+
+function openBulkEditModal() {
+    if (classFilter === 'ALL' || !currentFilteredFees.length) return;
+    const className = allClassrooms.find(c => String(c.id) === String(classFilter));
+    document.getElementById('bulk-edit-summary').textContent =
+        `Editing ${currentFilteredFees.length} fee record${currentFilteredFees.length !== 1 ? 's' : ''} for ${className ? className.name : 'this class'}. Tip: narrow the search box to one fee type first if the class has multiple.`;
+    document.getElementById('bulk-description').value = currentFilteredFees[0].description;
+    document.getElementById('bulk-amount').value = currentFilteredFees[0].amount;
+    document.getElementById('bulk-due-date').value = currentFilteredFees[0].dueDate;
+    document.getElementById('bulk-edit-error').classList.add('hidden');
+    document.getElementById('bulk-edit-modal').classList.remove('hidden');
+}
+
+function closeBulkEditModal() { document.getElementById('bulk-edit-modal').classList.add('hidden'); }
+
+let submittingBulkEdit = false;
+async function submitBulkEdit() {
+    if (submittingBulkEdit) return;
+    const body = {
+        feeIds: currentFilteredFees.map(f => f.id),
+        description: document.getElementById('bulk-description').value.trim(),
+        amount: parseFloat(document.getElementById('bulk-amount').value),
+        dueDate: document.getElementById('bulk-due-date').value,
+    };
+    const errEl = document.getElementById('bulk-edit-error');
+    if (!body.description) { showErr('bulk-edit-error', 'Description is required.'); return; }
+    if (!body.amount || body.amount <= 0) { showErr('bulk-edit-error', 'Enter a valid amount.'); return; }
+    if (!body.dueDate) { showErr('bulk-edit-error', 'Due date is required.'); return; }
+
+    submittingBulkEdit = true;
+    const btn = document.getElementById('bulk-edit-submit-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/fees/bulk', {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            closeBulkEditModal();
+            showToast(`Updated ${Array.isArray(data) ? data.length : 0} fee records!`);
+            await loadFees();
+        } else {
+            let msg = 'Failed to save.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('bulk-edit-error', msg);
+        }
+    } catch(e) { showErr('bulk-edit-error', 'Network error.'); }
+    finally { submittingBulkEdit = false; btn.disabled = false; }
+}
+
+let bulkDeleting = false;
+async function submitBulkDelete() {
+    if (bulkDeleting || classFilter === 'ALL' || !currentFilteredFees.length) return;
+    const className = allClassrooms.find(c => String(c.id) === String(classFilter));
+    const count = currentFilteredFees.length;
+    if (!confirm(`Delete all ${count} fee record${count !== 1 ? 's' : ''} for ${className ? className.name : 'this class'}? This cannot be undone.`)) return;
+
+    bulkDeleting = true;
+    const btn = document.getElementById('bulk-delete-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('/api/fees/bulk', {
+            method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feeIds: currentFilteredFees.map(f => f.id) })
+        });
+        if (res.ok) {
+            const data = await res.json();
+            showToast(`Deleted ${data.deleted != null ? data.deleted : count} fee records.`);
+            await loadFees();
+        } else {
+            let msg = 'Failed to delete.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showToast(msg);
+        }
+    } catch(e) { showToast('Network error.'); }
+    finally { bulkDeleting = false; btn.disabled = false; }
+}
+
+async function markPaid(id) {
+    const res = await fetch(`/api/fees/${id}/pay`, { method: 'PUT' });
+    if (res.ok) { showToast('Marked as paid.'); await loadFees(); }
+    else showToast('Failed to update.');
+}
+
+async function deleteFee(id, name) {
+    if (!confirm(`Delete this fee record for "${name}"?`)) return;
+    const res = await fetch(`/api/fees/${id}`, { method: 'DELETE' });
+    if (res.ok) { showToast('Fee record deleted.'); await loadFees(); }
+    else showToast('Failed to delete.');
+}
+
+(async function init() {
+    await loadStudents();
+    await loadClassrooms();
+    await loadFees();
+})();
+</script>
+
+<script>loadSidebar('admin', 'fees'); loadTopbar('admin');</script>
+</body>
+</html>

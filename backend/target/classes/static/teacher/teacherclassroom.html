@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Manage Classrooms</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        .card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -8px rgba(49,47,35,0.15); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+        details summary::-webkit-details-marker { display: none; }
+        .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        .color-swatch.selected { outline: 3px solid #6c5a00; outline-offset: 2px; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     LIST VIEW
+════════════════════════════════════════════════════════════════════════ -->
+<main id="view-list" class="ml-64 pt-24 px-8 pb-12 min-h-screen">
+    <div class="max-w-5xl mx-auto">
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">My Classrooms</h1>
+                <p class="text-stone-500 text-sm mt-1">Create and manage your classrooms</p>
+            </div>
+            <button onclick="openCreateModal()"
+                class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add</span>
+                Create Classroom
+            </button>
+        </div>
+
+        <div id="list-loading" class="py-24 flex flex-col items-center gap-3 text-stone-400">
+            <span class="material-symbols-outlined text-5xl spin">progress_activity</span>
+            <span class="text-sm">Loading classrooms…</span>
+        </div>
+
+        <div id="classrooms-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+        <div id="list-empty" class="hidden py-24 flex flex-col items-center gap-4 text-stone-400">
+            <div class="w-20 h-20 rounded-full bg-stone-100 flex items-center justify-center">
+                <span class="material-symbols-outlined text-4xl">school</span>
+            </div>
+            <div class="text-center">
+                <p class="font-semibold text-stone-500">No classrooms yet</p>
+                <p class="text-sm mt-1">Click "Create Classroom" to get started.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     DETAIL VIEW
+════════════════════════════════════════════════════════════════════════ -->
+<div id="view-detail" class="hidden ml-64 min-h-screen flex flex-col">
+
+    <!-- Banner -->
+    <div id="detail-header" class="px-8 pb-10 text-white flex flex-col" style="padding-top:72px; min-height:260px">
+        <!-- Nav row: back button + edit/delete -->
+        <div class="flex items-center justify-between mb-4">
+            <button onclick="showList()" class="flex items-center gap-1 text-white/80 hover:text-white text-sm font-medium transition-colors">
+                <span class="material-symbols-outlined text-base">arrow_back</span>
+                All Classrooms
+            </button>
+            <div class="flex gap-2 mt-2.5">
+                <button onclick="openEditModal()" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-full text-white text-xs font-semibold transition-colors">
+                    <span class="material-symbols-outlined text-sm">edit</span> Edit
+                </button>
+                <button onclick="confirmDeleteClassroom()" class="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-red-500/60 rounded-full text-white text-xs font-semibold transition-colors">
+                    <span class="material-symbols-outlined text-sm">delete</span> Delete
+                </button>
+            </div>
+        </div>
+        <!-- Class info -->
+        <h1 id="detail-name" class="text-3xl font-black leading-tight" style="font-family:'Plus Jakarta Sans',sans-serif"></h1>
+        <p id="detail-section" class="text-white/80 text-sm mt-1"></p>
+        <div class="flex items-center gap-2 mt-3">
+            <span class="material-symbols-outlined text-xl" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">account_circle</span>
+            <span id="detail-code" class="text-white/80 text-sm font-mono bg-white/15 px-3 py-1 rounded-full cursor-pointer hover:bg-white/25 transition-colors" onclick="copyCode()" title="Click to copy class code"></span>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="bg-white border-b border-stone-200 px-8 flex sticky top-0 z-20 shadow-sm">
+        <button onclick="switchTab('stream')"   id="tab-btn-stream"    class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">Stream</button>
+        <button onclick="switchTab('classwork')" id="tab-btn-classwork" class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">Classwork</button>
+        <button onclick="switchTab('people')"   id="tab-btn-people"    class="tab-btn px-6 py-4 text-sm font-medium text-stone-500 border-b-[3px] border-transparent hover:text-[#6c5a00] transition-colors">People</button>
+    </div>
+
+    <div id="tab-content" class="flex-1 py-8 px-8 max-w-3xl mx-auto w-full"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Create / Edit Classroom Modal -->
+<div id="classroom-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h2 id="classroom-modal-title" class="text-xl font-black text-[#312f23] mb-6" style="font-family:'Plus Jakarta Sans',sans-serif">Create Classroom</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Class Name *</label>
+                <input id="cm-name" type="text" placeholder="e.g. Pre-K Class A"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Section</label>
+                <input id="cm-section" type="text" placeholder="e.g. Morning Session"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-2">Color Theme</label>
+                <div class="flex gap-3 flex-wrap">
+                    <button data-color="indigo"  onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-indigo-600 selected"></button>
+                    <button data-color="emerald" onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-emerald-600"></button>
+                    <button data-color="violet"  onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-violet-600"></button>
+                    <button data-color="rose"    onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-rose-600"></button>
+                    <button data-color="amber"   onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-amber-500"></button>
+                    <button data-color="sky"     onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-sky-600"></button>
+                    <button data-color="teal"    onclick="selectColor(this)" class="color-swatch w-8 h-8 rounded-full bg-teal-600"></button>
+                </div>
+            </div>
+        </div>
+        <p id="cm-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeClassroomModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">Cancel</button>
+            <button onclick="submitClassroomForm()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Assignment Modal -->
+<div id="assignment-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+        <h2 class="text-xl font-black text-[#312f23] mb-6" style="font-family:'Plus Jakarta Sans',sans-serif">Add Activity</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Title *</label>
+                <input id="as-title" type="text" placeholder="e.g. Finger Painting"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Subject</label>
+                <select id="as-topic"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="General">General</option>
+                    <option value="Bahasa Melayu">Bahasa Melayu</option>
+                    <option value="English">English</option>
+                    <option value="Math">Math</option>
+                    <option value="Science">Science</option>
+                    <option value="Creative Arts">Creative Arts</option>
+                    <option value="Physical Education">Physical Education</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Description</label>
+                <textarea id="as-desc" rows="3" placeholder="Instructions or details…"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] resize-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Due Date</label>
+                    <input id="as-due" type="date"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div class="w-24">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Points</label>
+                    <input id="as-points" type="number" min="0" max="100" placeholder="—"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+            </div>
+        </div>
+        <p id="as-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeAssignmentModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">Cancel</button>
+            <button id="submit-assignment-btn" onclick="submitAssignment()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Add Activity</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<!-- Who Seen / Who Done Modal -->
+<div id="who-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-end sm:items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-stone-100 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <span id="who-modal-icon" class="material-symbols-outlined text-stone-400 text-lg">visibility</span>
+                <h3 id="who-modal-title" class="font-bold text-stone-800 text-sm"></h3>
+            </div>
+            <button onclick="closeWhoModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 transition-colors">
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </div>
+        <div id="who-modal-body" class="overflow-y-auto px-5 py-2 flex-1"></div>
+    </div>
+</div>
+
+<!-- Teacher Profile Modal -->
+<div id="teacher-profile-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4" onclick="if(event.target===this) closeTeacherProfileModal()">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto">
+        <div class="relative h-24 flex-shrink-0" style="background-color:#ffd709;">
+            <button onclick="closeTeacherProfileModal()" class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+                <div id="tp-avatar-wrap" style="width:88px;height:88px;border-radius:50%;border:4px solid white;box-shadow:0 8px 24px rgba(0,0,0,0.18);overflow:hidden;background:#ffd709;display:flex;align-items:center;justify-content:center;"></div>
+            </div>
+        </div>
+        <div class="pt-14 pb-6 px-6 text-center flex flex-col gap-4">
+            <div>
+                <h2 id="tp-name" class="text-lg font-extrabold text-[#312f23]"></h2>
+                <span id="tp-owner-badge" class="hidden text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full mt-1 inline-block">Owner</span>
+            </div>
+            <p id="tp-description" class="text-sm text-stone-500 leading-relaxed"></p>
+            <div id="tp-stats" class="grid grid-cols-3 gap-3"></div>
+            <div id="tp-info-rows" class="w-full space-y-2 text-left"></div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+const COLOR_MAP = {
+    indigo:  { cardBg: '#4f46e5' },
+    emerald: { cardBg: '#059669' },
+    violet:  { cardBg: '#7c3aed' },
+    rose:    { cardBg: '#e11d48' },
+    amber:   { cardBg: '#f59e0b' },
+    sky:     { cardBg: '#0284c7' },
+    teal:    { cardBg: '#0d9488' },
+};
+function hexOf(c) { return (COLOR_MAP[c] || COLOR_MAP.indigo).cardBg; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function formatDate(str) {
+    if (!str) return '';
+    const [y,m,d] = str.split('-');
+    const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(d)} ${mo[parseInt(m)-1]} ${y}`;
+}
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+
+let myAccountId = null;
+let currentClassroomId = null;
+let classroomCache = {};
+let selectedColor = 'indigo';
+let editingClassroomId = null; // null = create, number = edit
+let pendingOpenAssignmentId = null;
+
+// ── Load classrooms ──────────────────────────────────────────────────────
+async function loadTeacherEmailSuggestions() {
+    try {
+        const res = await fetch('/api/chat/teachers');
+        const teachers = res.ok ? await res.json() : [];
+        document.getElementById('teacher-email-suggestions').innerHTML =
+            teachers.map(t => `<option value="${esc(t.email)}">`).join('');
+    } catch (e) { /* suggestions are a nice-to-have, ignore failures */ }
+}
+loadTeacherEmailSuggestions();
+
+async function loadClassrooms() {
+    myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+    if (!myAccountId) return;
+    try {
+        const res = await fetch(`/api/classroom/my/${myAccountId}`);
+        const list = res.ok ? await res.json() : [];
+        document.getElementById('list-loading').classList.add('hidden');
+        if (!list.length) { document.getElementById('list-empty').classList.remove('hidden'); return; }
+        list.forEach(c => { classroomCache[c.id] = c; });
+        document.getElementById('classrooms-grid').classList.remove('hidden');
+        document.getElementById('classrooms-grid').innerHTML = list.map(renderCard).join('');
+    } catch(e) {
+        console.error('loadClassrooms error:', e);
+        document.getElementById('list-loading').classList.add('hidden');
+        document.getElementById('list-empty').classList.remove('hidden');
+    }
+}
+
+function formatDueDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    if (diff < 0)  return { label: 'Overdue',           color: '#dc2626' };
+    if (diff === 0) return { label: 'Remind today!',    color: '#dc2626' };
+    if (diff === 1) return { label: 'Remind tomorrow',  color: '#ea580c' };
+    if (diff <= 3)  return { label: `In ${diff} days`,  color: '#d97706' };
+    if (diff <= 7)  return { label: `In ${diff} days`,  color: null };
+    return { label: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), color: null };
+}
+
+function renderUpcomingWork(work, totalUpcoming, hex, moreClick, makeItemClick) {
+    if (!work || work.length === 0) return `
+        <div class="mx-5 mt-2 mb-3 pt-2 border-t border-stone-100 text-xs text-stone-300 italic">No upcoming work</div>`;
+    const items = work.map(w => {
+        const due = formatDueDate(w.dueDate);
+        const dueStyle = due.color ? `color:${due.color};font-weight:600` : 'color:#a8a29e';
+        const onclick = makeItemClick ? `onclick='event.stopPropagation();${makeItemClick(w.id)}'` : '';
+        const hoverClass = makeItemClick ? 'cursor-pointer hover:bg-stone-50 rounded-lg -mx-1 px-1 transition-colors' : '';
+        return `
+        <div ${onclick} class="flex items-center gap-2 py-1 ${hoverClass}">
+            <span class="material-symbols-outlined text-sm flex-shrink-0" style="color:${hex}">assignment</span>
+            <span class="flex-1 min-w-0 text-xs text-stone-600 truncate font-medium">${esc(w.title)}</span>
+            <span class="text-xs flex-shrink-0 whitespace-nowrap" style="${dueStyle}">${due.label}</span>
+        </div>`;
+    }).join('');
+    const extra = (totalUpcoming || 0) - work.length;
+    const moreLink = extra > 0 ? `
+        <button onclick="event.stopPropagation();${moreClick}" class="mt-1 text-xs font-semibold hover:underline" style="color:${hex}">
+            +${extra} more →
+        </button>` : '';
+    return `<div class="mx-5 mt-2 mb-3 pt-2 border-t border-stone-100">${items}${moreLink}</div>`;
+}
+
+function openClassroomToClasswork(id) { openClassroom(id, 'classwork'); }
+
+function openClassworkItem(classroomId, assignmentId) {
+    pendingOpenAssignmentId = assignmentId;
+    openClassroom(classroomId, 'classwork');
+}
+
+function renderCard(c) {
+    const hex = hexOf(c.color);
+    return `
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden card-hover cursor-pointer" onclick="openClassroom(${c.id})">
+        <div class="h-28 px-5 pt-4 pb-3 flex flex-col justify-between relative" style="background:${hex}">
+            <div class="flex items-start justify-between">
+                <div class="flex-1 min-w-0 pr-2">
+                    <h3 class="text-white font-black text-lg leading-tight" style="font-family:'Plus Jakarta Sans',sans-serif">${esc(c.name)}</h3>
+                    ${c.section ? `<p class="text-white/70 text-xs mt-0.5">${esc(c.section)}</p>` : ''}
+                </div>
+                <span class="material-symbols-outlined text-white/20 text-5xl flex-shrink-0">school</span>
+            </div>
+            <!-- quick edit on card -->
+            <div class="absolute top-3 right-3 flex gap-1" onclick="event.stopPropagation()">
+                <button onclick="openEditModalFor(${c.id})" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/40 text-white transition-colors" title="Edit">
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button onclick="confirmDeleteClassroomId(${c.id})" class="w-7 h-7 flex items-center justify-center rounded-full bg-white/20 hover:bg-red-500/60 text-white transition-colors" title="Delete">
+                    <span class="material-symbols-outlined text-sm">delete</span>
+                </button>
+            </div>
+        </div>
+        <div class="px-5 pt-3 flex items-center justify-between">
+            <div class="flex items-center gap-1.5 text-stone-400 text-xs">
+                <span class="material-symbols-outlined text-base">group</span>
+                <span>${c.studentCount || 0} students</span>
+            </div>
+            <button onclick="event.stopPropagation();openClassroom(${c.id})"
+                class="text-xs font-bold px-4 py-1.5 rounded-full transition-all"
+                style="color:${hex};background:${hex}18">
+                Open
+            </button>
+        </div>
+        ${renderUpcomingWork(c.upcomingWork, c.totalUpcoming, hex,
+            `openClassroomToClasswork(${c.id})`,
+            id => `openClassworkItem(${c.id}, ${id})`
+        )}
+    </div>`;
+}
+
+// ── Detail view ──────────────────────────────────────────────────────────
+function openClassroom(id, initialTab = 'stream') {
+    currentClassroomId = id;
+    document.getElementById('view-list').classList.add('hidden');
+    document.getElementById('view-detail').classList.remove('hidden');
+
+    const c = classroomCache[id] || {};
+    const hex = hexOf(c.color);
+    document.getElementById('detail-header').style.background = `linear-gradient(135deg, ${hex}ee, ${hex})`;
+    document.getElementById('detail-name').textContent = c.name || 'Classroom';
+    document.getElementById('detail-section').textContent = c.section || '';
+    document.getElementById('detail-code').textContent = `Code: ${c.classCode || '—'}`;
+    switchTab(initialTab);
+}
+
+function showList() {
+    currentClassroomId = null;
+    document.getElementById('view-detail').classList.add('hidden');
+    document.getElementById('view-list').classList.remove('hidden');
+    // Re-render cards so updated student counts are reflected
+    const list = Object.values(classroomCache);
+    if (list.length) {
+        document.getElementById('classrooms-grid').innerHTML = list.map(renderCard).join('');
+    }
+}
+
+function copyCode() {
+    const code = classroomCache[currentClassroomId]?.classCode;
+    if (code) { navigator.clipboard.writeText(code); showToast('Class code copied!'); }
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-[#6c5a00]', 'text-[#6c5a00]', 'font-bold');
+        b.classList.add('border-transparent', 'text-stone-500');
+    });
+    const active = document.getElementById(`tab-btn-${tab}`);
+    active.classList.add('border-[#6c5a00]', 'text-[#6c5a00]', 'font-bold');
+    active.classList.remove('border-transparent', 'text-stone-500');
+    loadTab(tab);
+}
+
+async function loadTab(tab) {
+    const el = document.getElementById('tab-content');
+    el.innerHTML = `<div class="py-20 flex items-center justify-center text-stone-300">
+        <span class="material-symbols-outlined text-5xl spin">progress_activity</span></div>`;
+    try {
+        if (tab === 'stream') {
+            const res = await fetch(`/api/classroom/${currentClassroomId}/stream`);
+            el.innerHTML = renderStream(res.ok ? await res.json() : []);
+        } else if (tab === 'classwork') {
+            const res = await fetch(`/api/classroom/${currentClassroomId}/classwork`);
+            el.innerHTML = renderClasswork(res.ok ? await res.json() : []);
+            if (pendingOpenAssignmentId !== null) {
+                const target = el.querySelector(`details[data-id="${pendingOpenAssignmentId}"]`);
+                if (target) {
+                    target.open = true;
+                    setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+                }
+                pendingOpenAssignmentId = null;
+            }
+        } else {
+            const res = await fetch(`/api/classroom/${currentClassroomId}/people`);
+            el.innerHTML = renderPeople(res.ok ? await res.json() : {});
+        }
+    } catch(e) {
+        el.innerHTML = `<p class="text-stone-400 text-sm text-center py-20">Failed to load.</p>`;
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// STREAM
+// ══════════════════════════════════════════════════════════════════════
+const TOPICS = ['General','Bahasa Melayu','English','Math','Science','Creative Arts','Physical Education'];
+const TOPIC_COLORS = {
+    'General':             { bg:'bg-stone-100',   text:'text-stone-500'  },
+    'Bahasa Melayu':     { bg:'bg-blue-100',    text:'text-blue-700'   },
+    'English':             { bg:'bg-sky-100',     text:'text-sky-700'    },
+    'Math':                { bg:'bg-violet-100',  text:'text-violet-700' },
+    'Science':             { bg:'bg-emerald-100', text:'text-emerald-700'},
+    'Creative Arts':       { bg:'bg-rose-100',    text:'text-rose-700'   },
+    'Physical Education':  { bg:'bg-orange-100',  text:'text-orange-700' },
+    // Legacy topics kept so older posts/assignments still render a color instead of falling back to gray.
+    'Art & Craft':         { bg:'bg-rose-100',    text:'text-rose-700'   },
+    'Music':               { bg:'bg-purple-100',  text:'text-purple-700' },
+    'Islamic Studies':     { bg:'bg-teal-100',    text:'text-teal-700'   },
+    'Moral Education':     { bg:'bg-amber-100',   text:'text-amber-700'  },
+};
+function topicBadge(topic) {
+    const t = topic || 'General';
+    const c = TOPIC_COLORS[t] || { bg:'bg-stone-100', text:'text-stone-500' };
+    return `<span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${c.bg} ${c.text}">${esc(t)}</span>`;
+}
+
+let streamFilterTopic = 'All';
+let allStreamPosts = [];
+
+function renderStream(posts) {
+    allStreamPosts = posts;
+    streamFilterTopic = 'All';
+    return buildStreamHtml();
+}
+
+function buildStreamHtml() {
+    const filtered = streamFilterTopic === 'All'
+        ? allStreamPosts
+        : allStreamPosts.filter(p => (p.topic || 'General') === streamFilterTopic);
+
+    const usedTopics = [...new Set(allStreamPosts.map(p => p.topic || 'General'))];
+    const filterPills = ['All', ...usedTopics].map(t => `
+        <button onclick="setStreamFilter('${esc(t)}')"
+            class="stream-filter-btn px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${streamFilterTopic === t
+                ? 'bg-[#ffd709] text-[#6c5a00] border-[#ffd709]'
+                : 'bg-white text-stone-500 border-stone-200 hover:border-[#ffd709]'}"
+            data-topic="${esc(t)}">${esc(t)}</button>`).join('');
+
+    return `
+    <!-- Post box -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-sm p-5 mb-4">
+        <input id="stream-title-input" type="text" maxlength="150" placeholder="Title (optional)"
+            class="w-full border-0 border-b border-stone-200 focus:ring-0 focus:border-stone-300 text-sm font-bold text-stone-800 placeholder:text-stone-400 placeholder:font-normal bg-transparent pb-3 mb-2">
+        <textarea id="stream-input" rows="3" placeholder="Share something with your class…"
+            class="w-full resize-none border-none focus:ring-0 text-sm text-stone-700 placeholder:text-stone-400 bg-transparent"></textarea>
+        <!-- Image preview -->
+        <div id="stream-img-preview" class="hidden mt-2 mb-1">
+            <div class="relative inline-block">
+                <img id="stream-img-thumb" src="" alt="" class="max-h-32 rounded-xl border border-stone-200 object-cover">
+                <button onclick="clearStreamImage()" class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">×</button>
+            </div>
+        </div>
+        <div class="flex items-center justify-between mt-3 gap-3 flex-wrap">
+            <div class="flex items-center gap-2">
+                <select id="stream-topic-select"
+                    class="border border-stone-200 rounded-xl px-3 py-1.5 text-sm text-stone-600 focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    ${TOPICS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}
+                </select>
+                <label class="cursor-pointer flex items-center gap-1 px-3 py-1.5 border border-stone-200 rounded-xl text-sm text-stone-500 hover:border-[#ffd709] transition-colors" title="Add photo">
+                    <span class="material-symbols-outlined text-base">add_photo_alternate</span>
+                    <input type="file" accept="image/*" class="hidden" onchange="handleStreamImagePick(this)">
+                </label>
+            </div>
+            <button id="post-announcement-btn" onclick="postAnnouncement()"
+                class="px-5 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-full hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Post
+            </button>
+        </div>
+    </div>
+
+    <!-- Topic filter pills -->
+    ${allStreamPosts.length > 0 ? `<div class="flex gap-2 flex-wrap mb-5" id="stream-filter-pills">${filterPills}</div>` : ''}
+
+    <!-- Posts -->
+    ${filtered.length ? filtered.map(p => `
+    <div class="rounded-2xl border shadow-sm p-6 mb-4 ${p.pinned ? 'bg-amber-50 border-amber-200' : 'bg-white border-stone-100'}">
+        ${p.pinned ? `<div class="flex items-center gap-1 text-amber-600 text-xs font-bold mb-3"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">push_pin</span> Pinned</div>` : ''}
+        <div class="flex items-start gap-4">
+            <div class="w-11 h-11 rounded-full bg-[#6c5a00] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                ${p.authorImage ? `<img src="${esc(p.authorImage)}" class="w-full h-full object-cover" alt="">` : `<span class="text-sm font-bold text-white">${esc(initials(p.authorName))}</span>`}
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-stone-800">${esc(p.authorName || 'You')}</span>
+                        ${topicBadge(p.topic)}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-stone-400">${esc(p.createdAt || '')}</span>
+                        <button onclick="togglePin(${p.id})" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-amber-50 transition-all ${p.pinned ? 'text-amber-500' : 'text-stone-300 hover:text-amber-400'}" title="${p.pinned ? 'Unpin' : 'Pin'}">
+                            <span class="material-symbols-outlined text-base" style="font-variation-settings:'FILL' ${p.pinned?1:0},'wght' 400,'GRAD' 0,'opsz' 24">push_pin</span>
+                        </button>
+                        <button onclick="deleteAnnouncement(${p.id})" class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-all" title="Delete">
+                            <span class="material-symbols-outlined text-base">delete</span>
+                        </button>
+                    </div>
+                </div>
+                ${p.title ? `<p class="font-bold text-stone-800 text-sm mb-1">${esc(p.title)}</p>` : ''}
+                <p class="text-stone-600 text-sm leading-relaxed whitespace-pre-line">${esc(p.content)}</p>
+                ${p.imageUrl ? `<img src="${esc(p.imageUrl)}" alt="" class="mt-3 rounded-xl max-h-64 object-cover border border-stone-100 cursor-zoom-in hover:opacity-90 transition-opacity" onclick="openImageLightbox(this.src)">` : ''}
+                <button onclick="showAnnouncementViewers(${p.id}, ${p.seenCount || 0})"
+                    class="flex items-center gap-1 mt-3 text-xs text-stone-400 hover:text-stone-600 transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-sm">visibility</span>
+                    <span>${p.seenCount || 0} seen</span>
+                </button>
+            </div>
+        </div>
+    </div>`).join('') : `
+    <div class="flex flex-col items-center gap-3 py-16 text-stone-400">
+        <span class="material-symbols-outlined text-5xl">campaign</span>
+        <p class="font-semibold text-stone-500">${allStreamPosts.length ? 'No posts in this topic.' : 'No announcements yet'}</p>
+        ${allStreamPosts.length ? '' : '<p class="text-sm">Share something with your class above.</p>'}
+    </div>`}`;
+}
+
+function setStreamFilter(topic) {
+    streamFilterTopic = topic;
+    document.getElementById('tab-content').innerHTML = buildStreamHtml();
+}
+
+let pendingImageUrl = null;
+
+async function handleStreamImagePick(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        const res = await fetch('/api/upload/image', { method: 'POST', body: fd });
+        if (res.ok) {
+            const data = await res.json();
+            pendingImageUrl = data.url;
+            document.getElementById('stream-img-thumb').src = pendingImageUrl;
+            document.getElementById('stream-img-preview').classList.remove('hidden');
+        } else showToast('Image upload failed.');
+    } catch(e) { showToast('Image upload error.'); }
+    input.value = '';
+}
+
+function clearStreamImage() {
+    pendingImageUrl = null;
+    document.getElementById('stream-img-preview').classList.add('hidden');
+    document.getElementById('stream-img-thumb').src = '';
+}
+
+let postingAnnouncement = false;
+async function postAnnouncement() {
+    if (postingAnnouncement) return;
+    const content = document.getElementById('stream-input').value.trim();
+    if (!content) { showToast('Please write something first.'); return; }
+    const title = document.getElementById('stream-title-input').value.trim();
+    const topic = document.getElementById('stream-topic-select').value;
+    postingAnnouncement = true;
+    const btn = document.getElementById('post-announcement-btn');
+    if (btn) btn.disabled = true;
+    try {
+        const res = await fetch(`/api/classroom/${currentClassroomId}/announcements`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content, topic, authorAccountId: myAccountId, imageUrl: pendingImageUrl })
+        });
+        if (res.ok) {
+            document.getElementById('stream-title-input').value = '';
+            document.getElementById('stream-input').value = '';
+            clearStreamImage();
+            loadTab('stream');
+        } else showToast('Failed to post.');
+    } catch(e) { showToast('Error posting.'); }
+    finally { postingAnnouncement = false; }
+}
+
+async function togglePin(id) {
+    await fetch(`/api/classroom/announcements/${id}/pin`, { method: 'POST' });
+    loadTab('stream');
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    const res = await fetch(`/api/classroom/announcements/${id}`, { method: 'DELETE' });
+    if (res.ok) loadTab('stream');
+    else showToast('Failed to delete.');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CLASSWORK
+// ══════════════════════════════════════════════════════════════════════
+function renderClasswork(items) {
+    const grouped = {};
+    items.forEach(a => { const t = a.topic || 'General'; (grouped[t]=grouped[t]||[]).push(a); });
+
+    return `
+    <div class="flex justify-end mb-6">
+        <button onclick="openAssignmentModal()"
+            class="flex items-center gap-2 px-5 py-2.5 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all text-sm">
+            <span class="material-symbols-outlined text-lg">add</span> Add Activity
+        </button>
+    </div>
+    ${items.length ? Object.entries(grouped).map(([topic, list]) => `
+    <div class="mb-8">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="h-px flex-1 bg-stone-200"></div>
+            <span class="text-xs font-bold text-stone-400 uppercase tracking-widest px-2">${esc(topic)}</span>
+            <div class="h-px flex-1 bg-stone-200"></div>
+        </div>
+        ${list.map(a => `
+        <details data-id="${a.id}" class="bg-white rounded-2xl border border-stone-100 shadow-sm mb-3 group overflow-hidden">
+            <summary class="px-5 py-4 flex items-center gap-4 cursor-pointer list-none hover:bg-stone-50 transition-colors">
+                <div class="w-9 h-9 rounded-full bg-[#ffd709]/20 flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-[#6c5a00] text-lg">assignment</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <p class="font-semibold text-stone-800 text-sm">${esc(a.title)}</p>
+                        ${topicBadge(a.topic)}
+                    </div>
+                    <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+                        <p class="text-xs text-stone-400">${a.dueDate ? 'Due ' + formatDate(a.dueDate) : 'No due date'}${a.points != null ? ' · ' + a.points + ' pts' : ''}</p>
+                        ${a.totalStudents > 0 ? `<button onclick="event.stopPropagation();showAssignmentCompletions(${a.id}, ${a.completionCount}, ${a.totalStudents})" class="flex items-center gap-1 text-xs ${a.completionCount === a.totalStudents ? 'text-emerald-600 font-semibold' : 'text-stone-400'} hover:opacity-70 transition-opacity"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24">task_alt</span>${a.completionCount}/${a.totalStudents} confirmed</button>` : ''}
+                    </div>
+                </div>
+                <button onclick="event.preventDefault();deleteAssignment(${a.id})"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-all flex-shrink-0" title="Delete">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+                <span class="material-symbols-outlined text-stone-400 text-base transition-transform group-open:rotate-180 flex-shrink-0">expand_more</span>
+            </summary>
+            ${a.description ? `<div class="px-5 pb-5 pt-2 border-t border-stone-100">
+                <p class="text-sm text-stone-600 leading-relaxed whitespace-pre-line">${esc(a.description)}</p></div>` : ''}
+        </details>`).join('')}
+    </div>`).join('') : `
+    <div class="flex flex-col items-center gap-3 py-16 text-stone-400">
+        <span class="material-symbols-outlined text-5xl">assignment</span>
+        <p class="font-semibold text-stone-500">No activities yet</p>
+        <p class="text-sm">Add your first activity using the button above.</p>
+    </div>`}`;
+}
+
+function openAssignmentModal() {
+    ['as-title','as-desc','as-due','as-points'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('as-topic').value = 'General';
+    document.getElementById('as-error').classList.add('hidden');
+    document.getElementById('assignment-modal').classList.remove('hidden');
+}
+function closeAssignmentModal() { document.getElementById('assignment-modal').classList.add('hidden'); }
+
+let submittingAssignment = false;
+async function submitAssignment() {
+    if (submittingAssignment) return;
+    const title = document.getElementById('as-title').value.trim();
+    if (!title) { showErr('as-error', 'Title is required.'); return; }
+    const pointsRaw = document.getElementById('as-points').value;
+    if (pointsRaw !== '' && (Number(pointsRaw) < 0 || Number(pointsRaw) > 100)) {
+        showErr('as-error', 'Points must be between 0 and 100.'); return;
+    }
+    const body = {
+        title,
+        topic: document.getElementById('as-topic').value.trim() || null,
+        description: document.getElementById('as-desc').value.trim() || null,
+        dueDate: document.getElementById('as-due').value || null,
+        points: document.getElementById('as-points').value || null,
+    };
+    submittingAssignment = true;
+    const btn = document.getElementById('submit-assignment-btn');
+    if (btn) btn.disabled = true;
+    try {
+        const res = await fetch(`/api/classroom/${currentClassroomId}/assignments`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (res.ok) { closeAssignmentModal(); loadTab('classwork'); showToast('Activity added!'); }
+        else showErr('as-error', 'Failed to add activity.');
+    } catch(e) { showErr('as-error', 'Network error.'); }
+    finally { submittingAssignment = false; if (btn) btn.disabled = false; }
+}
+
+async function deleteAssignment(id) {
+    if (!confirm('Delete this activity?')) return;
+    const res = await fetch(`/api/classroom/assignments/${id}`, { method: 'DELETE' });
+    if (res.ok) loadTab('classwork');
+    else showToast('Failed to delete.');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PEOPLE
+// ══════════════════════════════════════════════════════════════════════
+let peopleTeachersCache = [];
+
+function openTeacherProfileModal(accountId) {
+    const t = peopleTeachersCache.find(x => x.accountId === accountId);
+    if (!t) return;
+
+    document.getElementById('tp-name').textContent = t.name || '—';
+    document.getElementById('tp-owner-badge').classList.toggle('hidden', !t.isOwner);
+
+    const avatarWrap = document.getElementById('tp-avatar-wrap');
+    avatarWrap.innerHTML = t.image
+        ? `<img src="${esc(t.image)}" style="width:100%;height:100%;object-fit:cover;" alt="">`
+        : `<span style="font-size:1.75rem;font-weight:900;color:#6c5a00;">${esc((t.name||'?').charAt(0).toUpperCase())}</span>`;
+
+    document.getElementById('tp-description').textContent = t.description || 'No description yet.';
+
+    document.getElementById('tp-stats').innerHTML = `
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#ffd709] text-xl mb-1" style="font-variation-settings:'FILL' 1;">school</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.qualification || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Qualification</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF8A3D] text-xl mb-1" style="font-variation-settings:'FILL' 1;">history_edu</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.experience || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Experience</p>
+        </div>
+        <div class="bg-stone-50 p-3 rounded-2xl flex flex-col items-center">
+            <span class="material-symbols-outlined text-[#FF6B6B] text-xl mb-1" style="font-variation-settings:'FILL' 1;">volunteer_activism</span>
+            <p class="font-bold text-[#312f23] text-xs">${esc(t.focusArea || '—')}</p>
+            <p class="text-[9px] text-stone-400 font-bold uppercase tracking-wide mt-0.5">Focus Area</p>
+        </div>`;
+
+    const infoRow = (icon, label, value) => `
+        <div class="flex items-center gap-3 bg-stone-50 rounded-2xl px-4 py-3">
+            <span class="material-symbols-outlined text-lg text-[#6c5a00] flex-shrink-0">${icon}</span>
+            <div class="min-w-0">
+                <p class="text-[10px] font-bold text-stone-400 uppercase tracking-wide">${label}</p>
+                <p class="text-sm font-semibold text-stone-700 truncate">${esc(value)}</p>
+            </div>
+        </div>`;
+    const rows = [infoRow('mail', 'Email', t.email || 'Not available')];
+    if (t.phoneNumber) rows.push(infoRow('call', 'Phone', t.phoneNumber));
+    document.getElementById('tp-info-rows').innerHTML = rows.join('');
+
+    document.getElementById('teacher-profile-modal').classList.remove('hidden');
+}
+
+function closeTeacherProfileModal() {
+    document.getElementById('teacher-profile-modal').classList.add('hidden');
+}
+
+function renderPeople(data) {
+    const { teachers = [], students = [] } = data;
+    peopleTeachersCache = teachers;
+    function row(p, removable) {
+        const av = p.image
+            ? `<img src="${esc(p.image)}" class="w-full h-full object-cover" alt="">`
+            : `<span class="text-sm font-bold text-white">${esc(initials(p.studentName || p.name || '?'))}</span>`;
+        const displayName = p.studentName ? esc(p.studentName) : esc(p.name || '—');
+        const genderColor = p.gender === 'FEMALE' ? 'bg-rose-400' : 'bg-sky-500';
+        const isTeacher = !p.studentId;
+        const avatarBg = isTeacher ? 'bg-[#6c5a00]' : genderColor;
+        const ownerBadge = p.isOwner ? `<span class="text-[10px] font-bold text-[#6c5a00] bg-[#ffd709]/30 px-2 py-0.5 rounded-full ml-1">Owner</span>` : '';
+        const profileClickAttr = isTeacher ? ` onclick="openTeacherProfileModal('${esc(p.accountId)}')" style="cursor:pointer;"` : '';
+        const sub = p.studentCode
+            ? `<span class="text-xs text-stone-400">${esc(p.studentCode)} · Parent: ${esc(p.parentName||'')}</span>`
+            : '';
+        const removeBtn = removable
+            ? (isTeacher
+                ? `<button onclick="removeTeacher('${esc(p.accountId)}')"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Remove">
+                    <span class="material-symbols-outlined text-base">person_remove</span></button>`
+                : `<button onclick="removeStudent(${p.studentId})"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Remove">
+                    <span class="material-symbols-outlined text-base">person_remove</span></button>`)
+            : '';
+        const studentLinkParams = !isTeacher
+            ? `studentId=${p.studentId}&studentName=${encodeURIComponent(p.studentName||'')}&className=${encodeURIComponent(classroomCache[currentClassroomId]?.name||'')}&gender=${encodeURIComponent(p.gender||'')}`
+            : '';
+        const academicBtn = !isTeacher
+            ? `<a href="/teacher/teacheracademic.html?${studentLinkParams}" title="Academic Report"
+                class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors">
+                <span class="material-symbols-outlined text-base">school</span></a>`
+            : '';
+        const healthBtn = !isTeacher
+            ? `<a href="/teacher/teacherhealth.html?${studentLinkParams}" title="Health Record"
+                class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors">
+                <span class="material-symbols-outlined text-base">favorite</span></a>`
+            : '';
+        return `<div class="flex items-center gap-3 py-3 border-b border-stone-50 last:border-0">
+            <div class="w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center overflow-hidden flex-shrink-0"${profileClickAttr}>${av}</div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium text-stone-700 text-sm leading-tight"${profileClickAttr}>${displayName}${ownerBadge}</p>
+                ${sub}
+            </div>
+            ${academicBtn}
+            ${healthBtn}
+            ${removeBtn}
+        </div>`;
+    }
+
+    return `
+    <!-- Teacher section -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#6c5a00]">person</span>
+            <h3 class="font-bold text-stone-700">Teachers</h3>
+            <span class="ml-auto text-xs text-stone-400">${teachers.length}</span>
+        </div>
+        <div class="px-6">
+            ${teachers.length ? teachers.map(t => row(t, !t.isOwner)).join('') : '<p class="text-stone-400 text-sm py-4">No teacher info.</p>'}
+        </div>
+        <!-- Add teacher by email -->
+        <div class="px-6 py-4 border-t border-stone-100 flex gap-2">
+            <input id="teacher-input" type="email" placeholder="Add teacher by email…" list="teacher-email-suggestions" autocomplete="off"
+                class="flex-1 border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                onkeydown="if(event.key==='Enter') addTeacher()">
+            <datalist id="teacher-email-suggestions"></datalist>
+            <button id="add-teacher-btn" onclick="addTeacher()"
+                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                Add Teacher
+            </button>
+        </div>
+        <div id="teacher-error" class="hidden px-6 pb-3 text-xs text-red-500"></div>
+    </div>
+
+    <!-- Students section -->
+    <div class="bg-white rounded-2xl border border-stone-100 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-stone-100 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#6c5a00]">group</span>
+            <h3 class="font-bold text-stone-700">Students</h3>
+            <span class="ml-auto text-xs text-stone-400">${students.length}</span>
+        </div>
+        <!-- Add student by student code -->
+        <div class="px-6 py-4 border-b border-stone-100 flex gap-2">
+            <input id="enroll-input" type="text" placeholder="Enter Student Code (e.g. STU20001)…"
+                class="flex-1 border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                onkeydown="if(event.key==='Enter') enrollStudent()">
+            <button id="enroll-student-btn" onclick="enrollStudent()"
+                class="px-4 py-2 bg-[#ffd709] text-[#6c5a00] text-sm font-bold rounded-xl hover:bg-[#f5cc00] transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed">
+                Add Student
+            </button>
+        </div>
+        <div id="enroll-error" class="hidden px-6 pb-2 text-xs text-red-500"></div>
+        <div class="px-6">
+            ${students.length ? students.map(s => row(s, true)).join('') : '<p class="text-stone-400 text-sm py-4">No students enrolled yet.</p>'}
+        </div>
+    </div>`;
+}
+
+let enrollingStudent = false;
+async function enrollStudent() {
+    if (enrollingStudent) return;
+    const studentCode = document.getElementById('enroll-input').value.trim().toUpperCase();
+    if (!studentCode) { showInlineErr('enroll-error', 'Please enter a Student Code.'); return; }
+    enrollingStudent = true;
+    const btn = document.getElementById('enroll-student-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/classroom/${currentClassroomId}/enroll-by-code`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentCode })
+        });
+        if (res.ok) {
+            document.getElementById('enroll-input').value = '';
+            if (classroomCache[currentClassroomId]) classroomCache[currentClassroomId].studentCount = (classroomCache[currentClassroomId].studentCount || 0) + 1;
+            loadTab('people');
+            showToast('Student added!');
+        } else {
+            let msg = 'Failed to add student.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showInlineErr('enroll-error', msg);
+        }
+    } catch(e) { showInlineErr('enroll-error', 'Network error.'); }
+    finally { enrollingStudent = false; btn.disabled = false; }
+}
+
+async function removeStudent(studentId) {
+    if (!confirm('Remove this student from the classroom?')) return;
+    const res = await fetch(`/api/classroom/${currentClassroomId}/students/${studentId}`, { method: 'DELETE' });
+    if (res.ok) {
+        if (classroomCache[currentClassroomId]) classroomCache[currentClassroomId].studentCount = Math.max(0, (classroomCache[currentClassroomId].studentCount || 1) - 1);
+        loadTab('people');
+        showToast('Student removed.');
+    } else showToast('Failed to remove.');
+}
+
+let addingTeacher = false;
+async function addTeacher() {
+    if (addingTeacher) return;
+    const email = document.getElementById('teacher-input').value.trim().toLowerCase();
+    if (!email) { showInlineErr('teacher-error', 'Please enter an email address.'); return; }
+    addingTeacher = true;
+    const btn = document.getElementById('add-teacher-btn');
+    btn.disabled = true;
+    try {
+        const res = await fetch(`/api/classroom/${currentClassroomId}/teachers`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        if (res.ok) {
+            document.getElementById('teacher-input').value = '';
+            loadTab('people');
+            showToast('Teacher added!');
+        } else {
+            let msg = 'Failed to add teacher.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showInlineErr('teacher-error', msg);
+        }
+    } catch(e) { showInlineErr('teacher-error', 'Network error.'); }
+    finally { addingTeacher = false; btn.disabled = false; }
+}
+
+async function removeTeacher(accountId) {
+    if (!confirm('Remove this teacher from the classroom?')) return;
+    const res = await fetch(`/api/classroom/${currentClassroomId}/teachers/${accountId}`, { method: 'DELETE' });
+    if (res.ok) { loadTab('people'); showToast('Teacher removed.'); }
+    else showToast('Failed to remove teacher.');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CREATE / EDIT CLASSROOM MODAL
+// ══════════════════════════════════════════════════════════════════════
+function selectColor(btn) {
+    document.querySelectorAll('.color-swatch').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedColor = btn.dataset.color;
+}
+
+function openCreateModal() {
+    editingClassroomId = null;
+    document.getElementById('classroom-modal-title').textContent = 'Create Classroom';
+    document.getElementById('cm-name').value = '';
+    document.getElementById('cm-section').value = '';
+    document.getElementById('cm-error').classList.add('hidden');
+    selectColor(document.querySelector('.color-swatch[data-color="indigo"]'));
+    document.getElementById('classroom-modal').classList.remove('hidden');
+}
+
+function openEditModal() { openEditModalFor(currentClassroomId); }
+
+function openEditModalFor(id) {
+    editingClassroomId = id;
+    const c = classroomCache[id] || {};
+    document.getElementById('classroom-modal-title').textContent = 'Edit Classroom';
+    document.getElementById('cm-name').value = c.name || '';
+    document.getElementById('cm-section').value = c.section || '';
+    document.getElementById('cm-error').classList.add('hidden');
+    const swatch = document.querySelector(`.color-swatch[data-color="${c.color || 'indigo'}"]`);
+    selectColor(swatch || document.querySelector('.color-swatch[data-color="indigo"]'));
+    document.getElementById('classroom-modal').classList.remove('hidden');
+}
+
+function closeClassroomModal() { document.getElementById('classroom-modal').classList.add('hidden'); }
+
+async function submitClassroomForm() {
+    const name = document.getElementById('cm-name').value.trim();
+    if (!name) { showErr('cm-error', 'Class name is required.'); return; }
+    const body = {
+        name,
+        section: document.getElementById('cm-section').value.trim() || null,
+        color: selectedColor,
+        teacherAccountId: myAccountId,
+    };
+    try {
+        let res;
+        if (editingClassroomId) {
+            res = await fetch(`/api/classroom/${editingClassroomId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+        } else {
+            res = await fetch('/api/classroom', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+        }
+        if (res.ok) {
+            closeClassroomModal();
+            classroomCache = {};
+            await reloadList();
+            showToast(editingClassroomId ? 'Classroom updated!' : 'Classroom created!');
+            if (editingClassroomId) {
+                // refresh detail header too
+                const refreshed = await (await fetch(`/api/classroom/my/${myAccountId}`)).json();
+                refreshed.forEach(c => { classroomCache[c.id] = c; });
+                openClassroom(editingClassroomId);
+            }
+        } else {
+            let errMsg = `Server error ${res.status}.`;
+            try { const d = await res.json(); errMsg = d.error || errMsg; } catch(_) {}
+            showErr('cm-error', errMsg);
+            console.error('submitClassroomForm failed:', res.status, errMsg);
+        }
+    } catch(e) { console.error('submitClassroomForm network error:', e); showErr('cm-error', 'Network error — check console.'); }
+}
+
+async function reloadList() {
+    document.getElementById('classrooms-grid').classList.add('hidden');
+    document.getElementById('list-empty').classList.add('hidden');
+    document.getElementById('list-loading').classList.remove('hidden');
+    await loadClassrooms();
+}
+
+function confirmDeleteClassroom() { confirmDeleteClassroomId(currentClassroomId); }
+
+async function confirmDeleteClassroomId(id) {
+    const name = classroomCache[id]?.name || 'this classroom';
+    if (!confirm(`Delete "${name}"? This will remove all announcements and activities.`)) return;
+    const res = await fetch(`/api/classroom/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+        delete classroomCache[id];
+        showToast('Classroom deleted.');
+        showList();
+        reloadList();
+    } else showToast('Failed to delete classroom.');
+}
+
+// ── helpers ───────────────────────────────────────────────────────────────
+function showErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+}
+function showInlineErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// WHO SEEN / WHO DONE MODAL
+// ══════════════════════════════════════════════════════════════════════
+function whoRow(name, image, subtitle, isFemale) {
+    const avatarBg = (isFemale === true) ? 'bg-rose-400' : (isFemale === false) ? 'bg-sky-500' : 'bg-[#ffd709]';
+    const textColor = (isFemale === null || isFemale === undefined) ? 'text-[#6c5a00]' : 'text-white';
+    const av = image
+        ? `<img src="${esc(image)}" class="w-full h-full object-cover" alt="">`
+        : `<span class="text-xs font-bold ${textColor}">${esc(initials(name))}</span>`;
+    return `
+    <div class="flex items-center gap-3 py-2.5 border-b border-stone-50 last:border-0">
+        <div class="w-9 h-9 rounded-full ${avatarBg} flex items-center justify-center overflow-hidden flex-shrink-0">${av}</div>
+        <div class="flex-1 min-w-0">
+            <p class="font-medium text-stone-700 text-sm">${esc(name || '—')}</p>
+            ${subtitle ? `<p class="text-xs text-stone-400">${esc(subtitle)}</p>` : ''}
+        </div>
+    </div>`;
+}
+
+async function showAnnouncementViewers(announcementId, count) {
+    document.getElementById('who-modal-icon').textContent = 'visibility';
+    document.getElementById('who-modal-title').textContent = `${count} parent${count !== 1 ? 's' : ''} seen`;
+    document.getElementById('who-modal-body').innerHTML = '<div class="py-8 text-center text-stone-300"><span class="material-symbols-outlined text-3xl spin">progress_activity</span></div>';
+    document.getElementById('who-modal').classList.remove('hidden');
+    try {
+        const res = await fetch(`/api/classroom/announcements/${announcementId}/viewers`);
+        const viewers = res.ok ? await res.json() : [];
+        document.getElementById('who-modal-body').innerHTML = viewers.length
+            ? viewers.map(v => whoRow(v.name, v.image, v.viewedAt, null)).join('')
+            : '<p class="text-stone-400 text-sm py-6 text-center">No one has seen this yet.</p>';
+    } catch(e) {
+        document.getElementById('who-modal-body').innerHTML = '<p class="text-stone-400 text-sm py-6 text-center">Failed to load.</p>';
+    }
+}
+
+async function showAssignmentCompletions(assignmentId, doneCount, total) {
+    document.getElementById('who-modal-icon').textContent = 'task_alt';
+    document.getElementById('who-modal-title').textContent = `${doneCount} of ${total} confirmed`;
+    document.getElementById('who-modal-body').innerHTML = '<div class="py-8 text-center text-stone-300"><span class="material-symbols-outlined text-3xl spin">progress_activity</span></div>';
+    document.getElementById('who-modal').classList.remove('hidden');
+    try {
+        const res = await fetch(`/api/classroom/assignments/${assignmentId}/completions`);
+        const completions = res.ok ? await res.json() : [];
+        document.getElementById('who-modal-body').innerHTML = completions.length
+            ? completions.map(c => whoRow(c.studentName, null, c.markedAt || c.studentCode, c.gender === 'FEMALE')).join('')
+            : '<p class="text-stone-400 text-sm py-6 text-center">No student has confirmed yet.</p>';
+    } catch(e) {
+        document.getElementById('who-modal-body').innerHTML = '<p class="text-stone-400 text-sm py-6 text-center">Failed to load.</p>';
+    }
+}
+
+function closeWhoModal() { document.getElementById('who-modal').classList.add('hidden'); }
+
+// Deep link from e.g. the teacher home page's Upcoming Classwork "View" button:
+// ?classroomId=&tab=&assignmentId=
+function openFromDeepLink() {
+    const params = new URLSearchParams(location.search);
+
+    // e.g. from the teacher home page's "Add Classroom" tile: ?create=1
+    if (params.get('create') === '1') {
+        openCreateModal();
+        history.replaceState(null, '', location.pathname);
+        return;
+    }
+
+    const classroomId = Number(params.get('classroomId'));
+    const tab = params.get('tab') || 'stream';
+    const assignmentId = params.get('assignmentId') ? Number(params.get('assignmentId')) : null;
+    if (!classroomId) return;
+
+    if (assignmentId !== null) pendingOpenAssignmentId = assignmentId;
+    openClassroom(classroomId, tab);
+    history.replaceState(null, '', location.pathname);
+}
+
+loadClassrooms().then(openFromDeepLink);
+</script>
+
+<script>loadSidebar('teacher', 'classroom'); loadTopbar('teacher');</script>
+</body>
+</html>

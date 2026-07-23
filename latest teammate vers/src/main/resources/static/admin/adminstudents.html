@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Manage Students</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        .modal-bg { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Students</h1>
+                <p class="text-stone-500 text-sm mt-1">Create and manage student records.</p>
+            </div>
+            <button onclick="openCreateModal()"
+                class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">person_add</span>
+                Add Student
+            </button>
+        </div>
+
+        <!-- Stats strip (click to filter by parent status) -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <button onclick="setParentFilter('ALL')" id="pf-ALL"
+                class="parent-filter-card bg-white rounded-2xl shadow-sm border-2 border-[#ffd709] p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-[#312f23]" id="stat-total">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Total</p>
+            </button>
+            <button onclick="setParentFilter('LINKED')" id="pf-LINKED"
+                class="parent-filter-card bg-white rounded-2xl shadow-sm border-2 border-transparent p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-emerald-600" id="stat-linked">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Parent Linked</p>
+            </button>
+            <button onclick="setParentFilter('UNLINKED')" id="pf-UNLINKED"
+                class="parent-filter-card bg-white rounded-2xl shadow-sm border-2 border-transparent p-5 text-center transition-transform duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+                <p class="text-2xl font-black text-amber-500" id="stat-unlinked">–</p>
+                <p class="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">No Parent</p>
+            </button>
+        </div>
+
+        <!-- Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <!-- Search + filters -->
+            <div class="px-6 py-4 border-b border-stone-100 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <div class="relative max-w-sm flex-1 w-full">
+                    <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-stone-300 text-lg">search</span>
+                    </span>
+                    <input id="search-input" name="q" type="search" placeholder="Search by name or student code…" autocomplete="off"
+                        class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="filterStudents()">
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-1 bg-stone-100 rounded-full p-1">
+                        <button onclick="setGenderFilter('ALL')" id="gf-ALL" class="gender-filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]">All</button>
+                        <button onclick="setGenderFilter('MALE')" id="gf-MALE" class="gender-filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Male</button>
+                        <button onclick="setGenderFilter('FEMALE')" id="gf-FEMALE" class="gender-filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Female</button>
+                    </div>
+                    <span class="text-xs text-stone-400" id="list-count"></span>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="students-loading" class="py-16 flex justify-center">
+                <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+            </div>
+            <!-- Empty -->
+            <div id="students-empty" class="hidden py-16 flex flex-col items-center gap-2 text-stone-400">
+                <span class="material-symbols-outlined text-4xl">child_care</span>
+                <p class="text-sm">No students found.</p>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto hidden" id="students-table-wrap">
+                <table class="w-full text-left">
+                    <thead class="bg-stone-50">
+                        <tr class="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                            <th class="px-6 py-3">Code</th>
+                            <th class="px-6 py-3">Name</th>
+                            <th class="px-6 py-3">Gender</th>
+                            <th class="px-6 py-3">DOB</th>
+                            <th class="px-6 py-3">Parent</th>
+                            <th class="px-6 py-3">Classroom</th>
+                            <th class="px-6 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-tbody" class="divide-y divide-stone-50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Create / Edit Student Modal -->
+<div id="student-modal" class="hidden fixed inset-0 z-50 modal-bg flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+        <h2 id="modal-title" class="text-xl font-black text-[#312f23] mb-5" style="font-family:'Plus Jakarta Sans',sans-serif">Add Student</h2>
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Full Name *</label>
+                    <input id="sm-name" type="text" placeholder="e.g. Ahmad bin Ali"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Date of Birth * <span class="font-normal text-stone-400">(age 4–6)</span></label>
+                    <input id="sm-dob" type="date"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Gender</label>
+                    <select id="sm-gender" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                        <option value="">— Select —</option>
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                    </select>
+                </div>
+                <div class="col-span-2 relative">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Parent Email <span class="font-normal text-stone-400">(optional — links to existing parent account)</span></label>
+                    <input id="sm-parent-email" type="email" placeholder="parent@example.com" autocomplete="off"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]"
+                        oninput="onParentEmailInput()" onfocus="onParentEmailInput()" onblur="setTimeout(hideParentSuggestions, 150)">
+                    <div id="sm-parent-suggestions" class="hidden absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg max-h-40 overflow-y-auto"></div>
+                    <p id="sm-parent-status" class="text-xs mt-1"></p>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Emergency Contact</label>
+                    <input id="sm-emergency" type="text" placeholder="e.g. +60 12-345 6789"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-xs font-bold text-stone-500 mb-1">Medical Info</label>
+                    <textarea id="sm-medical" rows="2" placeholder="Allergies, conditions, notes…"
+                        class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] resize-none"></textarea>
+                </div>
+            </div>
+        </div>
+        <p id="sm-error" class="hidden text-xs text-red-500 mt-3"></p>
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeStudentModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="student-submit-btn" onclick="submitStudent()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function initials(n) { return String(n||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function showErr(id, msg) { const el=document.getElementById(id); el.textContent=msg; el.classList.remove('hidden'); }
+
+let allStudents = [];
+let editingId = null;
+let genderFilter = 'ALL';
+let parentFilter = 'ALL';
+let allParentAccounts = [];
+
+async function loadStudents() {
+    try {
+        const res = await fetch('/api/admin/students');
+        allStudents = res.ok ? await res.json() : [];
+        updateStats();
+        filterStudents();
+        document.getElementById('students-loading').classList.add('hidden');
+    } catch(e) {
+        document.getElementById('students-loading').classList.add('hidden');
+    }
+}
+
+async function loadParentAccounts() {
+    try {
+        const res = await fetch('/api/admin/accounts?role=PARENT');
+        allParentAccounts = res.ok ? await res.json() : [];
+    } catch (e) { allParentAccounts = []; }
+}
+
+// ── Parent email verification / autocomplete ────────────────────────────────
+function onParentEmailInput() {
+    const q = document.getElementById('sm-parent-email').value.trim().toLowerCase();
+    const box = document.getElementById('sm-parent-suggestions');
+    const status = document.getElementById('sm-parent-status');
+
+    if (!q) { box.classList.add('hidden'); status.textContent = ''; return; }
+
+    const exact = allParentAccounts.find(p => (p.email || '').toLowerCase() === q);
+    if (exact) {
+        status.innerHTML = `<span class="text-emerald-600 font-semibold">&#10003; Matches existing parent: ${esc(exact.fullName)}</span>`;
+    } else {
+        status.innerHTML = `<span class="text-amber-500">No existing parent account with this email yet — student will be unlinked until one registers.</span>`;
+    }
+
+    const matches = allParentAccounts.filter(p =>
+        (p.email || '').toLowerCase().includes(q) || (p.fullName || '').toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    if (!matches.length) { box.classList.add('hidden'); return; }
+    box.innerHTML = matches.map(p => `
+        <div onmousedown="selectParentSuggestion('${esc(p.email)}')"
+            class="px-3 py-2 text-sm hover:bg-[#ffd709]/10 cursor-pointer flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-sky-500 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">${esc(initials(p.fullName))}</span>
+            <div class="min-w-0">
+                <p class="font-medium text-stone-700 truncate">${esc(p.fullName)}</p>
+                <p class="text-xs text-stone-400 truncate">${esc(p.email)}</p>
+            </div>
+        </div>`).join('');
+    box.classList.remove('hidden');
+}
+
+function selectParentSuggestion(email) {
+    document.getElementById('sm-parent-email').value = email;
+    hideParentSuggestions();
+    onParentEmailInput();
+}
+
+function hideParentSuggestions() {
+    document.getElementById('sm-parent-suggestions').classList.add('hidden');
+}
+
+function updateStats() {
+    const linked   = allStudents.filter(s => s.parentId).length;
+    const unlinked = allStudents.length - linked;
+    document.getElementById('stat-total').textContent   = allStudents.length;
+    document.getElementById('stat-linked').textContent  = linked;
+    document.getElementById('stat-unlinked').textContent = unlinked;
+}
+
+function setGenderFilter(gender) {
+    genderFilter = gender;
+    document.querySelectorAll('.gender-filter-btn').forEach(b => {
+        b.className = 'gender-filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white';
+    });
+    document.getElementById('gf-' + gender).className = 'gender-filter-btn px-3 py-1 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]';
+    filterStudents();
+}
+
+function setParentFilter(status) {
+    parentFilter = status;
+    document.querySelectorAll('.parent-filter-card').forEach(b => {
+        b.classList.remove('border-[#ffd709]'); b.classList.add('border-transparent');
+    });
+    document.getElementById('pf-' + status).classList.remove('border-transparent');
+    document.getElementById('pf-' + status).classList.add('border-[#ffd709]');
+    filterStudents();
+}
+
+function filterStudents() {
+    const q = (document.getElementById('search-input').value || '').toLowerCase();
+    let list = allStudents;
+    if (q) list = list.filter(s =>
+        (s.fullName||'').toLowerCase().includes(q) || (s.studentCode||'').toLowerCase().includes(q)
+    );
+    if (genderFilter !== 'ALL') list = list.filter(s => s.gender === genderFilter);
+    if (parentFilter === 'LINKED') list = list.filter(s => !!s.parentId);
+    else if (parentFilter === 'UNLINKED') list = list.filter(s => !s.parentId);
+    renderStudents(list);
+    document.getElementById('list-count').textContent = `${list.length} student${list.length !== 1 ? 's' : ''}`;
+}
+
+function renderStudents(list) {
+    const tbody = document.getElementById('students-tbody');
+    const wrap  = document.getElementById('students-table-wrap');
+    const empty = document.getElementById('students-empty');
+    if (!list.length) { wrap.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); wrap.classList.remove('hidden');
+
+    const genderColor = g => g === 'FEMALE' ? 'bg-rose-400' : g === 'MALE' ? 'bg-sky-500' : 'bg-stone-400';
+    const formatDob = d => { if (!d) return '—'; const [y,m,day] = d.split('-'); const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${parseInt(day)} ${mo[parseInt(m)-1]} ${y}`; };
+
+    tbody.innerHTML = list.map(s => `
+        <tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-6 py-4">
+                <span class="font-mono text-xs font-bold text-[#6c5a00] bg-[#ffd709]/20 px-2 py-1 rounded-lg">${esc(s.studentCode||'—')}</span>
+            </td>
+            <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full ${genderColor(s.gender)} flex items-center justify-center flex-shrink-0">
+                        <span class="text-xs font-bold text-white">${esc(initials(s.fullName))}</span>
+                    </div>
+                    <span class="font-semibold text-sm text-stone-800">${esc(s.fullName)}</span>
+                </div>
+            </td>
+            <td class="px-6 py-4">
+                <span class="text-xs font-medium ${s.gender === 'FEMALE' ? 'text-rose-500' : s.gender === 'MALE' ? 'text-sky-500' : 'text-stone-400'}">${esc(s.gender||'—')}</span>
+            </td>
+            <td class="px-6 py-4 text-stone-400 text-sm">${formatDob(s.dateOfBirth)}</td>
+            <td class="px-6 py-4">
+                ${s.parentName
+                    ? `<div><p class="text-sm font-medium text-stone-700">${esc(s.parentName)}</p><p class="text-xs text-stone-400">${esc(s.parentEmail||'')}</p></div>`
+                    : `<span class="text-xs text-amber-500 font-semibold">Not linked</span>`}
+            </td>
+            <td class="px-6 py-4">
+                ${s.classroomName
+                    ? `<span class="text-sm text-stone-600">${esc(s.classroomName)}</span>`
+                    : `<span class="text-xs text-stone-300">—</span>`}
+            </td>
+            <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                    <a href="/admin/adminacademic.html?studentId=${s.id}&studentName=${encodeURIComponent(s.fullName||'')}&className=${encodeURIComponent(s.classroomName||'')}"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors" title="Academic Report">
+                        <span class="material-symbols-outlined text-base">school</span>
+                    </a>
+                    <a href="/admin/adminhealth.html?studentId=${s.id}&studentName=${encodeURIComponent(s.fullName||'')}&className=${encodeURIComponent(s.classroomName||'')}&dob=${encodeURIComponent(s.dateOfBirth||'')}&gender=${encodeURIComponent(s.gender||'')}"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors" title="Health Record">
+                        <span class="material-symbols-outlined text-base">favorite</span>
+                    </a>
+                    <button onclick="openEditModal(${s.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors" title="Edit">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="deleteStudent(${s.id},'${esc(s.fullName)}')"
+                        class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-300 hover:text-red-500 transition-colors" title="Delete">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+// ── Modals ───────────────────────────────────────────────────────────────────
+function openCreateModal() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = 'Add Student';
+    ['sm-name','sm-dob','sm-parent-email','sm-emergency','sm-medical'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('sm-gender').value = '';
+    document.getElementById('sm-error').classList.add('hidden');
+    document.getElementById('sm-parent-status').textContent = '';
+    hideParentSuggestions();
+    document.getElementById('student-modal').classList.remove('hidden');
+}
+
+function openEditModal(id) {
+    const s = allStudents.find(x => x.id === id);
+    if (!s) return;
+    editingId = id;
+    document.getElementById('modal-title').textContent = 'Edit Student';
+    document.getElementById('sm-name').value          = s.fullName || '';
+    document.getElementById('sm-dob').value           = s.dateOfBirth || '';
+    document.getElementById('sm-gender').value        = s.gender || '';
+    document.getElementById('sm-parent-email').value  = s.parentEmail || '';
+    document.getElementById('sm-emergency').value     = s.emergencyContact || '';
+    document.getElementById('sm-medical').value       = s.medicalInfo || '';
+    onParentEmailInput();
+    hideParentSuggestions();
+    document.getElementById('sm-error').classList.add('hidden');
+    document.getElementById('student-modal').classList.remove('hidden');
+}
+
+function closeStudentModal() { document.getElementById('student-modal').classList.add('hidden'); }
+
+let submittingStudent = false;
+async function submitStudent() {
+    if (submittingStudent) return;
+    const body = {
+        fullName:         document.getElementById('sm-name').value.trim(),
+        dateOfBirth:      document.getElementById('sm-dob').value || null,
+        gender:           document.getElementById('sm-gender').value || null,
+        parentEmail:      document.getElementById('sm-parent-email').value.trim() || null,
+        emergencyContact: document.getElementById('sm-emergency').value.trim() || null,
+        medicalInfo:      document.getElementById('sm-medical').value.trim() || null,
+    };
+    if (!body.fullName) { showErr('sm-error', 'Full name is required.'); return; }
+    if (!body.dateOfBirth) { showErr('sm-error', 'Date of birth is required.'); return; }
+    const dob = new Date(body.dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+    if (age < 4 || age > 6) {
+        showErr('sm-error', `Student must be between 4 and 6 years old (calculated age: ${age}).`);
+        return;
+    }
+    submittingStudent = true;
+    const btn = document.getElementById('student-submit-btn');
+    btn.disabled = true;
+    try {
+        let res;
+        if (editingId) {
+            res = await fetch(`/api/admin/students/${editingId}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+        } else {
+            res = await fetch('/api/admin/students', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+        }
+        if (res.ok) {
+            const data = await res.json();
+            closeStudentModal();
+            if (!editingId && data.studentCode) showToast(`Student created! Code: ${data.studentCode}`, 4000);
+            else showToast(editingId ? 'Student updated!' : 'Student created!');
+            await loadStudents();
+        } else {
+            let msg = 'Failed to save.';
+            try { const d = await res.json(); msg = d.error || msg; } catch(_) {}
+            showErr('sm-error', msg);
+        }
+    } catch(e) { showErr('sm-error', 'Network error.'); }
+    finally { submittingStudent = false; btn.disabled = false; }
+}
+
+async function deleteStudent(id, name) {
+    if (!confirm(`Delete student "${name}"? This will soft-delete the record.`)) return;
+    const res = await fetch(`/api/admin/students/${id}`, { method: 'DELETE' });
+    if (res.ok) { showToast('Student deleted.'); await loadStudents(); }
+    else showToast('Failed to delete.');
+}
+
+loadStudents();
+loadParentAccounts();
+</script>
+
+<script>loadSidebar('admin', 'students'); loadTopbar('admin');</script>
+</body>
+</html>

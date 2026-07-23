@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Events – MyTadika Admin</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { headline: ['Plus Jakarta Sans', 'sans-serif'], body: ['Be Vietnam Pro', 'sans-serif'] }
+            }}
+        };
+    </script>
+    <style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; }
+        #modal-overlay { backdrop-filter: blur(4px); }
+    </style>
+    <script src="/components/sidebar-loader.js"></script>
+</head>
+<body class="bg-[#fcf6e3] text-[#312f23] min-h-screen">
+
+<!-- Floating tooltip -->
+<div id="tooltip" class="hidden fixed z-50 pointer-events-none max-w-[260px] bg-[#312f23] text-white text-sm rounded-2xl px-4 py-3 shadow-2xl">
+    <div id="tooltip-title" class="font-bold mb-1 leading-snug"></div>
+    <div id="tooltip-desc" class="text-white/75 text-xs leading-relaxed"></div>
+</div>
+
+<!-- Add/Edit Event Modal -->
+<div id="modal-overlay" class="hidden fixed inset-0 z-40 bg-black/30 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden">
+        <!-- Modal header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+            <h3 id="modal-heading" class="text-lg font-black text-[#312f23] font-headline">Add School Event</h3>
+            <button onclick="closeModal()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors text-stone-500">
+                <span class="material-symbols-outlined text-xl">close</span>
+            </button>
+        </div>
+        <!-- Kind toggle (School Event / Public Holiday) — hidden while editing -->
+        <div id="modal-kind-toggle" class="px-6 pt-5">
+            <div class="flex gap-1 bg-stone-100 rounded-full p-1 w-fit">
+                <button type="button" onclick="setModalKind('school')" id="mk-school" class="modal-kind-btn px-4 py-1.5 rounded-full text-xs font-bold transition-colors bg-[#ffd709] text-[#6c5a00]">School Event</button>
+                <button type="button" onclick="setModalKind('holiday')" id="mk-holiday" class="modal-kind-btn px-4 py-1.5 rounded-full text-xs font-bold transition-colors text-stone-500 hover:bg-white">Public Holiday</button>
+            </div>
+        </div>
+        <!-- Modal body -->
+        <div class="px-6 py-5 space-y-4">
+            <div>
+                <label id="ev-title-label" class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Event Title *</label>
+                <input id="ev-title" type="text" placeholder="e.g. Sports Day, Exam Week, School Trip..."
+                    class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Date *</label>
+                <input id="ev-date" type="date"
+                    class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+            </div>
+            <div id="ev-enddate-wrap" class="hidden">
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">End Date (optional — for multi-day holidays)</label>
+                <input id="ev-enddate" type="date"
+                    class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+            </div>
+            <div id="ev-type-wrap">
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Category</label>
+                <select id="ev-type" class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50">
+                    <option value="general">General</option>
+                    <option value="sports">Sports Day</option>
+                    <option value="exam">Exam / Assessment</option>
+                    <option value="trip">School Trip</option>
+                    <option value="meeting">Parent-Teacher Meeting</option>
+                    <option value="holiday">School Holiday</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 uppercase tracking-wide mb-1.5">Description (optional)</label>
+                <textarea id="ev-desc" rows="3" placeholder="Add any details about this event..."
+                    class="w-full px-4 py-3 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#ffd709] text-sm bg-stone-50 resize-none"></textarea>
+            </div>
+            <div id="modal-error" class="hidden text-red-500 text-sm py-1"></div>
+        </div>
+        <!-- Modal footer -->
+        <div class="flex gap-3 px-6 py-4 bg-stone-50 border-t border-stone-100">
+            <button onclick="closeModal()" class="flex-1 py-3 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-100 transition-colors">
+                Cancel
+            </button>
+            <button onclick="submitEvent()" id="modal-submit-btn" class="flex-1 py-3 rounded-xl bg-[#ffd709] text-[#6c5a00] text-sm font-bold hover:bg-[#f5cc00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Add Event
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<main class="ml-64 pt-20 p-8 min-h-screen">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Page header -->
+        <div class="mb-4 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight text-[#6c5a00] font-headline">Events Calendar</h1>
+                <p class="text-stone-500 text-sm mt-1">Malaysia public holidays &amp; school events</p>
+            </div>
+            <button onclick="openModal()" class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add</span>
+                Add Event
+            </button>
+        </div>
+
+        <!-- Calendar card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
+            <!-- Calendar header -->
+            <div class="px-6 pt-6 pb-4 flex items-center justify-between border-b border-stone-100">
+                <button onclick="prevMonth()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 transition-colors text-[#6c5a00]">
+                    <span class="material-symbols-outlined text-xl">chevron_left</span>
+                </button>
+                <button onclick="openMonthPicker()" id="month-title" class="text-lg font-black text-[#312f23] font-headline tracking-tight rounded-full px-4 py-1.5 hover:bg-[#ffd709]/20 transition-colors cursor-pointer"></button>
+                <button onclick="nextMonth()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 transition-colors text-[#6c5a00]">
+                    <span class="material-symbols-outlined text-xl">chevron_right</span>
+                </button>
+            </div>
+
+            <div class="p-4">
+                <!-- Day-of-week headers -->
+                <div class="grid grid-cols-7 mb-1">
+                    <div class="text-center text-xs font-bold py-2 text-red-400">Sun</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Mon</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Tue</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Wed</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Thu</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Fri</div>
+                    <div class="text-center text-xs font-bold py-2 text-stone-400">Sat</div>
+                </div>
+
+                <!-- Calendar grid -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1"></div>
+            </div>
+
+            <!-- Legend -->
+            <div class="px-6 py-4 border-t border-stone-100 bg-stone-50/50 flex flex-wrap gap-5 text-xs text-stone-500">
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-lg bg-[#ffd709]"></div>
+                    <span>Today</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    </div>
+                    <span>Public Holiday</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-lg bg-red-50"></div>
+                    <span>Weekend</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                    </div>
+                    <span>School Event</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event lists for current month -->
+        <div id="month-events-list" class="mt-6 space-y-4"></div>
+
+    </div>
+</main>
+
+<!-- Month/Year Picker Modal -->
+<div id="month-picker-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-6">
+        <div class="flex items-center justify-between mb-5">
+            <button onclick="pickerPrevYear()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 transition-colors text-[#6c5a00]">
+                <span class="material-symbols-outlined text-xl">chevron_left</span>
+            </button>
+            <span id="picker-year" class="text-lg font-black text-[#312f23] font-headline"></span>
+            <button onclick="pickerNextYear()" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 transition-colors text-[#6c5a00]">
+                <span class="material-symbols-outlined text-xl">chevron_right</span>
+            </button>
+        </div>
+        <div id="picker-months" class="grid grid-cols-3 gap-2"></div>
+        <button onclick="closeMonthPicker()" class="w-full mt-5 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">Cancel</button>
+    </div>
+</div>
+
+<script>
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+const EVENT_COLORS = {
+    general: { bg: 'bg-blue-100',   text: 'text-blue-700' },
+    sports:  { bg: 'bg-orange-100', text: 'text-orange-700' },
+    exam:    { bg: 'bg-purple-100', text: 'text-purple-700' },
+    trip:    { bg: 'bg-teal-100',   text: 'text-teal-700' },
+    meeting: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+    holiday: { bg: 'bg-green-100',  text: 'text-green-700' },
+    other:   { bg: 'bg-stone-100',  text: 'text-stone-600' },
+};
+
+// Populated from API
+let holidayMap = {};     // { "2025-01-01": { id, name, desc } }
+let schoolEventMap = {}; // { "2025-03-15": [{ id, title, type, desc }] }
+
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+
+async function loadData() {
+    try {
+        const [hRes, eRes] = await Promise.all([
+            fetch('/api/events/holidays'),
+            fetch('/api/events/school')
+        ]);
+        if (hRes.ok) {
+            const list = await hRes.json();
+            holidayMap = {};
+            list.forEach(h => { holidayMap[h.holidayDate] = { id: h.id, name: h.name, desc: h.description || '' }; });
+        }
+        if (eRes.ok) {
+            const list = await eRes.json();
+            schoolEventMap = {};
+            list.forEach(ev => {
+                if (!schoolEventMap[ev.eventDate]) schoolEventMap[ev.eventDate] = [];
+                schoolEventMap[ev.eventDate].push({ id: ev.id, title: ev.title, type: ev.eventType, desc: ev.description || '' });
+            });
+        }
+    } catch (e) { console.error('Failed to load event data:', e); }
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function getSchoolEvents(dateStr) { return schoolEventMap[dateStr] || []; }
+
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+function cellHolidayEnter(el, e) { showSingleTip(e, el.dataset.hname || '', el.dataset.hdesc || ''); }
+function tagEnter(el, e) { showSingleTip(e, el.dataset.ename || '', el.dataset.edesc || ''); }
+function tagLeave(el, e) {
+    const cell = el.closest('[data-hname]');
+    if (cell) showSingleTip(e, cell.dataset.hname, cell.dataset.hdesc);
+    else hideTip();
+}
+
+async function deleteEvent(id) {
+    if (!confirm('Remove this event?')) return;
+    try {
+        const res = await fetch('/api/events/school/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            for (const date in schoolEventMap) {
+                schoolEventMap[date] = schoolEventMap[date].filter(e => e.id != id);
+                if (!schoolEventMap[date].length) delete schoolEventMap[date];
+            }
+            renderCalendar();
+        }
+    } catch (e) { console.error('Delete failed:', e); }
+}
+
+async function deleteHoliday(id) {
+    if (!confirm('Remove this public holiday?')) return;
+    try {
+        const res = await fetch('/api/events/holidays/' + id, { method: 'DELETE' });
+        if (res.ok) {
+            for (const d in holidayMap) {
+                if (holidayMap[d].id == id) delete holidayMap[d];
+            }
+            renderCalendar();
+        }
+    } catch (e) { console.error('Delete failed:', e); }
+}
+
+function renderCalendar() {
+    const today = new Date();
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    document.getElementById('month-title').textContent = MONTHS[currentMonth] + ' ' + currentYear;
+
+    let cells = '';
+    for (let i = 0; i < firstDay; i++) cells += '<div class="rounded-xl min-h-[64px]"></div>';
+
+    const monthHolidays = [], monthSchoolEvs = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = currentYear + '-' + pad(currentMonth + 1) + '-' + pad(d);
+        const dow = new Date(currentYear, currentMonth, d).getDay();
+        const isToday = today.getFullYear() === currentYear && today.getMonth() === currentMonth && today.getDate() === d;
+        const isSun = dow === 0, isSat = dow === 6;
+        const holiday = holidayMap[dateStr];
+        const schoolEvs = getSchoolEvents(dateStr);
+        const hasInfo = !!(holiday || schoolEvs.length);
+
+        if (holiday) monthHolidays.push({ id: holiday.id, date: d, name: holiday.name });
+        schoolEvs.forEach(ev => monthSchoolEvs.push({ ...ev, dayNum: d }));
+
+        let bg = 'hover:bg-stone-50';
+        if (isToday) bg = 'bg-[#ffd709]';
+        else if (holiday) bg = (isSun || isSat) ? 'bg-red-100' : 'bg-red-50';
+        else if (isSun || isSat) bg = 'bg-red-50';
+
+        const numCls = 'text-sm font-bold ' + (isToday ? 'text-[#6c5a00]' : (isSun || isSat) ? 'text-red-500' : 'text-stone-700');
+
+        const holidayDataAttrs = holiday
+            ? `data-hname="${escAttr(holiday.name)}" data-hdesc="${escAttr(holiday.desc)}" onmouseenter="cellHolidayEnter(this,event)" onmouseleave="hideTip()"`
+            : '';
+
+        let extras = '';
+        if (holiday) {
+            extras += `<div class="mt-auto flex justify-end pt-1">
+                <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+            </div>`;
+        }
+        schoolEvs.forEach(ev => {
+            const c = EVENT_COLORS[ev.type] || EVENT_COLORS.general;
+            extras += `<div class="mt-1 text-[10px] ${c.bg} ${c.text} rounded-full px-1.5 py-0.5 truncate font-semibold leading-tight cursor-pointer"
+                data-ename="${escAttr(ev.title)}" data-edesc="${escAttr(ev.desc)}"
+                onmouseenter="tagEnter(this,event)" onmouseleave="tagLeave(this,event)">${esc(ev.title)}</div>`;
+        });
+
+        cells += `<div class="relative rounded-xl p-2 min-h-[64px] flex flex-col transition-colors ${bg} ${holiday ? 'cursor-pointer' : ''}" ${holidayDataAttrs}>
+            <span class="${numCls}">${d}</span>${extras}</div>`;
+    }
+
+    document.getElementById('calendar-grid').innerHTML = cells;
+    renderMonthLists(monthHolidays, monthSchoolEvs);
+}
+
+function renderMonthLists(holidays, schoolEvs) {
+    const el = document.getElementById('month-events-list');
+    let html = '';
+
+    // School Events section — always shown
+    html += `<div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+        <h3 class="text-base font-bold text-[#312f23] font-headline mb-4">School Events in ${MONTHS[currentMonth]}</h3>`;
+    if (schoolEvs.length) {
+        html += `<div class="space-y-2">`;
+        schoolEvs.forEach(ev => {
+            const dow = DAYS[new Date(currentYear, currentMonth, ev.dayNum).getDay()];
+            const c = EVENT_COLORS[ev.type] || EVENT_COLORS.general;
+            html += `<div class="flex items-center gap-4 py-2 border-b border-stone-50 last:border-0">
+                <div class="w-10 h-10 rounded-xl ${c.bg} flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm font-black ${c.text}">${ev.dayNum}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-[#312f23]">${ev.title}</div>
+                    <div class="text-xs text-stone-400">${dow}, ${SHORT_MONTHS[currentMonth]} ${ev.dayNum} ${currentYear}</div>
+                    ${ev.desc ? `<div class="text-xs text-stone-500 mt-0.5 truncate">${ev.desc}</div>` : ''}
+                </div>
+                <button onclick="openEditModal(${ev.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors flex-shrink-0" title="Edit">
+                    <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+                <button onclick="deleteEvent(${ev.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors flex-shrink-0" title="Delete">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        html += `<p class="text-sm text-stone-400">No school event in this month.</p>`;
+    }
+    html += `</div>`;
+
+    // Public Holidays section — admin can edit/delete
+    html += `<div class="bg-white rounded-2xl shadow-sm border border-stone-100 p-6">
+        <h3 class="text-base font-bold text-[#312f23] font-headline mb-4">Public Holidays in ${MONTHS[currentMonth]}</h3>`;
+    if (holidays.length) {
+        html += `<div class="space-y-2">`;
+        holidays.forEach(h => {
+            const dow = DAYS[new Date(currentYear, currentMonth, h.date).getDay()];
+            html += `<div class="flex items-center gap-4 py-2 border-b border-stone-50 last:border-0">
+                <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <span class="text-sm font-black text-red-600">${h.date}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-semibold text-[#312f23]">${esc(h.name)}</div>
+                    <div class="text-xs text-stone-400">${dow}, ${SHORT_MONTHS[currentMonth]} ${h.date} ${currentYear}</div>
+                </div>
+                <button onclick="openEditHolidayModal(${h.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#ffd709]/20 text-stone-400 hover:text-[#6c5a00] transition-colors flex-shrink-0" title="Edit">
+                    <span class="material-symbols-outlined text-base">edit</span>
+                </button>
+                <button onclick="deleteHoliday(${h.id})" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 text-stone-400 hover:text-red-500 transition-colors flex-shrink-0" title="Delete">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                </button>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        html += `<p class="text-sm text-stone-400">No public holiday in this month.</p>`;
+    }
+    html += `</div>`;
+
+    el.innerHTML = html;
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+function showSingleTip(e, title, desc) {
+    document.getElementById('tooltip-title').textContent = title;
+    document.getElementById('tooltip-desc').textContent = desc;
+    document.getElementById('tooltip').classList.remove('hidden');
+    moveTip(e);
+}
+function moveTip(e) {
+    const tip = document.getElementById('tooltip');
+    let x = e.clientX + 14, y = e.clientY + 14;
+    const r = tip.getBoundingClientRect();
+    if (x + r.width + 14 > window.innerWidth) x = e.clientX - r.width - 14;
+    if (y + r.height + 14 > window.innerHeight) y = e.clientY - r.height - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+document.addEventListener('mousemove', e => {
+    if (!document.getElementById('tooltip').classList.contains('hidden')) moveTip(e);
+});
+function hideTip() { document.getElementById('tooltip').classList.add('hidden'); }
+
+// ── Month navigation ──────────────────────────────────────────────────────────
+function prevMonth() {
+    if (currentMonth === 0) { currentMonth = 11; currentYear--; } else currentMonth--;
+    renderCalendar();
+}
+function nextMonth() {
+    if (currentMonth === 11) { currentMonth = 0; currentYear++; } else currentMonth++;
+    renderCalendar();
+}
+
+// ── Month/Year picker ────────────────────────────────────────────────────────
+let pickerYear = currentYear;
+
+function openMonthPicker() {
+    pickerYear = currentYear;
+    renderMonthPicker();
+    document.getElementById('month-picker-modal').classList.remove('hidden');
+}
+function closeMonthPicker() { document.getElementById('month-picker-modal').classList.add('hidden'); }
+function pickerPrevYear() { pickerYear--; renderMonthPicker(); }
+function pickerNextYear() { pickerYear++; renderMonthPicker(); }
+
+function renderMonthPicker() {
+    document.getElementById('picker-year').textContent = pickerYear;
+    document.getElementById('picker-months').innerHTML = SHORT_MONTHS.map((m, i) => {
+        const isSelected = pickerYear === currentYear && i === currentMonth;
+        return `<button onclick="selectPickerMonth(${i})"
+            class="py-2.5 rounded-xl text-sm font-bold transition-colors ${isSelected ? 'bg-[#ffd709] text-[#6c5a00]' : 'bg-stone-50 text-stone-600 hover:bg-[#ffd709]/20'}">${m}</button>`;
+    }).join('');
+}
+
+function selectPickerMonth(monthIndex) {
+    currentMonth = monthIndex;
+    currentYear = pickerYear;
+    closeMonthPicker();
+    renderCalendar();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────────
+let editingId = null;     // null = adding new, number = editing existing
+let modalKind = 'school'; // 'school' | 'holiday'
+
+function setModalKind(kind) {
+    modalKind = kind;
+    document.getElementById('mk-school').className = 'modal-kind-btn px-4 py-1.5 rounded-full text-xs font-bold transition-colors ' + (kind === 'school' ? 'bg-[#ffd709] text-[#6c5a00]' : 'text-stone-500 hover:bg-white');
+    document.getElementById('mk-holiday').className = 'modal-kind-btn px-4 py-1.5 rounded-full text-xs font-bold transition-colors ' + (kind === 'holiday' ? 'bg-[#ffd709] text-[#6c5a00]' : 'text-stone-500 hover:bg-white');
+    document.getElementById('ev-type-wrap').classList.toggle('hidden', kind === 'holiday');
+    document.getElementById('ev-enddate-wrap').classList.toggle('hidden', !(kind === 'holiday' && editingId === null));
+    document.getElementById('ev-title-label').textContent = kind === 'holiday' ? 'Holiday Name *' : 'Event Title *';
+    document.getElementById('ev-title').placeholder = kind === 'holiday' ? 'e.g. Hari Raya, Deepavali, Christmas...' : 'e.g. Sports Day, Exam Week, School Trip...';
+    const editing = editingId !== null;
+    document.getElementById('modal-heading').textContent = (editing ? 'Edit ' : 'Add ') + (kind === 'holiday' ? 'Public Holiday' : 'School Event');
+    document.getElementById('modal-submit-btn').textContent = editing ? 'Save Changes' : (kind === 'holiday' ? 'Add Holiday' : 'Add Event');
+}
+
+function openModal() {
+    editingId = null;
+    document.getElementById('ev-title').value = '';
+    document.getElementById('ev-date').value = '';
+    document.getElementById('ev-enddate').value = '';
+    document.getElementById('ev-type').value = 'general';
+    document.getElementById('ev-desc').value = '';
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-kind-toggle').classList.remove('hidden');
+    setModalKind('school');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('ev-title').focus();
+}
+
+function openEditModal(id) {
+    // Find the school event in the local map
+    let found = null;
+    for (const evs of Object.values(schoolEventMap)) {
+        found = evs.find(e => e.id == id);
+        if (found) break;
+    }
+    if (!found) return;
+
+    editingId = id;
+    document.getElementById('ev-title').value = found.title;
+    document.getElementById('ev-date').value = (() => {
+        for (const [d, evs] of Object.entries(schoolEventMap)) {
+            if (evs.some(e => e.id == id)) return d;
+        }
+        return '';
+    })();
+    document.getElementById('ev-type').value = found.type || 'general';
+    document.getElementById('ev-desc').value = found.desc || '';
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-kind-toggle').classList.add('hidden');
+    setModalKind('school');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('ev-title').focus();
+}
+
+function openEditHolidayModal(id) {
+    let found = null, foundDate = null;
+    for (const [d, h] of Object.entries(holidayMap)) {
+        if (h.id == id) { found = h; foundDate = d; break; }
+    }
+    if (!found) return;
+
+    editingId = id;
+    document.getElementById('ev-title').value = found.name;
+    document.getElementById('ev-date').value = foundDate;
+    document.getElementById('ev-desc').value = found.desc || '';
+    document.getElementById('modal-error').classList.add('hidden');
+    document.getElementById('modal-kind-toggle').classList.add('hidden');
+    setModalKind('holiday');
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('ev-title').focus();
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+let submittingEvent = false;
+async function submitEvent() {
+    if (submittingEvent) return;
+    const title = document.getElementById('ev-title').value.trim();
+    const date  = document.getElementById('ev-date').value;
+    const type  = document.getElementById('ev-type').value;
+    const desc  = document.getElementById('ev-desc').value.trim();
+    const errEl = document.getElementById('modal-error');
+    const accountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId') || '';
+    const isEdit = editingId !== null;
+
+    if (!title) { errEl.textContent = modalKind === 'holiday' ? 'Please enter a holiday name.' : 'Please enter an event title.'; errEl.classList.remove('hidden'); return; }
+    if (!date)  { errEl.textContent = 'Please select a date.'; errEl.classList.remove('hidden'); return; }
+
+    submittingEvent = true;
+    const submitBtn = document.getElementById('modal-submit-btn');
+    submitBtn.disabled = true;
+    try {
+
+    if (modalKind === 'holiday') {
+        const endDate = isEdit ? '' : document.getElementById('ev-enddate').value;
+        const url = isEdit ? '/api/events/holidays/' + editingId : '/api/events/holidays';
+        const method = isEdit ? 'PUT' : 'POST';
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: title, date, endDate, description: desc })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                errEl.textContent = err.error || 'Failed to save holiday.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+            const saved = await res.json();
+            // Create returns an array (one row per day); update returns a single object.
+            const savedList = Array.isArray(saved) ? saved : [saved];
+            if (isEdit) {
+                for (const d in holidayMap) {
+                    if (holidayMap[d].id == editingId) delete holidayMap[d];
+                }
+            }
+            savedList.forEach(h => {
+                holidayMap[h.holidayDate] = { id: h.id, name: h.name, desc: h.description || '' };
+            });
+            closeModal();
+            const [y, m] = savedList[0].holidayDate.split('-').map(Number);
+            currentYear = y; currentMonth = m - 1;
+            renderCalendar();
+        } catch (e) {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.classList.remove('hidden');
+        }
+        return;
+    }
+
+    const url    = isEdit ? '/api/events/school/' + editingId : '/api/events/school';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, date, type, description: desc, createdByAccountId: accountId })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            errEl.textContent = err.error || 'Failed to save event.';
+            errEl.classList.remove('hidden');
+            return;
+        }
+        const saved = await res.json();
+
+        if (isEdit) {
+            for (const d in schoolEventMap) {
+                schoolEventMap[d] = schoolEventMap[d].filter(e => e.id != editingId);
+                if (!schoolEventMap[d].length) delete schoolEventMap[d];
+            }
+        }
+        if (!schoolEventMap[saved.eventDate]) schoolEventMap[saved.eventDate] = [];
+        schoolEventMap[saved.eventDate].push({ id: saved.id, title: saved.title, type: saved.eventType, desc: saved.description || '' });
+
+        closeModal();
+        const [y, m] = saved.eventDate.split('-').map(Number);
+        currentYear = y; currentMonth = m - 1;
+        renderCalendar();
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('hidden');
+    }
+    } finally { submittingEvent = false; submitBtn.disabled = false; }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    loadSidebar('admin', 'events');
+    loadTopbar('admin');
+    await loadData();
+    renderCalendar();
+});
+</script>
+</body>
+</html>

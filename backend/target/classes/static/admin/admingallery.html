@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTadika – Gallery</title>
+    <script>
+        if (!sessionStorage.getItem('token') && !localStorage.getItem('token')) {
+            window.location.replace('/login.html');
+        }
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script src="/components/sidebar-loader.js"></script>
+    <style>
+        .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #fcf6e3; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="text-stone-800 min-h-screen">
+
+<main class="ml-64 pt-20 px-8 pb-12 min-h-screen">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-8 flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h1 class="text-3xl font-black text-[#6c5a00]" style="font-family:'Plus Jakarta Sans',sans-serif">Gallery</h1>
+                <p class="text-stone-500 text-sm mt-1">Every Memory Box post across the school — post, moderate, or review as needed.</p>
+            </div>
+            <button onclick="openAddModal()"
+                class="flex items-center gap-2 px-5 py-3 bg-[#ffd709] text-[#6c5a00] font-bold rounded-full hover:bg-[#f5cc00] transition-all shadow-sm text-sm">
+                <span class="material-symbols-outlined text-xl">add_a_photo</span>
+                Add Memory
+            </button>
+        </div>
+
+        <div class="flex items-center justify-between mb-5">
+            <select id="class-filter" onchange="renderGrid()"
+                class="min-w-[160px] px-3 py-2 bg-stone-50 border border-stone-100 rounded-xl text-xs font-bold text-stone-600 cursor-pointer transition-colors hover:bg-white hover:border-[#ffd709] focus:outline-none focus:ring-2 focus:ring-[#ffd709]">
+                <option value="ALL">All Classes</option>
+            </select>
+            <span class="text-xs text-stone-400" id="grid-count"></span>
+        </div>
+
+        <div id="grid-loading" class="py-24 flex justify-center">
+            <span class="material-symbols-outlined text-4xl text-stone-300 spin">progress_activity</span>
+        </div>
+        <div id="grid-empty" class="hidden bg-white rounded-2xl shadow-sm border border-stone-100 p-16 text-center text-stone-400">
+            <span class="material-symbols-outlined text-5xl opacity-30">auto_stories</span>
+            <p class="mt-3 text-sm">No memory posts yet.</p>
+        </div>
+        <div id="memory-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </div>
+</main>
+
+<!-- Add Memory Modal -->
+<div id="add-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Add Memory</h2>
+            <button onclick="closeAddModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Class *</label>
+                <select id="am-classroom" class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] bg-white">
+                    <option value="">— Select class —</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Caption (optional)</label>
+                <textarea id="am-caption" rows="2" placeholder="What were the kids up to?"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Photos & Videos *</label>
+                <label class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-stone-200 rounded-xl py-6 cursor-pointer hover:border-[#ffd709] transition-colors">
+                    <span class="material-symbols-outlined text-3xl text-stone-300">add_photo_alternate</span>
+                    <span class="text-xs text-stone-400">Click to choose photos or videos (you can pick several)</span>
+                    <input id="am-files" type="file" accept="image/*,video/*" multiple class="hidden" onchange="handleFilesPicked(this)">
+                </label>
+                <div id="am-previews" class="grid grid-cols-4 gap-2 mt-3"></div>
+            </div>
+            <p id="am-error" class="hidden text-xs text-red-500"></p>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeAddModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="am-submit-btn" onclick="submitMemory()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Post</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Memory Modal -->
+<div id="edit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 max-h-[85vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-[#312f23]" style="font-family:'Plus Jakarta Sans',sans-serif">Edit Memory</h2>
+            <button onclick="closeEditModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-400">
+                <span class="material-symbols-outlined text-lg">close</span>
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Caption (optional)</label>
+                <textarea id="em-caption" rows="2" placeholder="What were the kids up to?"
+                    class="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ffd709] resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Existing photos & videos</label>
+                <div id="em-existing-images" class="grid grid-cols-4 gap-2"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-stone-500 mb-1">Add more photos & videos</label>
+                <label class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-stone-200 rounded-xl py-6 cursor-pointer hover:border-[#ffd709] transition-colors">
+                    <span class="material-symbols-outlined text-3xl text-stone-300">add_photo_alternate</span>
+                    <span class="text-xs text-stone-400">Click to choose photos or videos (you can pick several)</span>
+                    <input id="em-files" type="file" accept="image/*,video/*" multiple class="hidden" onchange="handleEditFilesPicked(this)">
+                </label>
+                <div id="em-previews" class="grid grid-cols-4 gap-2 mt-3"></div>
+            </div>
+            <p id="em-error" class="hidden text-xs text-red-500"></p>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50">Cancel</button>
+            <button id="em-submit-btn" onclick="submitEdit()" class="flex-1 py-2.5 rounded-xl bg-[#ffd709] text-[#6c5a00] font-bold text-sm hover:bg-[#f5cc00] disabled:opacity-50 disabled:cursor-not-allowed">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="hidden fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onclick="if(event.target===this) closeLightbox()">
+    <button onclick="closeLightbox()" class="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined">close</span>
+    </button>
+    <button onclick="downloadLightboxMedia()" class="absolute top-5 right-20 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" title="Download">
+        <span class="material-symbols-outlined">download</span>
+    </button>
+    <button onclick="lightboxNav(-1)" class="absolute left-3 sm:left-6 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined text-2xl">chevron_left</span>
+    </button>
+    <div class="flex flex-col items-center gap-3 max-h-[90vh] max-w-[90vw]">
+        <div id="lightbox-media" class="max-h-[72vh] max-w-[90vw]"></div>
+        <div id="lightbox-thumbs" class="hidden gap-2 overflow-x-auto max-w-[90vw] px-1 pb-1"></div>
+    </div>
+    <button onclick="lightboxNav(1)" class="absolute right-3 sm:right-6 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white">
+        <span class="material-symbols-outlined text-2xl">chevron_right</span>
+    </button>
+    <span id="lightbox-counter" class="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 text-xs font-bold"></span>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-5 py-2.5 rounded-full shadow-lg z-50"></div>
+
+<script>
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg, ms=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), ms);
+}
+function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function isVideo(item) { return item && item.type === 'VIDEO'; }
+
+const myAccountId = localStorage.getItem('accountId') || sessionStorage.getItem('accountId');
+let allClassrooms = [];
+let allPosts = [];
+let pickedFiles = [];
+let lightboxMedia = [];
+let lightboxIndex = 0;
+let loadedComments = {};
+
+const deepLinkPostId = new URLSearchParams(location.search).get('postId');
+
+// Downscales an image to a max dimension of 1600px and re-encodes as JPEG (~0.8 quality);
+// videos pass through untouched (can't easily compress client-side with canvas).
+function compressImage(file) {
+    return new Promise((resolve) => {
+        if (!file.type.startsWith('image/') || file.type === 'image/gif') { resolve(file); return; }
+        const img = new Image();
+        img.onload = () => {
+            const maxDim = 1600;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+                const scale = maxDim / Math.max(width, height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+                URL.revokeObjectURL(img.src);
+                if (!blob || blob.size >= file.size) { resolve(file); return; }
+                resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+            }, 'image/jpeg', 0.8);
+        };
+        img.onerror = () => resolve(file);
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+async function downloadLightboxMedia() {
+    const item = lightboxMedia[lightboxIndex];
+    if (!item) return;
+    try {
+        const res = await fetch(item.url);
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `memory-${Date.now()}.${isVideo(item) ? 'mp4' : 'jpg'}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+    } catch (e) { showToast('Failed to download.'); }
+}
+
+async function loadClassrooms() {
+    try {
+        const res = await fetch('/api/classroom/all');
+        allClassrooms = res.ok ? await res.json() : [];
+    } catch (e) { allClassrooms = []; }
+
+    const modalSelect = document.getElementById('am-classroom');
+    modalSelect.innerHTML = '<option value="">— Select class —</option>' +
+        allClassrooms.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+
+async function loadPosts() {
+    const select = document.getElementById('class-filter');
+    const previousFilter = select.value; // preserve whatever class was selected across edits/deletes/reloads
+    try {
+        const res = await fetch('/api/memory/all');
+        allPosts = res.ok ? await res.json() : [];
+    } catch (e) { allPosts = []; }
+
+    const classNames = [...new Set(allPosts.map(p => p.classroomName).filter(Boolean))].sort();
+    select.innerHTML = '<option value="ALL">All Classes</option>' +
+        classNames.map(cn => `<option value="${esc(cn)}">${esc(cn)}</option>`).join('');
+
+    if (deepLinkPostId) {
+        const target = allPosts.find(p => String(p.id) === String(deepLinkPostId));
+        if (target) select.value = target.classroomName;
+    } else if ([...select.options].some(o => o.value === previousFilter)) {
+        select.value = previousFilter;
+    }
+
+    document.getElementById('grid-loading').classList.add('hidden');
+    renderGrid();
+    if (deepLinkPostId) setTimeout(scrollToDeepLinkedPost, 100);
+}
+
+function scrollToDeepLinkedPost() {
+    const card = document.getElementById(`memory-post-${deepLinkPostId}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.add('ring-4', 'ring-[#ffd709]');
+    setTimeout(() => card.classList.remove('ring-4', 'ring-[#ffd709]'), 3000);
+}
+
+function renderGrid() {
+    const classFilter = document.getElementById('class-filter').value;
+    const list = classFilter === 'ALL' ? allPosts : allPosts.filter(p => p.classroomName === classFilter);
+
+    const grid = document.getElementById('memory-grid');
+    const empty = document.getElementById('grid-empty');
+    document.getElementById('grid-count').textContent = list.length ? `${list.length} post${list.length !== 1 ? 's' : ''}` : '';
+
+    if (!list.length) { grid.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden'); grid.classList.remove('hidden');
+
+    grid.innerHTML = list.map(p => `
+        <div id="memory-post-${p.id}" class="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden transition-shadow group">
+            <div class="relative aspect-square bg-stone-100 cursor-pointer" onclick='openLightbox(${JSON.stringify(p.media)}, 0)'>
+                ${isVideo(p.media[0])
+                    ? `<video src="${esc(p.media[0].url)}" class="w-full h-full object-cover" preload="metadata" muted></video>
+                       <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                           <span class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center">
+                               <span class="material-symbols-outlined text-2xl text-white" style="font-variation-settings:'FILL' 1">play_arrow</span>
+                           </span>
+                       </span>`
+                    : `<img src="${esc(p.media[0].url)}" class="w-full h-full object-cover" alt="">`}
+                ${p.media.length > 1 ? `<span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-full">+${p.media.length - 1} more</span>` : ''}
+                <div class="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="event.stopPropagation();openEditModal(${p.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 hover:bg-stone-100 text-stone-400 hover:text-stone-600" title="Edit">
+                        <span class="material-symbols-outlined text-base">edit</span>
+                    </button>
+                    <button onclick="event.stopPropagation();deletePost(${p.id})"
+                        class="w-8 h-8 flex items-center justify-center rounded-full bg-white/90 hover:bg-red-50 text-stone-400 hover:text-red-500" title="Delete post">
+                        <span class="material-symbols-outlined text-base">delete</span>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ffd709]/20 text-[#6c5a00] uppercase tracking-wide">${esc(p.classroomName)}</span>
+                    <span class="text-[10px] text-stone-400">${fmtDate(p.createdAt)} · ${esc(p.authorName)}</span>
+                </div>
+                ${p.caption ? `<p class="text-sm text-stone-600 leading-snug">${esc(p.caption)}</p>` : '<p class="text-sm text-stone-300 italic">No caption</p>'}
+                ${reactionCommentFooter(p)}
+            </div>
+        </div>`).join('');
+}
+
+function reactionCommentFooter(p) {
+    return `
+        <div class="flex items-center gap-4 mt-3 pt-3 border-t border-stone-100">
+            <span class="flex items-center gap-1 text-xs font-semibold text-stone-400">
+                <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' ${p.reactionCount ? 1 : 0},'wght' 500">favorite</span>
+                <span>${p.reactionCount || 0}</span>
+            </span>
+            <button onclick="toggleComments(${p.id})" class="flex items-center gap-1 text-xs font-semibold text-stone-400 hover:text-[#6c5a00] transition-colors">
+                <span class="material-symbols-outlined text-lg">chat_bubble</span>
+                <span id="comment-count-${p.id}">${p.commentCount || 0} comment${p.commentCount === 1 ? '' : 's'}</span>
+            </button>
+        </div>
+        <div id="comments-${p.id}" class="hidden mt-3 pt-3 border-t border-stone-100 space-y-2">
+            <div id="comments-list-${p.id}" class="space-y-2 max-h-48 overflow-y-auto"></div>
+        </div>`;
+}
+
+async function toggleComments(postId) {
+    const panel = document.getElementById(`comments-${postId}`);
+    if (!panel) return;
+    const opening = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (opening) await loadComments(postId);
+}
+
+async function loadComments(postId) {
+    const listEl = document.getElementById(`comments-list-${postId}`);
+    listEl.innerHTML = '<p class="text-xs text-stone-300 italic">Loading…</p>';
+    try {
+        const res = await fetch(`/api/memory/${postId}/comments`);
+        loadedComments[postId] = res.ok ? await res.json() : [];
+        renderComments(postId);
+    } catch (e) { listEl.innerHTML = '<p class="text-xs text-red-400">Failed to load comments.</p>'; }
+}
+
+function renderComments(postId) {
+    const listEl = document.getElementById(`comments-list-${postId}`);
+    const comments = loadedComments[postId] || [];
+    listEl.innerHTML = comments.length ? comments.map(c => `
+        <div class="flex items-start gap-2">
+            <div class="w-6 h-6 rounded-full bg-[#ffd709]/30 flex items-center justify-center text-[10px] font-bold text-[#6c5a00] flex-shrink-0 overflow-hidden">
+                ${c.authorImage ? `<img src="${esc(c.authorImage)}" class="w-full h-full object-cover" alt="">` : esc((c.authorName || '?')[0])}
+            </div>
+            <div class="flex-1 bg-stone-50 rounded-xl px-3 py-1.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-stone-700">${esc(c.authorName)}</span>
+                    <button onclick="deleteComment(${postId}, ${c.id})" class="text-stone-300 hover:text-red-400 ml-auto" title="Remove comment"><span class="material-symbols-outlined text-sm">close</span></button>
+                </div>
+                <p class="text-xs text-stone-600 break-words">${esc(c.content)}</p>
+            </div>
+        </div>`).join('') : '<p class="text-xs text-stone-300 italic">No comments yet.</p>';
+}
+
+async function deleteComment(postId, commentId) {
+    if (!confirm('Remove this comment?')) return;
+    const res = await fetch(`/api/memory/comments/${commentId}`, { method: 'DELETE' });
+    if (res.ok) {
+        const post = allPosts.find(x => x.id === postId);
+        if (post) {
+            post.commentCount = Math.max(0, (post.commentCount || 1) - 1);
+            const countEl = document.getElementById(`comment-count-${postId}`);
+            if (countEl) countEl.textContent = `${post.commentCount} comment${post.commentCount === 1 ? '' : 's'}`;
+        }
+        await loadComments(postId);
+    }
+}
+
+async function deletePost(id) {
+    if (!confirm('Delete this memory post? This removes all its photos, videos, and comments too.')) return;
+    const res = await fetch(`/api/memory/${id}`, { method: 'DELETE' });
+    if (res.ok) { showToast('Memory post deleted.'); await loadPosts(); }
+    else showToast('Failed to delete.');
+}
+
+// ── Add Memory Modal ─────────────────────────────────────────────────────────
+let coverFileIndex = 0;
+function openAddModal() {
+    document.getElementById('am-classroom').value = '';
+    document.getElementById('am-caption').value = '';
+    document.getElementById('am-files').value = '';
+    document.getElementById('am-error').classList.add('hidden');
+    pickedFiles = [];
+    coverFileIndex = 0;
+    renderPreviews();
+    document.getElementById('add-modal').classList.remove('hidden');
+}
+function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+function handleFilesPicked(input) {
+    pickedFiles = pickedFiles.concat(Array.from(input.files || []));
+    renderPreviews();
+}
+function removePickedFile(idx) {
+    pickedFiles.splice(idx, 1);
+    if (coverFileIndex === idx) coverFileIndex = 0;
+    else if (coverFileIndex > idx) coverFileIndex--;
+    renderPreviews();
+}
+function setCoverFile(idx) {
+    coverFileIndex = idx;
+    renderPreviews();
+}
+function renderPreviews() {
+    const wrap = document.getElementById('am-previews');
+    wrap.innerHTML = pickedFiles.map((f, idx) => `
+        <div class="relative aspect-square rounded-lg overflow-hidden bg-stone-100 ${idx === coverFileIndex ? 'ring-2 ring-[#ffd709]' : ''}">
+            ${f.type.startsWith('video/') ? `<video src="${URL.createObjectURL(f)}" class="w-full h-full object-cover" muted></video>` : `<img src="${URL.createObjectURL(f)}" class="w-full h-full object-cover" alt="">`}
+            ${idx === coverFileIndex
+                ? `<span class="absolute bottom-1 left-1 bg-[#ffd709] text-[#6c5a00] text-[9px] font-black px-1.5 py-0.5 rounded-full">Cover</span>`
+                : `<button onclick="setCoverFile(${idx})" title="Set as cover" class="absolute bottom-1 left-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"><span class="material-symbols-outlined text-xs">star</span></button>`}
+            <button onclick="removePickedFile(${idx})" class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white text-xs">×</button>
+        </div>`).join('');
+}
+
+let submittingMemory = false;
+async function submitMemory() {
+    if (submittingMemory) return;
+    const classroomId = document.getElementById('am-classroom').value;
+    const errEl = document.getElementById('am-error');
+    errEl.classList.add('hidden');
+    if (!classroomId) { errEl.textContent = 'Please select a class.'; errEl.classList.remove('hidden'); return; }
+    if (!pickedFiles.length) { errEl.textContent = 'Please choose at least one photo or video.'; errEl.classList.remove('hidden'); return; }
+
+    submittingMemory = true;
+    const btn = document.getElementById('am-submit-btn');
+    btn.disabled = true;
+    try {
+        const compressed = await Promise.all(pickedFiles.map(compressImage));
+        const formData = new FormData();
+        formData.append('classroomId', classroomId);
+        formData.append('authorAccountId', myAccountId);
+        formData.append('caption', document.getElementById('am-caption').value.trim());
+        formData.append('coverIndex', coverFileIndex);
+        compressed.forEach(f => formData.append('files', f));
+
+        const res = await fetch('/api/memory', { method: 'POST', body: formData });
+        if (res.ok) {
+            closeAddModal();
+            showToast('Memory posted!');
+            await loadPosts();
+        } else {
+            const d = await res.json().catch(() => ({}));
+            errEl.textContent = d.error || 'Failed to post memory.';
+            errEl.classList.remove('hidden');
+        }
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('hidden');
+    } finally {
+        submittingMemory = false;
+        btn.disabled = false;
+    }
+}
+
+// ── Edit Memory Modal ────────────────────────────────────────────────────────
+let editingPostId = null;
+let editRemoveImageIds = [];
+let editPickedFiles = [];
+let selectedCoverId = null;
+
+function openEditModal(postId) {
+    const post = allPosts.find(p => p.id === postId);
+    if (!post) return;
+    editingPostId = postId;
+    editRemoveImageIds = [];
+    editPickedFiles = [];
+    selectedCoverId = post.media[0] ? post.media[0].id : null; // media is already cover-first from the backend
+    document.getElementById('em-caption').value = post.caption || '';
+    document.getElementById('em-files').value = '';
+    document.getElementById('em-error').classList.add('hidden');
+    renderEditExistingImages(post);
+    renderEditPreviews();
+    document.getElementById('edit-modal').classList.remove('hidden');
+}
+function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); editingPostId = null; }
+
+function renderEditExistingImages(post) {
+    const wrap = document.getElementById('em-existing-images');
+    wrap.innerHTML = post.media.map((item) => {
+        if (editRemoveImageIds.includes(item.id)) return '';
+        const isCover = item.id === selectedCoverId;
+        return `
+        <div class="relative aspect-square rounded-lg overflow-hidden bg-stone-100 ${isCover ? 'ring-2 ring-[#ffd709]' : ''}">
+            ${isVideo(item) ? `<video src="${esc(item.url)}" class="w-full h-full object-cover" preload="metadata" muted></video>` : `<img src="${esc(item.url)}" class="w-full h-full object-cover" alt="">`}
+            ${isCover
+                ? `<span class="absolute bottom-1 left-1 bg-[#ffd709] text-[#6c5a00] text-[9px] font-black px-1.5 py-0.5 rounded-full">Cover</span>`
+                : `<button onclick="setCoverExisting(${item.id})" title="Set as cover" class="absolute bottom-1 left-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"><span class="material-symbols-outlined text-xs">star</span></button>`}
+            <button onclick="markImageForRemoval(${item.id})" class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white text-xs">×</button>
+        </div>`;
+    }).join('');
+}
+
+function setCoverExisting(imgId) {
+    selectedCoverId = imgId;
+    renderEditExistingImages(allPosts.find(p => p.id === editingPostId));
+}
+
+function markImageForRemoval(imgId) {
+    editRemoveImageIds.push(imgId);
+    if (selectedCoverId === imgId) {
+        const post = allPosts.find(p => p.id === editingPostId);
+        const remaining = post.media.filter(item => !editRemoveImageIds.includes(item.id));
+        selectedCoverId = remaining.length ? remaining[0].id : null;
+    }
+    renderEditExistingImages(allPosts.find(p => p.id === editingPostId));
+}
+
+function handleEditFilesPicked(input) {
+    editPickedFiles = editPickedFiles.concat(Array.from(input.files || []));
+    renderEditPreviews();
+}
+function removeEditPickedFile(idx) {
+    editPickedFiles.splice(idx, 1);
+    renderEditPreviews();
+}
+function renderEditPreviews() {
+    const wrap = document.getElementById('em-previews');
+    wrap.innerHTML = editPickedFiles.map((f, idx) => `
+        <div class="relative aspect-square rounded-lg overflow-hidden bg-stone-100">
+            ${f.type.startsWith('video/') ? `<video src="${URL.createObjectURL(f)}" class="w-full h-full object-cover" muted></video>` : `<img src="${URL.createObjectURL(f)}" class="w-full h-full object-cover" alt="">`}
+            <button onclick="removeEditPickedFile(${idx})" class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full bg-black/60 text-white text-xs">×</button>
+        </div>`).join('');
+}
+
+let submittingEdit = false;
+async function submitEdit() {
+    if (submittingEdit || editingPostId == null) return;
+    const post = allPosts.find(p => p.id === editingPostId);
+    const errEl = document.getElementById('em-error');
+    errEl.classList.add('hidden');
+    const remainingCount = post.media.filter(item => !editRemoveImageIds.includes(item.id)).length + editPickedFiles.length;
+    if (remainingCount < 1) { errEl.textContent = 'A memory post must have at least one photo or video.'; errEl.classList.remove('hidden'); return; }
+
+    submittingEdit = true;
+    const btn = document.getElementById('em-submit-btn');
+    btn.disabled = true;
+    try {
+        const compressed = await Promise.all(editPickedFiles.map(compressImage));
+        const formData = new FormData();
+        formData.append('caption', document.getElementById('em-caption').value.trim());
+        editRemoveImageIds.forEach(id => formData.append('removeImageIds', id));
+        if (selectedCoverId != null) formData.append('coverMediaId', selectedCoverId);
+        compressed.forEach(f => formData.append('files', f));
+
+        const res = await fetch(`/api/memory/${editingPostId}`, { method: 'PUT', body: formData });
+        if (res.ok) {
+            closeEditModal();
+            showToast('Memory updated!');
+            await loadPosts();
+        } else {
+            const d = await res.json().catch(() => ({}));
+            errEl.textContent = d.error || 'Failed to update memory.';
+            errEl.classList.remove('hidden');
+        }
+    } catch (e) {
+        errEl.textContent = 'Network error. Please try again.';
+        errEl.classList.remove('hidden');
+    } finally {
+        submittingEdit = false;
+        btn.disabled = false;
+    }
+}
+
+// ── Lightbox ─────────────────────────────────────────────────────────────────
+function openLightbox(media, index) {
+    lightboxMedia = media;
+    lightboxIndex = index;
+    renderLightboxThumbs();
+    renderLightbox();
+    document.getElementById('lightbox').classList.remove('hidden');
+}
+function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    document.getElementById('lightbox-media').innerHTML = '';
+    document.getElementById('lightbox-thumbs').innerHTML = '';
+}
+function lightboxNav(delta) {
+    lightboxIndex = (lightboxIndex + delta + lightboxMedia.length) % lightboxMedia.length;
+    renderLightbox();
+}
+function jumpToMedia(i) {
+    lightboxIndex = i;
+    renderLightbox();
+}
+function renderLightbox() {
+    lightboxZoomed = false;
+    const item = lightboxMedia[lightboxIndex];
+    const container = document.getElementById('lightbox-media');
+    container.innerHTML = isVideo(item)
+        ? `<video src="${esc(item.url)}" class="max-h-[72vh] max-w-[90vw] rounded-lg" controls autoplay></video>`
+        : `<img src="${esc(item.url)}" onclick="event.stopPropagation();toggleZoom(event)" class="max-h-[72vh] max-w-[90vw] rounded-lg object-contain cursor-zoom-in transition-transform duration-200" alt="">`;
+    document.getElementById('lightbox-counter').textContent = lightboxMedia.length > 1 ? `${lightboxIndex + 1} / ${lightboxMedia.length}` : '';
+    updateThumbHighlight();
+}
+
+// Thumbnail strip so you can jump straight to any photo/video instead of clicking through
+// each one sequentially. Videos use preload="metadata" (poster frame only, not the full file)
+// and images use loading="lazy" — both keep the strip fast regardless of post size.
+function renderLightboxThumbs() {
+    const wrap = document.getElementById('lightbox-thumbs');
+    if (lightboxMedia.length <= 1) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+    wrap.classList.remove('hidden');
+    wrap.classList.add('flex');
+    wrap.innerHTML = lightboxMedia.map((item, i) => `
+        <button onclick="event.stopPropagation();jumpToMedia(${i})" data-thumb-idx="${i}"
+            class="relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === lightboxIndex ? 'border-[#ffd709]' : 'border-transparent opacity-60 hover:opacity-100'}">
+            ${isVideo(item)
+                ? `<video src="${esc(item.url)}" preload="metadata" muted class="w-full h-full object-cover"></video>
+                   <span class="absolute inset-0 flex items-center justify-center"><span class="material-symbols-outlined text-white text-sm" style="font-variation-settings:'FILL' 1">play_arrow</span></span>`
+                : `<img src="${esc(item.url)}" loading="lazy" decoding="async" class="w-full h-full object-cover" alt="">`}
+        </button>`).join('');
+}
+
+function updateThumbHighlight() {
+    document.querySelectorAll('#lightbox-thumbs button').forEach((btn, i) => {
+        btn.className = `relative w-14 h-14 rounded-md overflow-hidden flex-shrink-0 border-2 transition-all ${i === lightboxIndex ? 'border-[#ffd709]' : 'border-transparent opacity-60 hover:opacity-100'}`;
+    });
+}
+
+// Click-to-zoom: anchors the zoom on wherever you clicked, click again to zoom back out.
+let lightboxZoomed = false;
+function toggleZoom(evt) {
+    const img = evt.currentTarget;
+    if (!lightboxZoomed) {
+        const rect = img.getBoundingClientRect();
+        const originX = ((evt.clientX - rect.left) / rect.width) * 100;
+        const originY = ((evt.clientY - rect.top) / rect.height) * 100;
+        img.style.transformOrigin = `${originX}% ${originY}%`;
+        img.style.transform = 'scale(2.5)';
+        img.classList.replace('cursor-zoom-in', 'cursor-zoom-out');
+    } else {
+        img.style.transform = 'scale(1)';
+        img.classList.replace('cursor-zoom-out', 'cursor-zoom-in');
+    }
+    lightboxZoomed = !lightboxZoomed;
+}
+
+(async function init() {
+    await loadClassrooms();
+    await loadPosts();
+})();
+</script>
+
+<script>loadSidebar('admin', 'gallery'); loadTopbar('admin');</script>
+</body>
+</html>
